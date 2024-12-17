@@ -28,12 +28,13 @@ struct sprite
     unsigned int framesX, framesY;
     // std::string path;
     // sf::Sprite rect;
-    unsigned int img;
+    unsigned int sprite_texture;
     bool empty = true;
 
     sprite();
 
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
+    void setTexture(const char *path);
 
     void Put(float _x, float _y);
     void Move(float _xdist, float _ydist);

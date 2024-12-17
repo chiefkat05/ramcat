@@ -8,6 +8,12 @@
 
 #include "../headers/sprite.h"
 
+float texCoords[] = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f,
+    0.0f, 1.0f};
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
@@ -38,10 +44,11 @@ int main()
         return 0;
     }
 
-    shader shaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
+    shader shaderProgram("./shaders/texture.vertex", "./shaders/texture.fragment");
 
     quad spriteRect;
-    sprite player;
+    sprite bg;
+    bg.setTexture("./test.png");
     int left = 1;
 
     float current_time = 0;
@@ -57,12 +64,12 @@ int main()
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        player.Move(0.1f * delta_time * left, 0.0f);
-        if (player.x > 1.0f)
-            left = -1;
-        if (player.x < -1.0f)
-            left = 1;
-        player.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
+        // player.Move(0.1f * delta_time * left, 0.0f);
+        // if (player.x > 1.0f)
+        //     left = -1;
+        // if (player.x < -1.0f)
+        //     left = 1;
+        bg.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

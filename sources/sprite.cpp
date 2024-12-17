@@ -1,16 +1,49 @@
 #include "../headers/sprite.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb/stb_image.h"
+
 float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    0.5f, 0.5f, 0.0f,
-    -0.5f, 0.5f, 0.0f};
+    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+    0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+    -0.5f, 0.5f, 0.0f, 0.0f, 0.0f};
 unsigned int indices[] = {
     0, 1, 2,
     0, 3, 2};
 
 sprite::sprite()
 {
+}
+void sprite::setTexture(const char *path)
+{
+    glGenTextures(1, &sprite_texture);
+    glBindTexture(GL_TEXTURE_2D, sprite_texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    float borderColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "\n\terror " << path << " failed to load\n";
+    }
+
+    stbi_image_free(data);
 }
 void sprite::Put(float _x, float _y)
 {
@@ -25,10 +58,11 @@ void sprite::Move(float _xdist, float _ydist)
 
 void sprite::Draw(shader &program, unsigned int VAO, unsigned int EBO)
 {
+    glBindTexture(GL_TEXTURE_2D, sprite_texture);
+
     program.use();
     program.setUniformVec3("position", x, y, 0.0f);
     glBindVertexArray(VAO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
@@ -45,12 +79,13 @@ quad::quad()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 }
 void quad::quadKill()
 {
-
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 }
