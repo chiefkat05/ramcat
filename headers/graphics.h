@@ -3,6 +3,10 @@
 
 #include <glad/glad.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 #include <fstream>
 
@@ -22,6 +26,7 @@ public:
     void setUniformFloat(const char *name, float x);
     void setUniformInt(const char *name, int x);
     void setUniformBool(const char *name, bool x);
+    void setUniformMat4(const char *name, glm::mat4 matrix);
 };
 
 #endif

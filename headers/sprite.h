@@ -23,18 +23,18 @@ struct quad
 
 struct sprite
 {
-    float x, y, w, h;
+    float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
     unsigned int spriteW, spriteH;
     unsigned int framesX, framesY;
     // std::string path;
     // sf::Sprite rect;
-    unsigned int sprite_texture;
+    unsigned int sprite_texture, sprite_texture2;
     bool empty = true;
 
     sprite();
 
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
-    void setTexture(const char *path);
+    void setTexture(const char *path, unsigned int &textureID);
 
     void Put(float _x, float _y);
     void Move(float _xdist, float _ydist);
