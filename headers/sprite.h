@@ -31,7 +31,7 @@ struct object
 
 struct sprite
 {
-    float x = 0.0f, y = 0.0f, w = 0.0f, h = 0.0f;
+    float x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f, h = 1.0f, d = 1.0f, rx = 0.0f, ry = 0.0f, rz = 0.0f;
     unsigned int spriteW, spriteH;
     unsigned int framesX, framesY;
     unsigned int textureX, textureY, textureWidth, textureHeight;
@@ -47,8 +47,10 @@ struct sprite
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
     void setTexture(const char *path, unsigned int &textureID);
 
-    void Put(float _x, float _y);
-    void Move(float _xdist, float _ydist);
+    void Put(float _x, float _y, float _z);
+    void Move(float _xdist, float _ydist, float _zdist);
+    void Scale(float _w, float _h, float _d);
+    void Rotate(float _rx, float _ry, float _rz);
 
     void Draw(shader &program, unsigned int VAO, unsigned int EBO);
 };

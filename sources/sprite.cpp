@@ -90,19 +90,42 @@ void sprite::setTexture(const char *path, unsigned int &textureID)
 
     stbi_image_free(data);
 }
-void sprite::Put(float _x, float _y)
+void sprite::Put(float _x, float _y, float _z)
 {
     x = _x;
     y = _y;
+    z = _z;
 }
-void sprite::Move(float _xdist, float _ydist)
+void sprite::Move(float _xdist, float _ydist, float _zdist)
 {
     x += _xdist;
     y += _ydist;
+    z += _zdist;
+}
+void sprite::Scale(float _w, float _h, float _d)
+{
+    w = _w;
+    h = _h;
+    d = _d;
+}
+void sprite::Rotate(float _rx, float _ry, float _rz)
+{
+    rx = _rx;
+    ry = _ry;
+    rz = _rz;
 }
 
 void sprite::Draw(shader &program, unsigned int VAO, unsigned int EBO)
 {
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(x, y, z));
+    model = glm::scale(model, glm::vec3(w, h, d));
+    model = glm::rotate(model, glm::radians(rx), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
+    // model = glm::rotate(model, ); rotation is scary
+    program.setUniformMat4("model", model);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sprite_texture);
     switch (sprite_object->obj_type)
@@ -168,7 +191,6 @@ object::object(object_type _obj)
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
         glEnableVertexAttribArray(1);
-        std::cout << "init cube\n";
         break;
     default:
         break;

@@ -23,24 +23,9 @@ void processInput(GLFWwindow *window);
 
 float delta_time = 0.0f;
 
-glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraLockedFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraDirection = glm::normalize(cameraTarget - cameraPosition);
-glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-glm::vec3 cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-glm::vec3 cameraLockedRight = glm::vec3(0.0f);
-glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
-float pitch = 0.0f, yaw = 0.0f;
-float lastMouseX = window_width * 0.5f;
-float lastMouseY = window_height * 0.5f;
-bool firstMouse = true;
-bool fullscreen = false, swappedFullscreen = false;
-bool mouseCapture = true, swappedMouseCapture = false;
-glm::vec3 cameraVelocity = glm::vec3(0.0f);
-bool jumped = false;
-float fov = 90.0f, zoomed_fov = 20.0f, current_fov = 90.0f;
+camera mainCam(CAMERA_2D_FOLLOW);
+// mainCam.LockTo(&player);
+// mainCam.SetBoundary(&leftWall, &rightWall);
 
 int main()
 {
@@ -73,11 +58,19 @@ int main()
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
     sprite bg(&spriteRect);
+    sprite floor(&spriteRect);
     sprite fren(&spriteCube);
     bg.setTexture("./test.png", bg.sprite_texture);
     fren.setTexture("./fren.png", fren.sprite_texture);
-    shaderProgram.use();
-    shaderProgram.setUniformInt("tex", 0);
+    floor.setTexture("./img/soot.png", floor.sprite_texture);
+
+    // declare 'sprites' or game objects here
+    // sprite yoursprite(&[spriteRect | spriteCube]);
+    // yoursprite.setTexture([path], yoursprite.sprite_texture);
+    // yoursprite.Put(10.0f, 10.0f, 0.0f);
+    // yoursprite.Scale(2.0f, 2.0f, 2.0f);
+    // yoursprite.Rotate(0.0f, 0.0f, 45.0f);
+    // yoursprite.Draw(shader, [spriteRect | spriteCube].VAO, [spriteRect | spriteCube].EBO);
 
     float current_time = 0;
 
@@ -97,25 +90,26 @@ int main()
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 proj;
 
-        cameraPosition += cameraVelocity;
+        mainCam.cameraPosition += mainCam.cameraVelocity;
 
-        view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
-        proj = glm::perspective(glm::radians(current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 200.0f);
+        view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+        proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 200.0f);
         shaderProgram.setUniformMat4("projection", proj);
         shaderProgram.setUniformMat4("view", view);
-        glm::mat4 model = glm::mat4(1.0f);
+
         for (int i = 0; i < 5; ++i)
         {
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(i * 1.2f - 2.0f, 0.0f, 0.0f));
-            model = glm::rotate(model, static_cast<float>(glfwGetTime()) * glm::radians(50.0f) * i, glm::vec3(0.5f, 1.0f, 0.0f));
-            shaderProgram.setUniformMat4("model", model);
+            bg.Put(i * 10.0f, 0.0f, 0.0f);
+            bg.Scale(10.0f, 10.0f, 10.0f);
             bg.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
         }
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(4.0f, 0.0f, 4.0f));
-        shaderProgram.setUniformMat4("model", model);
+        fren.Put(4.0f, -1.0f, -14.0f);
         fren.Draw(shaderProgram, spriteCube.VAO, spriteCube.EBO);
+
+        floor.Put(0.0f, -5.0f, 0.0f);
+        floor.Scale(400.0f, 400.0f, 400.0f);
+        floor.Rotate(90.0f, 0.0f, 0.0f);
+        floor.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -132,118 +126,166 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 }
 void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
-    if (firstMouse)
+    if (mainCam.firstMouse)
     {
-        lastMouseX = xpos;
-        lastMouseY = ypos;
-        firstMouse = false;
+        mainCam.lastMouseX = xpos;
+        mainCam.lastMouseY = ypos;
+        mainCam.firstMouse = false;
     }
 
-    float offsetX = xpos - lastMouseX;
-    float offsetY = lastMouseY - ypos;
-
-    lastMouseX = xpos;
-    lastMouseY = ypos;
+    float offsetX = xpos - mainCam.lastMouseX;
+    float offsetY = mainCam.lastMouseY - ypos;
 
     const float sensitivity = 0.1f;
-    offsetX *= sensitivity;
-    offsetY *= sensitivity;
-
-    yaw += offsetX;
-    pitch += offsetY;
-
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
     glm::vec3 direction = glm::vec3(0.0f);
-    direction.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-    direction.y = std::sin(glm::radians(pitch));
-    direction.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
-    cameraFront = glm::normalize(direction);
-    direction = glm::vec3(0.0f);
-    direction.x = std::cos(glm::radians(yaw));
-    direction.z = std::sin(glm::radians(yaw));
-    cameraLockedFront = glm::normalize(direction);
 
-    cameraRight = glm::cross(cameraUp, cameraFront);
-    cameraLockedRight = glm::cross(cameraUp, cameraLockedFront);
+    switch (mainCam.type)
+    {
+    case CAMERA_STATIONARY:
+        break;
+    case CAMERA_2D_FOLLOW:
+        if (mainCam.firstMouse)
+        {
+            mainCam.lastMouseX = xpos;
+            mainCam.lastMouseY = ypos;
+            mainCam.firstMouse = false;
+        }
+
+        mainCam.lastMouseX = xpos;
+        mainCam.lastMouseY = ypos;
+
+        offsetX *= sensitivity;
+        offsetY *= sensitivity;
+
+        mainCam.cameraPosition.x += offsetX;
+        mainCam.cameraPosition.y += offsetY;
+        break;
+    default:
+
+        mainCam.lastMouseX = xpos;
+        mainCam.lastMouseY = ypos;
+
+        offsetX *= sensitivity;
+        offsetY *= sensitivity;
+
+        mainCam.yaw += offsetX;
+        mainCam.pitch += offsetY;
+
+        if (mainCam.pitch > 89.0f)
+            mainCam.pitch = 89.0f;
+        if (mainCam.pitch < -89.0f)
+            mainCam.pitch = -89.0f;
+
+        direction.x = std::cos(glm::radians(mainCam.yaw)) * std::cos(glm::radians(mainCam.pitch));
+        direction.y = std::sin(glm::radians(mainCam.pitch));
+        direction.z = std::sin(glm::radians(mainCam.yaw)) * std::cos(glm::radians(mainCam.pitch));
+        mainCam.cameraFront = glm::normalize(direction);
+        direction = glm::vec3(0.0f);
+        direction.x = std::cos(glm::radians(mainCam.yaw));
+        direction.z = std::sin(glm::radians(mainCam.yaw));
+        mainCam.cameraLockedFront = glm::normalize(direction);
+
+        mainCam.cameraRight = glm::cross(mainCam.cameraUp, mainCam.cameraFront);
+        mainCam.cameraLockedRight = glm::cross(mainCam.cameraUp, mainCam.cameraLockedFront);
+        break;
+    }
 }
 void processInput(GLFWwindow *window)
 {
-    cameraVelocity.x = 0.0f;
-    cameraVelocity.z = 0.0f;
-
-    if (cameraPosition.y > 0.0f)
-        cameraVelocity.y -= 2.0f * delta_time;
-    if (cameraPosition.y <= 0.0f)
+    if (mainCam.type == CAMERA_3D)
     {
-        cameraPosition.y = 0.0f;
-        cameraVelocity.y = 0.0f;
-        jumped = false;
-    }
+        mainCam.cameraVelocity.x = 0.0f;
+        mainCam.cameraVelocity.z = 0.0f;
 
+        if (mainCam.cameraPosition.y > 0.0f)
+            mainCam.cameraVelocity.y -= 2.0f * delta_time;
+        if (mainCam.cameraPosition.y <= 0.0f)
+        {
+            mainCam.cameraPosition.y = 0.0f;
+            mainCam.cameraVelocity.y = 0.0f;
+            mainCam.jumped = false;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_W))
+        {
+            mainCam.cameraVelocity += mainCam.cameraLockedFront * 4.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S))
+        {
+            mainCam.cameraVelocity -= mainCam.cameraLockedFront * 4.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A))
+        {
+            mainCam.cameraVelocity -= glm::normalize(glm::cross(mainCam.cameraFront, mainCam.cameraUp)) * 4.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D))
+        {
+            mainCam.cameraVelocity += glm::normalize(glm::cross(mainCam.cameraFront, mainCam.cameraUp)) * 4.0f * delta_time;
+        }
+        if (!mainCam.jumped && glfwGetKey(window, GLFW_KEY_SPACE))
+        {
+            mainCam.cameraVelocity.y = 20.0f * delta_time;
+            mainCam.jumped = true;
+        }
+    }
+    if (mainCam.type == CAMERA_2D_FOLLOW)
+    {
+        if (glfwGetKey(window, GLFW_KEY_W))
+        {
+            mainCam.cameraPosition.y += 10.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S))
+        {
+            mainCam.cameraPosition.y -= 10.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A))
+        {
+            mainCam.cameraPosition.x -= 10.0f * delta_time;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D))
+        {
+            mainCam.cameraPosition.x += 10.0f * delta_time;
+        }
+    }
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
     }
-    if (glfwGetKey(window, GLFW_KEY_W))
-    {
-        cameraVelocity += cameraLockedFront * 4.0f * delta_time;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S))
-    {
-        cameraVelocity -= cameraLockedFront * 4.0f * delta_time;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A))
-    {
-        cameraVelocity -= glm::normalize(glm::cross(cameraFront, cameraUp)) * 4.0f * delta_time;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D))
-    {
-        cameraVelocity += glm::normalize(glm::cross(cameraFront, cameraUp)) * 4.0f * delta_time;
-    }
-    if (!jumped && glfwGetKey(window, GLFW_KEY_SPACE))
-    {
-        cameraVelocity.y = 0.4f;
-        jumped = true;
-    }
 
     if (glfwGetKey(window, GLFW_KEY_C))
     {
-        current_fov = zoomed_fov;
+        mainCam.current_fov = mainCam.zoomed_fov;
     }
     if (!glfwGetKey(window, GLFW_KEY_C))
     {
-        current_fov = fov;
+        mainCam.current_fov = mainCam.fov;
     }
 
-    if (!glfwGetKey(window, GLFW_KEY_F) && swappedFullscreen)
-        swappedFullscreen = false;
+    if (!glfwGetKey(window, GLFW_KEY_F) && mainCam.swappedFullscreen)
+        mainCam.swappedFullscreen = false;
 
-    if (glfwGetKey(window, GLFW_KEY_F) && !swappedFullscreen)
+    if (glfwGetKey(window, GLFW_KEY_F) && !mainCam.swappedFullscreen)
     {
-        fullscreen = !fullscreen;
-        if (fullscreen)
+        mainCam.fullscreen = !mainCam.fullscreen;
+        if (mainCam.fullscreen)
             glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
-        if (!fullscreen)
+        if (!mainCam.fullscreen)
             glfwSetWindowMonitor(window, NULL, 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
 
-        swappedFullscreen = true;
+        mainCam.swappedFullscreen = true;
     }
 
-    if (!glfwGetKey(window, GLFW_KEY_TAB) && swappedMouseCapture)
-        swappedMouseCapture = false;
+    if (!glfwGetKey(window, GLFW_KEY_TAB) && mainCam.swappedMouseCapture)
+        mainCam.swappedMouseCapture = false;
 
-    if (glfwGetKey(window, GLFW_KEY_TAB) && !swappedMouseCapture)
+    if (glfwGetKey(window, GLFW_KEY_TAB) && !mainCam.swappedMouseCapture)
     {
-        mouseCapture = !mouseCapture;
-        if (mouseCapture)
+        mainCam.mouseCapture = !mainCam.mouseCapture;
+        if (mainCam.mouseCapture)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if (!mouseCapture)
+        if (!mainCam.mouseCapture)
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-        swappedMouseCapture = true;
+        mainCam.swappedMouseCapture = true;
     }
 }
