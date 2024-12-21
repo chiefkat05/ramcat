@@ -57,7 +57,6 @@ int main()
         return 0;
     }
     glfwMakeContextCurrent(window);
-    // glViewport(0, 0, 1980, 1080);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -69,21 +68,20 @@ int main()
         return 0;
     }
 
-    shader shaderProgram("./shaders/translation.vertex", "./shaders/texture-2.fragment");
+    shader shaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
 
-    quad spriteRect;
-    sprite bg;
+    object spriteRect(OBJ_QUAD);
+    object spriteCube(OBJ_CUBE);
+    sprite bg(&spriteRect);
+    sprite fren(&spriteCube);
     bg.setTexture("./test.png", bg.sprite_texture);
-    bg.setTexture("./test-2.png", bg.sprite_texture2);
+    fren.setTexture("./fren.png", fren.sprite_texture);
     shaderProgram.use();
     shaderProgram.setUniformInt("tex", 0);
-    shaderProgram.setUniformInt("tex_2", 1);
 
     float current_time = 0;
 
     glEnable(GL_DEPTH_TEST);
-
-    // glm::mat4 orthographic = glm::ortho(0.0f, static_cast<float>(window_width), 0.0f, static_cast<float>(window_height), 0.1f, 200.0f);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -96,25 +94,6 @@ int main()
         glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // player.Move(0.1f * delta_time * left, 0.0f);
-        // if (player.x > 1.0f)
-        //     left = -1;
-        // if (player.x < -1.0f)
-        //     left = 1;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        {
-            bg.Move(2.0f * delta_time, 0.0f);
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        {
-            bg.Move(-2.0f * delta_time, 0.0f);
-        }
-        glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-        // glm::mat4 trans = glm::mat4(1.0f);
-        // trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-        // trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-        // trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
-        // shaderProgram.setUniformMat4("transform", trans);
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 proj;
 
@@ -124,14 +103,19 @@ int main()
         proj = glm::perspective(glm::radians(current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.1f, 200.0f);
         shaderProgram.setUniformMat4("projection", proj);
         shaderProgram.setUniformMat4("view", view);
+        glm::mat4 model = glm::mat4(1.0f);
         for (int i = 0; i < 5; ++i)
         {
-            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::mat4(1.0f);
             model = glm::translate(model, glm::vec3(i * 1.2f - 2.0f, 0.0f, 0.0f));
             model = glm::rotate(model, static_cast<float>(glfwGetTime()) * glm::radians(50.0f) * i, glm::vec3(0.5f, 1.0f, 0.0f));
             shaderProgram.setUniformMat4("model", model);
             bg.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
         }
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(4.0f, 0.0f, 4.0f));
+        shaderProgram.setUniformMat4("model", model);
+        fren.Draw(shaderProgram, spriteCube.VAO, spriteCube.EBO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -222,8 +206,6 @@ void processInput(GLFWwindow *window)
     }
     if (!jumped && glfwGetKey(window, GLFW_KEY_SPACE))
     {
-        // cameraVelocity.y = 1.0f;
-        // cameraVelocity = glm::normalize(glm::cross(cameraRight, cameraLockedFront)) * 0.4f;
         cameraVelocity.y = 0.4f;
         jumped = true;
     }
