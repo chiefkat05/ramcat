@@ -54,16 +54,50 @@ float cube_vertices[] = {
     -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
     -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
 
-sprite::sprite(object *_obj)
+sprite::sprite()
+{
+}
+sprite::sprite(object *_obj, shader *_sprite_shader)
 {
     sprite_object = _obj;
+    sprite_shader = _sprite_shader;
+    textureWidth = 1.0f;
+    textureHeight = 1.0f;
+
+    // bool foundMatchingTexture = false;
+    // for (unsigned int i = 0; i < tPile.count; ++i)
+    // {
+    //     if (tPile.paths[i] == _path)
+    //     {
+    //         img = i;
+    //         foundMatchingTexture = true;
+    //         break;
+    //     }
+    // }
+
+    // if (!foundMatchingTexture && !tPile.list[tPile.count].loadFromFile(_path))
+    // {
+    //     std::cout << "error: image " << _path << " failed to load.\n";
+    //     return;
+    // }
+    // tPile.list[tPile.count].setRepeated(true);
+
+    // if (!foundMatchingTexture)
+    // {
+    //     tPile.paths[tPile.count] = _path;
+    //     img = tPile.count;
+
+    //     ++tPile.count;
+    // }
+
+    // rect = sf::Sprite(tPile.list[img]);
 }
-void sprite::setTexture(const char *path, unsigned int &textureID)
+void sprite::setTexture(const char *path, unsigned int _fx, unsigned int _fy)
 {
     // stbi_set_flip_vertically_on_load(true);
-    glGenTextures(1, &textureID);
+    glGenTextures(1, &sprite_texture);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    glBindTexture(GL_TEXTURE_2D, sprite_texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -80,7 +114,7 @@ void sprite::setTexture(const char *path, unsigned int &textureID)
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
     if (data)
     {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     else
@@ -89,6 +123,27 @@ void sprite::setTexture(const char *path, unsigned int &textureID)
     }
 
     stbi_image_free(data);
+
+    framesX = 1;
+    framesY = 1;
+    if (_fx > 1)
+        framesX = _fx;
+    if (_fy > 1)
+        framesY = _fy;
+
+    texture_path = path;
+
+    // rect.setPosition(sf::Vector2(_x, _y));
+
+    // spriteW = tPile.list[img].getSize().x / framesX;
+    // spriteH = tPile.list[img].getSize().y / framesY;
+    spriteW = width / framesX;
+    spriteH = height / framesY;
+
+    textureWidth = static_cast<float>(spriteW) / width;
+    textureHeight = static_cast<float>(spriteH) / height;
+
+    empty = false;
 }
 void sprite::Put(float _x, float _y, float _z)
 {
@@ -115,28 +170,30 @@ void sprite::Rotate(float _rx, float _ry, float _rz)
     rz = _rz;
 }
 
-void sprite::Draw(shader &program, unsigned int VAO, unsigned int EBO)
+void sprite::Draw()
 {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(x, y, z));
-    model = glm::scale(model, glm::vec3(w, h, d));
     model = glm::rotate(model, glm::radians(rx), glm::vec3(1.0f, 0.0f, 0.0f));
     model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
-    // model = glm::rotate(model, ); rotation is scary
-    program.setUniformMat4("model", model);
+    model = glm::scale(model, glm::vec3(w, h, d));
+    sprite_shader->use();
+    sprite_shader->setUniformMat4("model", model);
+    sprite_shader->setUniformVec2("tex_offset", textureX, textureY);
+    sprite_shader->setUniformVec2("tex_scale", textureWidth, textureHeight);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sprite_texture);
     switch (sprite_object->obj_type)
     {
     case OBJ_QUAD:
-        glBindVertexArray(VAO);
-        glBindBuffer(1, EBO);
+        glBindVertexArray(sprite_object->VAO);
+        glBindBuffer(1, sprite_object->EBO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         break;
     case OBJ_CUBE:
-        glBindVertexArray(VAO);
+        glBindVertexArray(sprite_object->VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         break;
     case OBJ_NULL:
@@ -144,15 +201,6 @@ void sprite::Draw(shader &program, unsigned int VAO, unsigned int EBO)
     default:
         break;
     }
-    // program.use();
-    // program.setUniformVec3("position", x, y, 0.0f);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sprite_texture);
-    // glActiveTexture(GL_TEXTURE1);
-    // glBindTexture(GL_TEXTURE_2D, sprite_texture2);
-
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 object::object(object_type _obj)

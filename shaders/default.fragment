@@ -3,8 +3,13 @@ out vec4 FragColor;
 in vec2 tex_position;
 
 uniform sampler2D tex;
+uniform vec2 tex_offset;
+uniform vec2 tex_scale;
 
 void main()
 {
-    FragColor = texture(tex, tex_position);
+    vec4 textureOutput = texture(tex, (tex_position + tex_offset) * tex_scale);
+    if (textureOutput.w < 0.1)
+        discard;
+    FragColor = textureOutput;
 } 

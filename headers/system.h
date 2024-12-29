@@ -3,9 +3,8 @@
 
 #include <iostream>
 #include <string>
-#include "sprite.h"
-// #include "collision.h"
-// #include "dungeon.h"
+#include "collision.h"
+#include "dungeon.h"
 // #include "effects.h"
 
 const unsigned int entity_limit = 64; // also change in dungeon.h since there's another one there, also delete one of these so that there's only one pls
@@ -38,63 +37,63 @@ enum ANIMATION_MAPPINGS
     ANIM_ABILITY_8
 };
 
-// struct character
-// {
-//     float velocityX = 0.0f, velocityY = 0.0f, runSpeedMulti = 1.0f;
-//     bool onGround = false, jumped = false;
-//     bool isAPlayer = false;
+struct character
+{
+    float velocityX = 0.0f, velocityY = 0.0f, runSpeedMulti = 1.0f;
+    bool onGround = false, jumped = false;
+    bool isAPlayer = false;
 
-//     animation animations[animation_limit];
-//     // float posX = 0.0f, posY = 0.0f;
-//     // float walkToX = 0.0f, walkToY = 0.0f;
-//     sprite visual;
-//     aabb collider;
+    animation animations[animation_limit];
+    // float posX = 0.0f, posY = 0.0f;
+    // float walkToX = 0.0f, walkToY = 0.0f;
+    sprite visual;
+    aabb collider;
 
-//     IDENTIFICATION id = CH_MONSTER;
-//     float attackTimer = 0.0f;
-//     int hp = 10, maxhp = 10;
-//     float runSpeed = 100.0f;
+    IDENTIFICATION id = CH_MONSTER;
+    float attackTimer = 0.0f;
+    int hp = 10, maxhp = 10;
+    float runSpeed = 100.0f;
 
-//     bool animationFinished = true, animationLooping = false;
-//     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
+    bool animationFinished = true, animationLooping = false;
+    ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
 
-//     unsigned int initiative = 0;
+    unsigned int initiative = 0;
 
-//     character();
-//     character(sprite &v, IDENTIFICATION _id);
-//     character(std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character();
+    character(sprite &v, IDENTIFICATION _id);
+    character(object *spriteObject, shader *spriteProgram, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
-//     void MoveTo(float _x, float _y, dungeon *currentDungeon);
+    void MoveTo(float _x, float _y, dungeon *currentDungeon);
 
-//     void Update(float delta_time);
-//     void updatePosition(float delta_time);
+    void Update(float delta_time);
+    void updatePosition(float delta_time);
 
-//     void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd);
-//     void PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loops);
-// };
+    void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd);
+    void PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loops);
+};
 
-// struct game_system
-// {
-//     character *characters[entity_limit];
-//     sprite *sortedSprites[entity_limit];
-//     particlesystem *particles[particle_system_limit];
-//     int particlesystemcount;
-//     int level = 0;
-//     bool levelincreasing = false;
+struct game_system
+{
+    character *characters[entity_limit];
+    sprite *sortedSprites[entity_limit];
+    // particlesystem *particles[particle_system_limit];
+    // int particlesystemcount;
+    int level = 0;
+    bool levelincreasing = false;
 
-//     int characterCount = 0;
-//     bool paused = false;
-//     // sf::Music game_music;
-//     // bool music_playing = false;
+    int characterCount = 0;
+    bool paused = false;
+    // sf::Music game_music;
+    // bool music_playing = false;
 
-//     void Add(character *e);
-//     void Add(particlesystem *p);
+    void Add(character *e);
+    // void Add(particlesystem *p);
 
-//     void handleMusic();
+    // void handleMusic();
 
-//     void update(dungeon &floor, float delta_time);
+    void update(dungeon &floor, float delta_time);
 
-//     void killParticles();
-// };
+    // void killParticles();
+};
 
 #endif

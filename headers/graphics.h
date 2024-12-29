@@ -2,6 +2,7 @@
 #define GRAPHICS_H
 
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -57,6 +58,9 @@ struct camera
     bool jumped = false;
     float fov = 90.0f, zoomed_fov = 20.0f, current_fov = 90.0f;
     simple_camera_types type;
+    glm::vec3 boundaryCorner, boundarySizeCorner;
+    bool boundaryset = false;
+    float *cameraLockX, *cameraLockY, *cameraLockZ;
 
     camera(simple_camera_types _type)
     {
@@ -109,6 +113,47 @@ struct camera
             cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
             break;
             break;
+        }
+    }
+
+    void setBoundary(float x, float y, float z, float x2, float y2, float z2)
+    {
+        boundaryCorner = glm::vec3(x, y, z);
+        boundarySizeCorner = glm::vec3(x2, y2, z2);
+
+        boundaryset = true;
+    }
+    void lockTo(float *x, float *y = nullptr, float *z = nullptr)
+    {
+        cameraLockX = x;
+        cameraLockY = y;
+        cameraLockZ = z;
+    }
+
+    void update()
+    {
+        if (cameraLockX != nullptr)
+            cameraPosition.x = *cameraLockX;
+        if (cameraLockY != nullptr)
+            cameraPosition.y = *cameraLockY;
+        if (cameraLockZ != nullptr)
+            cameraPosition.z = *cameraLockZ;
+
+        if (boundaryset)
+        {
+            if (cameraPosition.x < boundaryCorner.x)
+                cameraPosition.x = boundaryCorner.x;
+            if (cameraPosition.y < boundaryCorner.y)
+                cameraPosition.y = boundaryCorner.y;
+            if (cameraPosition.z < boundaryCorner.z)
+                cameraPosition.z = boundaryCorner.z;
+
+            if (cameraPosition.x > boundarySizeCorner.x)
+                cameraPosition.x = boundarySizeCorner.x;
+            if (cameraPosition.y > boundarySizeCorner.y)
+                cameraPosition.y = boundarySizeCorner.y;
+            if (cameraPosition.z > boundarySizeCorner.z)
+                cameraPosition.z = boundarySizeCorner.z;
         }
     }
 

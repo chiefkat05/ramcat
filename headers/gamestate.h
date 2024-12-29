@@ -2,7 +2,7 @@
 #define GAMESTATE_H
 
 #include "sprite.h"
-#include "network.h"
+// #include "network.h"
 #include "system.h"
 #include <vector>
 
@@ -32,7 +32,7 @@ struct ui_element
     ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int),
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
-    ui_element(ui_element_type t, const char *path, float x, float y, int frX, int frY, void func(character *, game_system *, dungeon *, int),
+    ui_element(ui_element_type t, object *obj, shader *shad, const char *path, float x, float y, int frX, int frY, void func(character *, game_system *, dungeon *, int),
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
 
@@ -58,7 +58,7 @@ struct gui
     animation bgAnim;
     bool quit = false;
 
-    void screenDraw(sf::RenderWindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
+    void screenDraw(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
 };
 
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
