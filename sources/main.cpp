@@ -66,7 +66,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (p.onGround && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
         // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-        p.velocityY -= 3.2f * p.runSpeed;
+        p.velocityY = 3.2f * p.runSpeed;
         p.jumped = true;
     }
     // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
@@ -122,31 +122,25 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
     {
     case START_SCREEN:
         gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-        // gui_data.background.Put(mainCam.cameraPosition.x + mainCam.cameraFront.x, mainCam.cameraPosition.y + mainCam.cameraFront.y, mainCam.cameraPosition.z + mainCam.cameraFront.z - 1.0f);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        // gui_data.bgAnim = animation(&gui_data.background, 0, 9, 50.0f);
-        // gui_data.background.setColor(sf::Color(255, 255, 255, 255));
-        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, gui_object, "./test-2.png", 10.0f, 50.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
-        // gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
-        // gui_data.elements[gui_data.elements.size() - 1].anim.run(delta_time, true);
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./fren.png", -0.5f, -0.5f, 32.0f, 64.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         break;
     case MENU_SCREEN:
-        // floor.screenPositionX = 0.0f;
-        // floor.screenPositionY = 0.0f;
         gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./test-2.png", 40.0f, 40.0f, 1.0f, 1.0f, 1, 1,
                                                startGame, nullptr, nullptr, nullptr, prevState));
         gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         break;
     case CHARACTER_CREATION_SCREEN:
-        // gui_data.background = sprite("../img/c_s.png", 0.0f, 0.0f, 1, 1);
-        // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
-        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./test.png", 0.0f, 0.0f, 1.0f, 1.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.background = sprite(&gui_object, "./test-2.png", 1, 1);
+        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./fren.png", -0.5f, -0.5f, 32.0f, 64.0f, 4, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
+        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+
         if (mainG.levelincreasing)
         {
             mainG.levelincreasing = false;
@@ -155,46 +149,38 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         switch (mainG.level)
         {
         case 0:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", &gui_object, 1, 1);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.wer", &gui_object, 4, 2);
             break;
         case 1:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L02.txt", &gui_object, 1, 1);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.wer", &gui_object, 4, 2);
             break;
         case 2:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L03.txt", &gui_object, 1, 1);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.wer", &gui_object, 4, 2);
             break;
         case 3:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/W.txt", &gui_object, 1, 1);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.wer", &gui_object, 4, 2);
             break;
         case 4:
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.wer", &gui_object, 4, 2);
+            break;
+        case 5:
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.wer", &gui_object, 4, 2);
+            break;
+        case 6:
             state = MENU_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", &gui_object, 1, 1);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.wer", &gui_object, 4, 2);
             break;
         }
 
-        // if (!mainG.game_music.openFromFile("../snd/mus/L-04.mp3"))
-        // {
-        //     std::cout << "failed to load ../snd/mus/L-04.mp3\n";
-        // }
         mainG.initSound("../snd/mus/L-01.mp3", 0, &s_engine);
-        // gui_data.background = sprite("../img/01.png", 0.0f, 0.0f, 1, 2);
-        // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
         gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
         gui_data.bgAnim.setScale(2.0f, 1.0f);
 
-        mainP.visual.Put(floor.spawnLocationX, floor.spawnLocationY, 0.0f);
-        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, "../img/s.png", 218.0f, 102.0f, 1, 1, optionsTab, nullptr, &mainG));
-
-        // if (prevState == CHARACTER_CREATION_SCREEN)
-        // {
-        //     mainP.posX = floor.spawnLocationX;
-        //     mainP.posY = floor.spawnLocationY;
-        //     mainP.walkToX = floor.spawnLocationX;
-        //     mainP.walkToY = floor.spawnLocationY;
-        // }
+        if (prevState == CHARACTER_CREATION_SCREEN)
+            mainP.visual.Put(floor.spawnLocationX, floor.spawnLocationY, 0.0f);
 
         break;
     case WON_LEVEL_STATE:
@@ -368,10 +354,6 @@ int main()
                 state = WON_LEVEL_STATE;
             }
         }
-        floor.Scale(400.0f, 400.0f, 1.0f);
-        floor.Rotate(-90.0f, 0.0f, 0.0f);
-        floor.Put(0.0f, -4.0f, 0.0f);
-        floor.Draw(shaderProgram);
         // for (int i = 0; i < game.particlesystemcount; ++i)
         // {
         //     game.particles[i]->draw(window, delta_time);
@@ -385,10 +367,10 @@ int main()
         {
             uiKeyHeld = true;
         }
-        // if (showUI)
-        // {
-        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
-        // }
+        if (state != DUNGEON_SCREEN)
+        {
+            gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -569,11 +551,11 @@ void processInput(GLFWwindow *window)
         mainCam.swappedMouseCapture = true;
     }
 
-    if (!pauseKeyHeld && glfwGetKey(window, GLFW_KEY_SPACE))
-    {
-        game.paused = !game.paused;
-    }
-    pauseKeyHeld = false;
-    if (glfwGetKey(window, GLFW_KEY_SPACE))
-        pauseKeyHeld = true;
+    // if (!pauseKeyHeld && glfwGetKey(window, GLFW_KEY_SPACE))
+    // {
+    //     game.paused = !game.paused;
+    // }
+    // pauseKeyHeld = false;
+    // if (glfwGetKey(window, GLFW_KEY_SPACE))
+    //     pauseKeyHeld = true;
 }

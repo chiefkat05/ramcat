@@ -60,7 +60,6 @@ void ui_element::update(float mouseX, float mouseY, bool mousePressed, bool mous
             return;
         }
         buttonHovered = true;
-        std::cout << delta_time << ", " << mouseX << ", " << posX << ", " << width << "\n";
 
         if (!mousePressed)
             visual.SetColor(0.5f, 0.5f, 0.5f, 0.5f);

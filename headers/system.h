@@ -41,7 +41,7 @@ enum ANIMATION_MAPPINGS
 
 struct character
 {
-    float velocityX = 0.0f, velocityY = 0.0f, runSpeedMulti = 1.0f;
+    float velocityX = 0.0f, velocityY = 0.0f;
     bool onGround = false, jumped = false;
     bool isAPlayer = false;
 
@@ -54,7 +54,7 @@ struct character
     IDENTIFICATION id = CH_MONSTER;
     float attackTimer = 0.0f;
     int hp = 10, maxhp = 10;
-    float runSpeed = 100.0f;
+    float runSpeed = 1.0f;
 
     bool animationFinished = true, animationLooping = false;
     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;

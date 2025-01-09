@@ -41,9 +41,11 @@ void dungeon::draw(GLFWwindow *win, shader &program)
             if (tiles[x][y].id == -1)
                 continue;
 
-            dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125f, (roomHeight - y) * dungeonSprite.spriteH * 0.125f, 0.0f);
+            dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125f, (roomHeight - y) * dungeonSprite.spriteH * 0.125f, 9.0f);
             dungeonSprite.textureX = tiles[x][y].id % dungeonSprite.framesX;
             dungeonSprite.textureY = tiles[x][y].id / dungeonSprite.framesX;
+            dungeonSprite.Put(-1.6f + x * 0.16f, -0.5f + (roomHeight - y) * 0.16f, 0.0f);
+            dungeonSprite.Scale(0.16f, 0.16f, 1.0f);
 
             dungeonSprite.Draw(program);
         }
@@ -92,8 +94,10 @@ void dungeon::readRoomFile(const char *path)
             case 's':
                 tiles[i][roomHeight].id = 2;
 
-                spawnLocationX = i * dungeonSprite.spriteW;
-                spawnLocationY = roomHeight * dungeonSprite.spriteH;
+                // spawnLocationX = i * dungeonSprite.spriteW;
+                // spawnLocationY = roomHeight * dungeonSprite.spriteH;
+                spawnLocationX = 0.0f;
+                spawnLocationY = 0.0f;
                 tiles[i][roomHeight].collisionID = -1;
                 break;
             case 'e':
