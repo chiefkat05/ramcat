@@ -57,12 +57,22 @@ float cube_vertices[] = {
 sprite::sprite()
 {
 }
-sprite::sprite(object *_obj, shader *_sprite_shader)
+sprite::sprite(object *_obj, const char *path, unsigned int _fx, unsigned int _fy)
 {
     sprite_object = _obj;
-    sprite_shader = _sprite_shader;
     textureWidth = 1.0f;
     textureHeight = 1.0f;
+
+    texture_path = path;
+
+    framesX = 1;
+    framesY = 1;
+    if (_fx > 1)
+        framesX = _fx;
+    if (_fy > 1)
+        framesY = _fy;
+
+    textureInit();
 
     // bool foundMatchingTexture = false;
     // for (unsigned int i = 0; i < tPile.count; ++i)
@@ -92,7 +102,7 @@ sprite::sprite(object *_obj, shader *_sprite_shader)
 
     // rect = sf::Sprite(tPile.list[img]);
 }
-void sprite::setTexture(const char *path, unsigned int _fx, unsigned int _fy)
+void sprite::textureInit()
 {
     // stbi_set_flip_vertically_on_load(true);
     glGenTextures(1, &sprite_texture);
@@ -111,7 +121,7 @@ void sprite::setTexture(const char *path, unsigned int _fx, unsigned int _fy)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(texture_path, &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -119,24 +129,11 @@ void sprite::setTexture(const char *path, unsigned int _fx, unsigned int _fy)
     }
     else
     {
-        std::cout << "\n\terror " << path << " failed to load\n";
+        std::cout << "\n\terror " << texture_path << " failed to load\n";
     }
 
     stbi_image_free(data);
 
-    framesX = 1;
-    framesY = 1;
-    if (_fx > 1)
-        framesX = _fx;
-    if (_fy > 1)
-        framesY = _fy;
-
-    texture_path = path;
-
-    // rect.setPosition(sf::Vector2(_x, _y));
-
-    // spriteW = tPile.list[img].getSize().x / framesX;
-    // spriteH = tPile.list[img].getSize().y / framesY;
     spriteW = width / framesX;
     spriteH = height / framesY;
 
@@ -170,7 +167,15 @@ void sprite::Rotate(float _rx, float _ry, float _rz)
     rz = _rz;
 }
 
-void sprite::Draw()
+void sprite::SetColor(float _r, float _g, float _b, float _a)
+{
+    colr = _r;
+    colg = _g;
+    colb = _b;
+    cola = _a;
+}
+
+void sprite::Draw(shader &program)
 {
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(x, y, z));
@@ -178,10 +183,12 @@ void sprite::Draw()
     model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, glm::vec3(w, h, d));
-    sprite_shader->use();
-    sprite_shader->setUniformMat4("model", model);
-    sprite_shader->setUniformVec2("tex_offset", textureX, textureY);
-    sprite_shader->setUniformVec2("tex_scale", textureWidth, textureHeight);
+    program.use();
+    program.setUniformInt("tex", 0);
+    program.setUniformMat4("model", model);
+    program.setUniformVec2("tex_offset", textureX, textureY);
+    program.setUniformVec2("tex_scale", textureWidth, textureHeight);
+    program.setUniformVec4("color", colr, colg, colb, cola);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sprite_texture);

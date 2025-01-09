@@ -5,6 +5,7 @@
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
+#include "../headers/miniaudio.h"
 
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
@@ -100,50 +101,50 @@ void mouseUpdate(GLFWwindow *window)
     }
 }
 
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, shader *dungeon_shader, unsigned int fx, unsigned int fy);
+void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy);
 
 int prevState = -1;
 int entityHP[entity_limit];
 int entityHP_UI_Index = 0;
 // edit all guis here
-void menuData(game_system &mainG, character &mainP, dungeon &floor, object *gui_object, shader *gui_shader)
+void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
 {
     if (state == prevState)
         return;
 
     gui_data.elements.clear();
+    // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+    gui_data.background = sprite(&gui_object, "./null.png", 1, 1);
 
     std::string temp_path;
     // mainG.killParticles();
     switch (state)
     {
     case START_SCREEN:
-        // if (!mainG.game_music.openFromFile("../snd/mus/M-01.mp3"))
-        // {
-        //     std::cout << "failed to load ../snd/mus/M-01.mp3\n";
-        // }
-        // gui_data.background = sprite("../img/pond.png", 0.0f, 0.0f, 2, 5);
-        gui_data.background = sprite(gui_object, gui_shader);
-        gui_data.background.setTexture("./test.png", 1, 1);
+        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        // gui_data.background.Put(mainCam.cameraPosition.x + mainCam.cameraFront.x, mainCam.cameraPosition.y + mainCam.cameraFront.y, mainCam.cameraPosition.z + mainCam.cameraFront.z - 1.0f);
+        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
         // gui_data.bgAnim = animation(&gui_data.background, 0, 9, 50.0f);
         // gui_data.background.setColor(sf::Color(255, 255, 255, 255));
-        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, gui_object, gui_shader, "./test-2.png", 10.0f, 50.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, gui_object, "./test-2.png", 10.0f, 50.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         // gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         // gui_data.elements[gui_data.elements.size() - 1].anim.run(delta_time, true);
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./fren.png", -0.5f, -0.5f, 32.0f, 64.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         break;
     case MENU_SCREEN:
         // floor.screenPositionX = 0.0f;
         // floor.screenPositionY = 0.0f;
-        // gui_data.background = sprite("../img/particles.png", 0.0f, 0.0f, 3, 1);
+        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
         // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, gui_object, gui_shader, "./test-2.png", 40.0f, 40.0f, 1, 1,
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./test-2.png", 40.0f, 40.0f, 1.0f, 1.0f, 1, 1,
                                                startGame, nullptr, nullptr, nullptr, prevState));
         gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         break;
     case CHARACTER_CREATION_SCREEN:
         // gui_data.background = sprite("../img/c_s.png", 0.0f, 0.0f, 1, 1);
         // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, gui_object, gui_shader, "./test.png", 40.0f, 40.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        // gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./test.png", 0.0f, 0.0f, 1.0f, 1.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
         if (mainG.levelincreasing)
@@ -154,23 +155,23 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object *gui_
         switch (mainG.level)
         {
         case 0:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", gui_object, gui_shader, 1, 1);
+            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", &gui_object, 1, 1);
             break;
         case 1:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L02.txt", gui_object, gui_shader, 1, 1);
+            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L02.txt", &gui_object, 1, 1);
             break;
         case 2:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L03.txt", gui_object, gui_shader, 1, 1);
+            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L03.txt", &gui_object, 1, 1);
             break;
         case 3:
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/W.txt", gui_object, gui_shader, 1, 1);
+            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/W.txt", &gui_object, 1, 1);
             break;
         case 4:
             state = MENU_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", gui_object, gui_shader, 1, 1);
+            dungeonInit(mainG, floor, "../img/01-tiles.png", "../dungeons/L01.txt", &gui_object, 1, 1);
             break;
         }
 
@@ -178,6 +179,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object *gui_
         // {
         //     std::cout << "failed to load ../snd/mus/L-04.mp3\n";
         // }
+        mainG.initSound("../snd/mus/L-01.mp3", 0, &s_engine);
         // gui_data.background = sprite("../img/01.png", 0.0f, 0.0f, 1, 2);
         // gui_data.background.rect.setColor(sf::Color(255, 255, 255, 255));
         gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
@@ -209,10 +211,15 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object *gui_
     prevState = state;
 }
 
-bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
-void playerInit(character &pl, game_system &game, object *player_object, shader *player_shader)
+void loadtest(object &gui_object)
 {
-    pl = character(player_object, player_shader, "./img/stick.png", 120.0f, 40.0f, 4, 1, CH_PLAYER);
+    gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+}
+
+bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
+void playerInit(character &pl, game_system &game, object *player_object)
+{
+    pl = character(player_object, "./img/stick.png", 120.0f, 40.0f, 4, 1, CH_PLAYER);
     pl.isAPlayer = true;
 
     pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
@@ -222,9 +229,9 @@ void playerInit(character &pl, game_system &game, object *player_object, shader 
 
     game.Add(&pl);
 }
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, shader *dungeon_shader, unsigned int fx, unsigned int fy)
+void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy)
 {
-    dg = dungeon(tilePath.c_str(), dungeon_object, dungeon_shader, fx, fy);
+    dg = dungeon(tilePath.c_str(), dungeon_object, fx, fy);
     dg.readRoomFile(levelPath.c_str());
 }
 
@@ -279,12 +286,9 @@ int main()
 
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
-    sprite bg(&spriteRect, &shaderProgram);
-    sprite floor(&spriteRect, &shaderProgram);
-    sprite fren(&spriteCube, &shaderProgram);
-    bg.setTexture("./test.png", bg.sprite_texture);
-    fren.setTexture("./fren.png", fren.sprite_texture);
-    floor.setTexture("./img/soot.png", floor.sprite_texture);
+    sprite bg(&spriteRect, "./test.png");
+    sprite floor(&spriteRect, "./img/soot.png");
+    sprite fren(&spriteCube, "./fren.png");
 
     // declare 'sprites' or game objects here
     // sprite yoursprite(&[spriteRect | spriteCube]);
@@ -300,38 +304,20 @@ int main()
 
     // mainCam.lockTo();
     // mainCam.setBoundary(-50, -50, -50, 50, 50, 50);
-    dungeon mainDungeon("./img/tiles.png", &spriteRect, &shaderProgram, 4, 2); // lmao
+    dungeon mainDungeon("./img/tiles.png", &spriteRect, 4, 2); // lmao
     mainDungeon.readRoomFile("./levels/01.wer");
-    mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f);
+    mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
     character mainPlayer;
-    playerInit(mainPlayer, game, &spriteRect, &shaderProgram);
+    playerInit(mainPlayer, game, &spriteRect);
+    prevState = WIN_SCREEN;
 
-    // while (!glfwWindowShouldClose(window))
-    // {
-    //     float past_time = current_time;
-    //     current_time = glfwGetTime();
-    //     delta_time = current_time - past_time;
+    ma_engine soundEngine;
 
-    //     processInput(window);
-
-    //     updateView(shaderProgram);
-
-    //     mainDungeon.draw(window);
-
-    // floor.Put(0.0f, -5.0f, 0.0f);
-    // floor.Scale(400.0f, 400.0f, 400.0f);
-    // floor.Rotate(90.0f, 0.0f, 0.0f);
-    // floor.Draw(shaderProgram, spriteRect.VAO, spriteRect.EBO);
-
-    //     glfwSwapBuffers(window);
-    //     glfwPollEvents();
-    // }
-
-    sprite testBG(&spriteRect, &shaderProgram);
-    testBG.setTexture("./test.png", 1, 1);
-
-    // gui_data.background = sprite(&spriteRect, &shaderProgram);
-    // gui_data.background.setTexture("./test.png", 1, 1);
+    ma_result game_sound_result = ma_engine_init(nullptr, &soundEngine);
+    if (game_sound_result != MA_SUCCESS)
+    {
+        std::cout << game_sound_result << " sound error\n";
+    }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -350,31 +336,17 @@ int main()
             prevState = WON_LEVEL_STATE;
             state = DUNGEON_SCREEN;
         }
-        menuData(game, mainPlayer, mainDungeon, &spriteRect, &shaderProgram);
+        menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
 
-        // game.handleMusic();
-
-        // window.draw(gui_data.background);
-        // std::cout << gui_data.background.x << ", " << gui_data.background.texture_path << ", " << gui_data.background.w << "\n";
-        // testBG.Draw();
-        if (!gui_data.background.empty)
-        {
-            std::cout << "drawing BG\n";
-            gui_data.background.Draw();
-        }
-        floor.Put(0.0f, -5.0f, 0.0f);
-        floor.Scale(400.0f, 400.0f, 400.0f);
-        floor.Rotate(90.0f, 0.0f, 0.0f);
-        floor.Draw();
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
             // mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
             // window.setView(screen);
 
-            // game.update(mainDungeon, delta_time);
+            game.update(mainDungeon, delta_time);
             playerControl(game, mainPlayer, window, &mainDungeon);
 
-            // mainDungeon.draw(window);
+            mainDungeon.draw(window, shaderProgram);
 
             for (int i = 0; i < game.characterCount; ++i)
             {
@@ -382,7 +354,7 @@ int main()
                     continue;
 
                 // window.draw(game.characters[i]->visual.rect);
-                // game.characters[i]->visual.Draw();
+                game.characters[i]->visual.Draw(shaderProgram);
             }
 
             if (mainPlayer.hp <= 0)
@@ -396,6 +368,10 @@ int main()
                 state = WON_LEVEL_STATE;
             }
         }
+        floor.Scale(400.0f, 400.0f, 1.0f);
+        floor.Rotate(-90.0f, 0.0f, 0.0f);
+        floor.Put(0.0f, -4.0f, 0.0f);
+        floor.Draw(shaderProgram);
         // for (int i = 0; i < game.particlesystemcount; ++i)
         // {
         //     game.particles[i]->draw(window, delta_time);
@@ -409,14 +385,15 @@ int main()
         {
             uiKeyHeld = true;
         }
-        if (showUI)
-        {
-            // gui_data.screenDraw(window, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
-        }
+        // if (showUI)
+        // {
+        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
+        // }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    ma_engine_uninit(&soundEngine);
 
     glfwTerminate();
     return 0;

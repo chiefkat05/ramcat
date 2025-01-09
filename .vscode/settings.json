@@ -68,6 +68,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "hash_map": "cpp"
     }
 }

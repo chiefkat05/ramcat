@@ -32,31 +32,32 @@ struct object
 struct sprite
 {
     float x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f, h = 1.0f, d = 1.0f, rx = 0.0f, ry = 0.0f, rz = 0.0f;
-    unsigned int spriteW, spriteH;
-    unsigned int framesX, framesY;
-    unsigned int textureX, textureY;
-    float textureWidth, textureHeight;
+    float colr = 1.0f, colg = 1.0f, colb = 1.0f, cola = 1.0f;
+    unsigned int spriteW = 0, spriteH = 0;
+    unsigned int framesX = 1, framesY = 1;
+    unsigned int textureX = 0, textureY = 0;
+    float textureWidth = 0, textureHeight = 0;
     // std::string path;
     // sf::Sprite rect;
     unsigned int sprite_texture;
-    shader *sprite_shader;
     bool empty = true;
     // object_type obj_type;
-    object *sprite_object;
+    object *sprite_object = nullptr;
     const char *texture_path;
 
     sprite();
-    sprite(object *_obj, shader *_sprite_shader);
+    sprite(object *_obj, const char *path, unsigned int _fx = 1, unsigned int _fy = 1);
 
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
-    void setTexture(const char *path, unsigned int _fx = 1, unsigned int _fy = 1);
+    void textureInit();
 
     void Put(float _x, float _y, float _z);
     void Move(float _xdist, float _ydist, float _zdist);
     void Scale(float _w, float _h, float _d);
     void Rotate(float _rx, float _ry, float _rz);
+    void SetColor(float _r, float _g, float _b, float _a);
 
-    void Draw();
+    void Draw(shader &program);
 };
 
 struct animation

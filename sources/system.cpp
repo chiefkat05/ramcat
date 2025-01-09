@@ -1,5 +1,8 @@
 #include "../headers/system.h"
 
+#define MINIAUDIO_IMPLEMENTATION
+#include "../headers/miniaudio.h"
+
 // soundhandler soundplayer;
 
 character::character() {}
@@ -17,13 +20,12 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     collider = aabb(visual.x - visual.spriteW * 0.5f, visual.y - visual.spriteH,
                     visual.x + visual.spriteW * 0.5f, visual.y);
 }
-character::character(object *spriteObject, shader *spriteProgram, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(object *spriteObject, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
     // visual = sprite(filepath.c_str(), x, y, fx, fy);
     // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
     // visual.rect.setOrigin(sf::Vector2(static_cast<float>(visual.spriteW) * 0.5f, static_cast<float>(visual.spriteH)));
-    visual = sprite(spriteObject, spriteProgram);
-    visual.setTexture(filepath.c_str(), fx, fy);
+    visual = sprite(spriteObject, filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0f);
     // posX = visual.rect.getPosition().x;
     // posY = visual.rect.getPosition().y;
@@ -150,6 +152,23 @@ void game_system::Add(character *e)
 //         music_playing = true;
 //     }
 // }
+// void handleMusic();
+void game_system::loopSound(unsigned int id)
+{
+    // code that makes id sound loop if playing
+}
+void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
+{
+    game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
+    if (game_sound_result != MA_SUCCESS)
+    {
+        std::cout << game_sound_result << " sound error\n";
+    }
+}
+void game_system::playSound(unsigned int id, int volume, int start_time)
+{
+    ma_sound_start(&game_sounds[id]);
+}
 
 void game_system::update(dungeon &floor, float delta_time)
 {

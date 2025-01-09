@@ -4,11 +4,10 @@ dungeon::dungeon()
 {
     dungeonInitialized = false;
 }
-dungeon::dungeon(const char *_tileSetPath, object *_spriteObject, shader *_spriteShader, unsigned int _fx, unsigned int _fy)
+dungeon::dungeon(const char *_tileSetPath, object *_spriteObject, unsigned int _fx, unsigned int _fy)
 {
     tileSetPath = _tileSetPath;
-    dungeonSprite = sprite(_spriteObject, _spriteShader);
-    dungeonSprite.setTexture(tileSetPath, _fx, _fy);
+    dungeonSprite = sprite(_spriteObject, tileSetPath, _fx, _fy);
     dungeonInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {
@@ -33,7 +32,7 @@ dungeon::dungeon(const char *_tileSetPath, object *_spriteObject, shader *_sprit
 //         view.setCenter(sf::Vector2f(view.getCenter().x, viewBoundsY));
 // }
 
-void dungeon::draw(GLFWwindow *win)
+void dungeon::draw(GLFWwindow *win, shader &program)
 {
     for (unsigned int x = 0; x < roomWidth; ++x)
     {
@@ -46,7 +45,7 @@ void dungeon::draw(GLFWwindow *win)
             dungeonSprite.textureX = tiles[x][y].id % dungeonSprite.framesX;
             dungeonSprite.textureY = tiles[x][y].id / dungeonSprite.framesX;
 
-            dungeonSprite.Draw();
+            dungeonSprite.Draw(program);
         }
     }
 }
