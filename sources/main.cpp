@@ -5,7 +5,7 @@
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
-#include "../headers/miniaudio.h"
+// #include "../headers/miniaudio.h"
 
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
@@ -107,7 +107,8 @@ int prevState = -1;
 int entityHP[entity_limit];
 int entityHP_UI_Index = 0;
 // edit all guis here
-void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
+// void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
+void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object)
 {
     if (state == prevState)
         return;
@@ -175,7 +176,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             break;
         }
 
-        mainG.initSound("../snd/mus/L-01.mp3", 0, &s_engine);
+        // mainG.initSound("../snd/mus/L-01.mp3", 0, &s_engine);
         gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
         gui_data.bgAnim.setScale(2.0f, 1.0f);
 
@@ -297,13 +298,13 @@ int main()
     playerInit(mainPlayer, game, &spriteRect);
     prevState = WIN_SCREEN;
 
-    ma_engine soundEngine;
+    // ma_engine soundEngine;
 
-    ma_result game_sound_result = ma_engine_init(nullptr, &soundEngine);
-    if (game_sound_result != MA_SUCCESS)
-    {
-        std::cout << game_sound_result << " sound error\n";
-    }
+    // ma_result game_sound_result = ma_engine_init(nullptr, &soundEngine);
+    // if (game_sound_result != MA_SUCCESS)
+    // {
+    //     std::cout << game_sound_result << " sound error\n";
+    // }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -322,7 +323,8 @@ int main()
             prevState = WON_LEVEL_STATE;
             state = DUNGEON_SCREEN;
         }
-        menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
+        menuData(game, mainPlayer, mainDungeon, spriteRect);
+        // menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
 
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
@@ -375,7 +377,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    ma_engine_uninit(&soundEngine);
+    // ma_engine_uninit(&soundEngine);
 
     glfwTerminate();
     return 0;

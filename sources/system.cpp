@@ -1,7 +1,7 @@
 #include "../headers/system.h"
 
-#define MINIAUDIO_IMPLEMENTATION
-#include "../headers/miniaudio.h"
+// #define MINIAUDIO_IMPLEMENTATION
+// #include "../headers/miniaudio.h"
 
 // soundhandler soundplayer;
 
@@ -153,22 +153,22 @@ void game_system::Add(character *e)
 //     }
 // }
 // void handleMusic();
-void game_system::loopSound(unsigned int id)
-{
-    // code that makes id sound loop if playing
-}
-void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
-{
-    game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
-    if (game_sound_result != MA_SUCCESS)
-    {
-        std::cout << game_sound_result << " sound error\n";
-    }
-}
-void game_system::playSound(unsigned int id, int volume, int start_time)
-{
-    ma_sound_start(&game_sounds[id]);
-}
+// void game_system::loopSound(unsigned int id)
+// {
+//     // code that makes id sound loop if playing
+// }
+// void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
+// {
+//     game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
+//     if (game_sound_result != MA_SUCCESS)
+//     {
+//         std::cout << game_sound_result << " sound error\n";
+//     }
+// }
+// void game_system::playSound(unsigned int id, int volume, int start_time)
+// {
+//     ma_sound_start(&game_sounds[id]);
+// }
 
 void game_system::update(dungeon &floor, float delta_time)
 {
