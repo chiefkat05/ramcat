@@ -104,10 +104,10 @@ void gui::screenDraw(GLFWwindow *window, shader &program, float mouseX, float mo
         elements[i].visual.Draw(program);
     }
     background.Draw(program);
-    // if (bgAnim._sprite != nullptr)
-    // {
-    //     bgAnim.run(delta_time, true);
-    // }
+    if (bgAnim._sprite != nullptr)
+    {
+        bgAnim.run(delta_time, true);
+    }
 }
 
 void startGame(character *p, game_system *gs, dungeon *d, int argv)

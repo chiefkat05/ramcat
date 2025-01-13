@@ -6,7 +6,7 @@
 #include "collision.h"
 #include "dungeon.h"
 // #include "effects.h"
-// #include "miniaudio.h"
+#include "miniaudio.h"
 
 const unsigned int entity_limit = 64; // also change in dungeon.h since there's another one there, also delete one of these so that there's only one pls
 const unsigned int character_limit = 6;
@@ -72,6 +72,7 @@ struct character
 
     void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd);
     void PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loops);
+    void StopAnimation(ANIMATION_MAPPINGS id);
 };
 
 struct game_system
@@ -85,18 +86,18 @@ struct game_system
 
     int characterCount = 0;
     bool paused = false;
-    // ma_result game_sound_result;
-    // ma_sound game_sounds[sound_limit];
-    // bool music_playing = false;
+    ma_result game_sound_result;
+    ma_sound game_sounds[sound_limit];
+    bool music_playing = false;
 
     void Add(character *e);
     // void Add(particlesystem *p);
 
     // void initSoundEngine();
     // void handleMusic();
-    // void loopSound(unsigned int id);
-    // void initSound(const char *path, unsigned int id, ma_engine *engine);
-    // void playSound(unsigned int id, int volume, int start_time);
+    void loopSound(unsigned int id);
+    void initSound(const char *path, unsigned int id, ma_engine *engine);
+    void playSound(unsigned int id, float volume, int start_time);
     // void uninitMusic();
 
     void update(dungeon &floor, float delta_time);

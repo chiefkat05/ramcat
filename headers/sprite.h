@@ -117,10 +117,12 @@ struct animation
             finished = true;
             return;
         }
-        _sprite->textureX = frame % _sprite->framesX * _sprite->spriteW;
-        _sprite->textureY = frame / _sprite->framesX * _sprite->spriteH;
-        _sprite->textureWidth = _sprite->spriteW * xScale;
-        _sprite->textureHeight = _sprite->spriteH * yScale;
+        // _sprite->textureX = frame % _sprite->framesX * _sprite->spriteW;
+        // _sprite->textureY = frame / _sprite->framesX * _sprite->spriteH;
+        _sprite->textureX = frame % _sprite->framesX;
+        _sprite->textureY = frame / _sprite->framesX;
+        // _sprite->textureWidth = _sprite->spriteW * xScale;
+        // _sprite->textureHeight = _sprite->spriteH * yScale;
         // _sprite->rect.setTextureRect(sf::IntRect(frame % _sprite->framesX * _sprite->spriteW, frame / _sprite->framesX * _sprite->spriteH,
         //                                          _sprite->spriteW * xScale, _sprite->spriteH * yScale));
     }

@@ -1,7 +1,7 @@
 #include "../headers/system.h"
 
-// #define MINIAUDIO_IMPLEMENTATION
-// #include "../headers/miniaudio.h"
+#define MINIAUDIO_IMPLEMENTATION
+#include "../headers/miniaudio.h"
 
 // soundhandler soundplayer;
 
@@ -95,10 +95,19 @@ void character::PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loop
     if (animations[id]._sprite == nullptr)
         return;
 
-    animations[id].frame = animations[id].start;
-    animations[id].timer = 10.0f;
+    if (playingAnim != id)
+    {
+        animations[id].frame = animations[id].start;
+        animations[id].timer = 10.0f;
+    }
     playingAnim = id;
     animationLooping = loops;
+}
+void character::StopAnimation(ANIMATION_MAPPINGS id)
+{
+    animations[id].finished = true;
+    animations[id].timer = 0.0f;
+    animations[id].frame = animations[id].end;
 }
 
 int qsPartition(sprite *sprites[entity_limit], int low, int high) // see if there's a better optimized way to do this, such as random pivot
@@ -153,22 +162,23 @@ void game_system::Add(character *e)
 //     }
 // }
 // void handleMusic();
-// void game_system::loopSound(unsigned int id)
-// {
-//     // code that makes id sound loop if playing
-// }
-// void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
-// {
-//     game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
-//     if (game_sound_result != MA_SUCCESS)
-//     {
-//         std::cout << game_sound_result << " sound error\n";
-//     }
-// }
-// void game_system::playSound(unsigned int id, int volume, int start_time)
-// {
-//     ma_sound_start(&game_sounds[id]);
-// }
+void game_system::loopSound(unsigned int id)
+{
+    // code that makes id sound loop if playing
+}
+void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
+{
+    game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
+    if (game_sound_result != MA_SUCCESS)
+    {
+        std::cout << game_sound_result << " sound error\n";
+    }
+}
+void game_system::playSound(unsigned int id, float volume, int start_time)
+{
+    ma_sound_set_volume(&game_sounds[id], volume);
+    ma_sound_start(&game_sounds[id]);
+}
 
 void game_system::update(dungeon &floor, float delta_time)
 {

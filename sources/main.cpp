@@ -5,7 +5,7 @@
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
-// #include "../headers/miniaudio.h"
+#include "../headers/miniaudio.h"
 
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
@@ -34,24 +34,34 @@ camera mainCam(CAMERA_STATIONARY);
 void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
 {
     p.velocityX = 0.0f;
-    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-    // {
-    //     // p.MoveTo(p.visual.rect.getPosition().x - 4.0f, p.visual.rect.getPosition().y, floor);
-    //     p.velocityX = -p.runSpeed;
-    // }
+    bool walkingkeypressed = false;
+    static bool stepsoundplayed = false;
     if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
     {
         p.velocityX = -p.runSpeed;
+        p.PlayAnimation(ANIM_WALK, delta_time, true);
+        p.visual.Rotate(0.0f, 180.0f, 0.0f);
+        walkingkeypressed = true;
     }
-    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-    // {
-    //     // p.MoveTo(p.visual.rect.getPosition().x + 4.0f, p.visual.rect.getPosition().y, floor);
-    //     p.velocityX = p.runSpeed;
-    //     // p.visual.Move(50.0f * delta_time, 0.0f);
-    // }
     if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT))
     {
         p.velocityX = p.runSpeed;
+        p.visual.Rotate(0.0f, 0.0f, 0.0f);
+        p.PlayAnimation(ANIM_WALK, delta_time, true);
+        walkingkeypressed = true;
+    }
+    if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
+    {
+        stepsoundplayed = false;
+    }
+    if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
+    {
+        game.playSound(2, 0.3f, 0);
+        stepsoundplayed = true;
+    }
+    if (!walkingkeypressed)
+    {
+        p.StopAnimation(ANIM_WALK);
     }
     if (!p.onGround)
     {
@@ -66,8 +76,9 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (p.onGround && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
         // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-        p.velocityY = 3.2f * p.runSpeed;
+        p.velocityY = 30.2f * p.runSpeed;
         p.jumped = true;
+        p.PlayAnimation(ANIM_WALK, delta_time, true);
     }
     // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     // {
@@ -107,8 +118,7 @@ int prevState = -1;
 int entityHP[entity_limit];
 int entityHP_UI_Index = 0;
 // edit all guis here
-// void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
-void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object)
+void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
 {
     if (state == prevState)
         return;
@@ -122,23 +132,29 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
     switch (state)
     {
     case START_SCREEN:
-        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
+        mainG.playSound(0, 1, 0);
+        gui_data.background = sprite(&gui_object, "./img/menu.png", 3, 1);
+        gui_data.bgAnim = animation(&gui_data.background, 0, 1, 30.0f);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./fren.png", -0.5f, -0.5f, 32.0f, 64.0f, 4, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 64.0f, 128.0f, 1, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         break;
     case MENU_SCREEN:
         gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./test-2.png", 40.0f, 40.0f, 1.0f, 1.0f, 1, 1,
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", 40.0f, 40.0f, 1.0f, 1.0f, 1, 1,
                                                startGame, nullptr, nullptr, nullptr, prevState));
         gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         break;
     case CHARACTER_CREATION_SCREEN:
         gui_data.background = sprite(&gui_object, "./test-2.png", 1, 1);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./fren.png", -0.5f, -0.5f, 32.0f, 64.0f, 4, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 32.0f, 32.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
+        mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
+        mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
+        mainG.playSound(1, 1, 0);
         gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
 
@@ -176,9 +192,8 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             break;
         }
 
-        // mainG.initSound("../snd/mus/L-01.mp3", 0, &s_engine);
-        gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
-        gui_data.bgAnim.setScale(2.0f, 1.0f);
+        // gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
+        // gui_data.bgAnim.setScale(2.0f, 1.0f);
 
         if (prevState == CHARACTER_CREATION_SCREEN)
             mainP.visual.Put(floor.spawnLocationX, floor.spawnLocationY, 0.0f);
@@ -206,13 +221,17 @@ void loadtest(object &gui_object)
 bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
 void playerInit(character &pl, game_system &game, object *player_object)
 {
-    pl = character(player_object, "./img/stick.png", 120.0f, 40.0f, 4, 1, CH_PLAYER);
+    pl = character(player_object, "./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
+    pl.visual.Scale(0.32f, 0.32f, 1.0f);
+    // pl.visual.Scale(pl.visual.spriteW, pl.visual.spriteH);
+    // pl.visual.Scale(0.1f, 0.1f, 1.0f);
+    // std::cout << pl.visual.textureWidth << " hmm\n";
     pl.isAPlayer = true;
 
     pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
-    pl.SetAnimation(ANIM_WALK, 0, 1, 150.0f);
-    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
-    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
+    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0f);
+    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
+    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
 
     game.Add(&pl);
 }
@@ -274,7 +293,7 @@ int main()
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
     sprite bg(&spriteRect, "./test.png");
-    sprite floor(&spriteRect, "./img/soot.png");
+    sprite floor(&spriteRect, "./test.png");
     sprite fren(&spriteCube, "./fren.png");
 
     // declare 'sprites' or game objects here
@@ -298,13 +317,13 @@ int main()
     playerInit(mainPlayer, game, &spriteRect);
     prevState = WIN_SCREEN;
 
-    // ma_engine soundEngine;
+    ma_engine soundEngine;
 
-    // ma_result game_sound_result = ma_engine_init(nullptr, &soundEngine);
-    // if (game_sound_result != MA_SUCCESS)
-    // {
-    //     std::cout << game_sound_result << " sound error\n";
-    // }
+    ma_result game_sound_result = ma_engine_init(nullptr, &soundEngine);
+    if (game_sound_result != MA_SUCCESS)
+    {
+        std::cout << game_sound_result << " sound error\n";
+    }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -323,8 +342,8 @@ int main()
             prevState = WON_LEVEL_STATE;
             state = DUNGEON_SCREEN;
         }
-        menuData(game, mainPlayer, mainDungeon, spriteRect);
-        // menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
+        // menuData(game, mainPlayer, mainDungeon, spriteRect);
+        menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
 
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
@@ -377,7 +396,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    // ma_engine_uninit(&soundEngine);
+    ma_engine_uninit(&soundEngine);
 
     glfwTerminate();
     return 0;
@@ -513,6 +532,7 @@ void processInput(GLFWwindow *window)
     }
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
+        std::cout << " wow close window please\n";
         glfwSetWindowShouldClose(window, true);
     }
 
