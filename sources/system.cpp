@@ -243,12 +243,6 @@ void game_system::update(dungeon &floor, float delta_time)
             float firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                            characters[i]->velocityY * delta_time, floor.collision_boxes[j], xNormal, yNormal);
 
-            std::cout << "x = " << characters[i]->collider.min_x << ", " << characters[i]->collider.max_x << ", y = "
-                      << characters[i]->collider.min_y << ", " << characters[i]->collider.max_y << ", colx = "
-                      << floor.collision_boxes[j].min_x << ", " << floor.collision_boxes[j].max_x << ", coly = "
-                      << floor.collision_boxes[j].min_y << ", " << floor.collision_boxes[j].max_y << ", colvalue = "
-                      << firstCollisionHitTest << ", nx = " << xNormal << ", ny = " << yNormal << "\n";
-
             switch (floor.collision_boxes[j].collisionID)
             {
             case 1:

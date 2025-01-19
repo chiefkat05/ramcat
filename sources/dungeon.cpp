@@ -162,7 +162,6 @@ void dungeon::readRoomFile(const char *path)
                 //     collisionendx = x;
                 // }
 
-                // std::cout << "sx = " << collisionstartx << ", ex = " << collisionendx << ", " << x << " | sy = " << collisionstarty << ", ey = " << collisionendy << ", " << y << " hmm\n";
                 // if end x found and current y is not start y and current x is between box bounds and either next y has no collision or is part of another box, set end y to next y tile
                 if (collisionendy == -1 && (collisionendx != -1 && x >= collisionstartx && x < collisionendx &&
                                                 (!tiles[x][y + 1].collisionID == c || tiles[x][y + 1].collisiontaken) ||
@@ -180,19 +179,10 @@ void dungeon::readRoomFile(const char *path)
                 if (collisionendx == -1 || collisionendy == -1)
                     continue;
 
-                // std::cout << collisionstartx << ", " << collisionendx << ", " << collisionstarty << ", " << collisionendy << " huh\n";
-                // collisionstarty = roomHeight - collisionstarty;
-                // collisionendy = roomHeight - collisionendy; // idk fug
-                // collision_boxes[collision_box_count] = aabb(collisionstartx * dungeonSprite.spriteW, collisionstarty * dungeonSprite.spriteH,
-                //                                             collisionendx * dungeonSprite.spriteW, collisionendy * dungeonSprite.spriteH);
                 int newystart = roomHeight - collisionstarty + 1;
                 int newyend = roomHeight - collisionendy + 1;
                 collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f,
-                                                            collisionendx * 0.16f, newystart * 0.16f); // way too small
-                // collision_boxes[collision_box_count] = aabb(collisionstartx * dungeonSprite.spriteW * 0.125f, collisionstarty * dungeonSprite.spriteH * 0.125f,
-                // collisionendx * dungeonSprite.spriteW * 0.125f, collisionendy * dungeonSprite.spriteH * 0.125f);
-                std::cout << collision_boxes[collision_box_count].min_x << ", " << collision_boxes[collision_box_count].max_x << ", y = "
-                          << collision_boxes[collision_box_count].min_y << ", " << collision_boxes[collision_box_count].max_y << "\n";
+                                                            collisionendx * 0.16f, newystart * 0.16f);
                 collision_boxes[collision_box_count].collisionID = c;
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)

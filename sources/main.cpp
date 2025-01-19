@@ -167,8 +167,10 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
         mainG.playSound(1, 1, 0);
-        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+        gui_data.background = sprite(&gui_object, "./img/bg/01.png", 1, 1);
+        gui_data.background.x = 6.5f;
+        gui_data.background.y = 0.4f;
+        gui_data.background.Scale(17.778f, 2.0f, 1.0f);
 
         if (mainG.levelincreasing)
         {
