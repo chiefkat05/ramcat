@@ -41,10 +41,10 @@ void dungeon::draw(GLFWwindow *win, shader &program)
             if (tiles[x][y].id == -1)
                 continue;
 
-            dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125f, (roomHeight - y) * dungeonSprite.spriteH * 0.125f, 9.0f);
+            // dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125f, (roomHeight - y) * dungeonSprite.spriteH * 0.125f, 9.0f);
             dungeonSprite.textureX = tiles[x][y].id % dungeonSprite.framesX;
             dungeonSprite.textureY = tiles[x][y].id / dungeonSprite.framesX;
-            dungeonSprite.Put(-1.6f + x * 0.16f, -0.5f + (roomHeight - y) * 0.16f, 0.0f);
+            dungeonSprite.Put(x * 0.16f, (roomHeight - y) * 0.16f, 0.0f);
             dungeonSprite.Scale(0.16f, 0.16f, 1.0f);
 
             dungeonSprite.Draw(program);
@@ -94,10 +94,8 @@ void dungeon::readRoomFile(const char *path)
             case 's':
                 tiles[i][roomHeight].id = 2;
 
-                // spawnLocationX = i * dungeonSprite.spriteW;
-                // spawnLocationY = roomHeight * dungeonSprite.spriteH;
-                spawnLocationX = 0.0f;
-                spawnLocationY = 0.0f;
+                spawnLocationX = i * 0.125f;
+                spawnLocationY = roomHeight;
                 tiles[i][roomHeight].collisionID = -1;
                 break;
             case 'e':
@@ -117,6 +115,8 @@ void dungeon::readRoomFile(const char *path)
 
         ++roomHeight;
     }
+    // add boolean to check if spawn exists pls
+    spawnLocationY = (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
 
     file.close();
     if (file.is_open())
@@ -180,14 +180,26 @@ void dungeon::readRoomFile(const char *path)
                 if (collisionendx == -1 || collisionendy == -1)
                     continue;
 
-                collision_boxes[collision_box_count] = aabb(collisionstartx * dungeonSprite.spriteW, collisionstarty * dungeonSprite.spriteH,
-                                                            collisionendx * dungeonSprite.spriteW, collisionendy * dungeonSprite.spriteH);
+                // std::cout << collisionstartx << ", " << collisionendx << ", " << collisionstarty << ", " << collisionendy << " huh\n";
+                // collisionstarty = roomHeight - collisionstarty;
+                // collisionendy = roomHeight - collisionendy; // idk fug
+                // collision_boxes[collision_box_count] = aabb(collisionstartx * dungeonSprite.spriteW, collisionstarty * dungeonSprite.spriteH,
+                //                                             collisionendx * dungeonSprite.spriteW, collisionendy * dungeonSprite.spriteH);
+                int newystart = roomHeight - collisionstarty + 1;
+                int newyend = roomHeight - collisionendy + 1;
+                collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f,
+                                                            collisionendx * 0.16f, newystart * 0.16f); // way too small
+                // collision_boxes[collision_box_count] = aabb(collisionstartx * dungeonSprite.spriteW * 0.125f, collisionstarty * dungeonSprite.spriteH * 0.125f,
+                // collisionendx * dungeonSprite.spriteW * 0.125f, collisionendy * dungeonSprite.spriteH * 0.125f);
+                std::cout << collision_boxes[collision_box_count].min_x << ", " << collision_boxes[collision_box_count].max_x << ", y = "
+                          << collision_boxes[collision_box_count].min_y << ", " << collision_boxes[collision_box_count].max_y << "\n";
                 collision_boxes[collision_box_count].collisionID = c;
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)
                 {
                     std::cerr << "\n\tToo many collision boxes! Try increasing the collision box limit or lowering the number of boxes in your level.\n";
                     std::cerr << "\tfor information, there are currently " << collision_box_count << " collision boxes out of the limit of " << collision_box_limit << ".\n";
+                    return;
                 }
 
                 x = collisionstartx; // bad practice, make efficient

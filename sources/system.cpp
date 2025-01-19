@@ -17,8 +17,10 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     id = _id;
     hp = maxhp;
 
-    collider = aabb(visual.x - visual.spriteW * 0.5f, visual.y - visual.spriteH,
-                    visual.x + visual.spriteW * 0.5f, visual.y);
+    // collider = aabb(visual.x - visual.spriteW * 0.5f, visual.y - visual.spriteH,
+    //                 visual.x + visual.spriteW * 0.5f, visual.y);
+    collider = aabb(visual.x, visual.y - visual.spriteH * 0.16f, visual.x + visual.spriteW * 0.16f, visual.y);
+    // collider = aabb(visual.x, visual.y, visual.x + 0.01f, visual.y + 0.01f);
 }
 character::character(object *spriteObject, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
@@ -49,11 +51,20 @@ void character::MoveTo(float _x, float _y, dungeon *currentDungeon)
 
 void character::Update(float delta_time)
 {
-    // collider.moveCenterToPoint(visual.rect.getPosition().x, visual.rect.getPosition().y + 4.0f);
-    collider.min_x = visual.x - visual.spriteW * 0.5f;
-    collider.max_x = visual.x + visual.spriteW * 0.5f;
-    collider.min_y = visual.y - visual.spriteH;
-    collider.max_y = visual.y;
+    // collider.moveCenterToPoint(visual.x, visual.y);
+    // collider.min_x = visual.x - visual.spriteW * 0.5f;
+    // collider.max_x = visual.x + visual.spriteW * 0.5f;
+    // collider.min_y = visual.y - visual.spriteH;
+    // collider.max_y = visual.y;
+    // collider.min_x = visual.x;
+    // collider.max_x = visual.x + 0.01f;
+    // collider.min_y = visual.y;
+    // collider.max_y = visual.y + 0.01f;
+    // collider = aabb(visual.x, visual.y - visual.spriteH * 0.16f, visual.x + visual.spriteW * 0.16f, visual.y);
+    collider.min_x = visual.x;
+    collider.max_x = visual.x + 0.16f;
+    collider.min_y = visual.y - 0.08f;
+    collider.max_y = visual.y + 0.08f;
 
     if (hp <= 0)
     {
@@ -83,6 +94,7 @@ void character::Update(float delta_time)
 }
 void character::updatePosition(float delta_time)
 {
+    // std::cout << visual.x << ", " << visual.y << ", vel = " << velocityX << ", " << velocityY << " player\n";
     visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0f);
 }
 
@@ -179,19 +191,22 @@ void game_system::playSound(unsigned int id, float volume, int start_time)
     ma_sound_set_volume(&game_sounds[id], volume);
     ma_sound_start(&game_sounds[id]);
 }
-
+void game_system::stopSound(unsigned int id)
+{
+    ma_sound_stop(&game_sounds[id]);
+}
 void game_system::update(dungeon &floor, float delta_time)
 {
-    if (paused)
-    {
-        for (int i = 0; i < characterCount; ++i)
-        {
-            characters[i]->visual.Put(characters[i]->visual.x, characters[i]->visual.y, 0.0f);
-        }
-        return;
-    }
+    // if (paused)
+    // {
+    //     for (int i = 0; i < characterCount; ++i)
+    //     {
+    //         characters[i]->visual.Put(characters[i]->visual.x, characters[i]->visual.y, 0.0f);
+    //     }
+    //     return;
+    // }
 
-    quicksortSprites(sortedSprites, 0, characterCount - 1);
+    // quicksortSprites(sortedSprites, 0, characterCount - 1);
     for (int i = 0; i < characterCount; ++i)
     {
         for (int j = 0; j < characterCount; ++j)
@@ -210,7 +225,7 @@ void game_system::update(dungeon &floor, float delta_time)
         characters[i]->Update(delta_time);
         if (!characters[i]->onGround)
         {
-            characters[i]->velocityY += 900.0f * delta_time;
+            characters[i]->velocityY -= 10.0f * delta_time;
         }
 
         for (int j = 0; j < floor.collision_box_count; ++j)
@@ -228,11 +243,19 @@ void game_system::update(dungeon &floor, float delta_time)
             float firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                            characters[i]->velocityY * delta_time, floor.collision_boxes[j], xNormal, yNormal);
 
+            std::cout << "x = " << characters[i]->collider.min_x << ", " << characters[i]->collider.max_x << ", y = "
+                      << characters[i]->collider.min_y << ", " << characters[i]->collider.max_y << ", colx = "
+                      << floor.collision_boxes[j].min_x << ", " << floor.collision_boxes[j].max_x << ", coly = "
+                      << floor.collision_boxes[j].min_y << ", " << floor.collision_boxes[j].max_y << ", colvalue = "
+                      << firstCollisionHitTest << ", nx = " << xNormal << ", ny = " << yNormal << "\n";
+
             switch (floor.collision_boxes[j].collisionID)
             {
             case 1:
                 if (firstCollisionHitTest < 1.0f)
+                {
                     characters[i]->hp = 0;
+                }
                 break;
             case 2:
                 if (firstCollisionHitTest < 1.0f && characters[i]->isAPlayer)
@@ -247,12 +270,12 @@ void game_system::update(dungeon &floor, float delta_time)
                 {
                     characters[i]->velocityX *= firstCollisionHitTest;
                 }
-                if (firstCollisionHitTest < 1.0f && yNormal < 0.0f && characters[i]->velocityY > 0.0f)
+                if (firstCollisionHitTest < 1.0f && yNormal > 0.0f && characters[i]->velocityY < 0.0f)
                 {
                     characters[i]->onGround = true;
                     characters[i]->velocityY *= firstCollisionHitTest;
                 }
-                if (firstCollisionHitTest < 1.0f && yNormal > 0.0f && characters[i]->velocityY < 0.0f)
+                if (firstCollisionHitTest < 1.0f && yNormal < 0.0f && characters[i]->velocityY > 0.0f)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
                 }

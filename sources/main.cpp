@@ -39,16 +39,26 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
     {
         p.velocityX = -p.runSpeed;
-        p.PlayAnimation(ANIM_WALK, delta_time, true);
         p.visual.Rotate(0.0f, 180.0f, 0.0f);
+        if (p.onGround)
+            p.PlayAnimation(ANIM_WALK, delta_time, true);
         walkingkeypressed = true;
     }
     if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT))
     {
         p.velocityX = p.runSpeed;
         p.visual.Rotate(0.0f, 0.0f, 0.0f);
-        p.PlayAnimation(ANIM_WALK, delta_time, true);
+        if (p.onGround)
+            p.PlayAnimation(ANIM_WALK, delta_time, true);
+
         walkingkeypressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
+    {
+        // p.velocityY = -p.runSpeed;
+        // p.PlayAnimation(ANIM_WALK, delta_time, true);
+        // walkingkeypressed = true;
+        // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
     }
     if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
     {
@@ -56,7 +66,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
     {
-        game.playSound(2, 0.3f, 0);
+        game.playSound(2, 0.15f, 0);
         stepsoundplayed = true;
     }
     if (!walkingkeypressed)
@@ -76,18 +86,19 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (p.onGround && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
         // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-        p.velocityY = 30.2f * p.runSpeed;
-        p.jumped = true;
-        p.PlayAnimation(ANIM_WALK, delta_time, true);
+        p.velocityY = 2.0f * p.runSpeed;
+        // p.visual.Move(0.0f, 0.1f, 0.0f);
+        // p.jumped = true;
     }
     // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     // {
     //     // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
     // }
-    if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
-    {
-        // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
-    }
+    // if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
+    // {
+    //     p.velocityY = p.runSpeed;
+    //     // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
+    // }
 }
 
 float current_time = 0.0f;
@@ -152,6 +163,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 32.0f, 32.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
+        mainG.stopSound(0);
         mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
         mainG.playSound(1, 1, 0);
@@ -195,8 +207,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         // gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
         // gui_data.bgAnim.setScale(2.0f, 1.0f);
 
-        if (prevState == CHARACTER_CREATION_SCREEN)
-            mainP.visual.Put(floor.spawnLocationX, floor.spawnLocationY, 0.0f);
+        mainP.visual.Put(floor.spawnLocationX, -floor.spawnLocationY, 0.0f);
 
         break;
     case WON_LEVEL_STATE:
@@ -311,7 +322,7 @@ int main()
     // mainCam.lockTo();
     // mainCam.setBoundary(-50, -50, -50, 50, 50, 50);
     dungeon mainDungeon("./img/tiles.png", &spriteRect, 4, 2); // lmao
-    mainDungeon.readRoomFile("./levels/01.wer");
+    // mainDungeon.readRoomFile("./levels/01.wer");
     mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
     character mainPlayer;
     playerInit(mainPlayer, game, &spriteRect);
@@ -350,6 +361,8 @@ int main()
             // mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
             // window.setView(screen);
 
+            mainCam.lockTo(&mainPlayer.visual.x, &mainPlayer.visual.y);
+
             game.update(mainDungeon, delta_time);
             playerControl(game, mainPlayer, window, &mainDungeon);
 
@@ -366,7 +379,7 @@ int main()
 
             if (mainPlayer.hp <= 0)
             {
-                mainPlayer.visual.Put(mainDungeon.spawnLocationX, mainDungeon.spawnLocationY, 0.0f);
+                mainPlayer.visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0f);
                 mainPlayer.hp = mainPlayer.maxhp;
             }
 
@@ -388,10 +401,7 @@ int main()
         {
             uiKeyHeld = true;
         }
-        if (state != DUNGEON_SCREEN)
-        {
-            gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
-        }
+        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -532,7 +542,6 @@ void processInput(GLFWwindow *window)
     }
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
-        std::cout << " wow close window please\n";
         glfwSetWindowShouldClose(window, true);
     }
 

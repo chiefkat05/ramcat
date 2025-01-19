@@ -98,6 +98,7 @@ struct game_system
     void loopSound(unsigned int id);
     void initSound(const char *path, unsigned int id, ma_engine *engine);
     void playSound(unsigned int id, float volume, int start_time);
+    void stopSound(unsigned int id);
     // void uninitMusic();
 
     void update(dungeon &floor, float delta_time);
