@@ -180,6 +180,10 @@ void game_system::loopSound(unsigned int id)
 }
 void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
 {
+    if (game_sounds[id].pDataSource != nullptr)
+    {
+        return;
+    }
     game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
     if (game_sound_result != MA_SUCCESS)
     {
@@ -253,7 +257,9 @@ void game_system::update(dungeon &floor, float delta_time)
                 break;
             case 2:
                 if (firstCollisionHitTest < 1.0f && characters[i]->isAPlayer)
+                {
                     levelincreasing = true;
+                }
                 break;
             default:
                 if (firstCollisionHitTest < 1.0f && xNormal < 0.0f && characters[i]->velocityX > 0.0f)

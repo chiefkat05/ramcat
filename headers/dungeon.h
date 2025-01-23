@@ -14,7 +14,7 @@ const unsigned int collision_id_limit = 3;
 struct tile
 {
     unsigned int id = 0;
-    unsigned int collisionID = -1;
+    int collisionID = -1;
     bool collisiontaken;
 };
 

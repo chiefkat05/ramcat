@@ -69,6 +69,7 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "set": "cpp",
-        "hash_map": "cpp"
+        "hash_map": "cpp",
+        "valarray": "cpp"
     }
 }

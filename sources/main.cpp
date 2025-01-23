@@ -86,7 +86,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (p.onGround && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
         // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-        p.velocityY = 2.0f * p.runSpeed;
+        p.velocityY = 1.0f * p.runSpeed;
         // p.visual.Move(0.0f, 0.1f, 0.0f);
         // p.jumped = true;
     }
@@ -143,12 +143,17 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
     switch (state)
     {
     case START_SCREEN:
+        mainP.visual.Put(0.0f, 0.0f, 0.0f);
+        mainG.stopSound(1);
+        mainG.stopSound(2);
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
         gui_data.background = sprite(&gui_object, "./img/menu.png", 3, 1);
         gui_data.bgAnim = animation(&gui_data.background, 0, 1, 30.0f);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 64.0f, 128.0f, 1, 1, startGame, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 64.0f, 128.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        mainG.level = 0;
+        mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
         gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
@@ -158,12 +163,13 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         break;
     case CHARACTER_CREATION_SCREEN:
-        gui_data.background = sprite(&gui_object, "./test-2.png", 1, 1);
+        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
         gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 32.0f, 32.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
         mainG.stopSound(0);
+        // sound cuts out on level 2
         mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
         mainG.playSound(1, 1, 0);
@@ -186,8 +192,10 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.wer", &gui_object, 4, 2);
             break;
         case 2:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.wer", &gui_object, 4, 2);
-            break;
+            state = START_SCREEN;
+            return;
+            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.wer", &gui_object, 4, 2);
+            // break;
         case 3:
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.wer", &gui_object, 4, 2);
             break;
@@ -379,7 +387,7 @@ int main()
                 game.characters[i]->visual.Draw(shaderProgram);
             }
 
-            if (mainPlayer.hp <= 0)
+            if (mainPlayer.hp <= 0 || mainPlayer.velocityY < -100.0f)
             {
                 mainPlayer.visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0f);
                 mainPlayer.hp = mainPlayer.maxhp;
@@ -408,7 +416,7 @@ int main()
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    ma_engine_uninit(&soundEngine);
+    // ma_engine_uninit(&soundEngine);
 
     glfwTerminate();
     return 0;

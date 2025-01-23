@@ -1,5 +1,7 @@
 #include "../headers/dungeon.h"
 
+// #define DEBUG_COLLISIONS
+
 dungeon::dungeon()
 {
     dungeonInitialized = false;
@@ -126,11 +128,14 @@ void dungeon::readRoomFile(const char *path)
 
     // it's not as good as it could be, but I love this thing
     int collisionstartx = -1, collisionstarty = -1, collisionendx = -1, collisionendy = -1;
+    int lookXLimit = roomWidth;
+    int lookXMin = 0;
+    int lookYMin = 0;
     for (int c = 0; c < collision_id_limit; ++c)
     {
-        for (int y = 0; y < roomHeight; ++y)
+        for (int y = lookYMin; y < roomHeight; ++y)
         {
-            for (int x = 0; x < roomWidth; ++x)
+            for (int x = lookXMin; x < lookXLimit; ++x)
             {
                 // if (tiles[x][y].id == -1 || !tiles[x][y].collision || tiles[x][y].collisiontaken)
                 //     continue;
@@ -140,44 +145,68 @@ void dungeon::readRoomFile(const char *path)
                 {
                     collisionstartx = x;
                     collisionstarty = y;
+                    lookXMin = collisionstartx;
+                    lookYMin = collisionstarty;
+#ifdef DEBUG_COLLISIONS
+                    std::cout << x << ", " << y << " -- start\n";
+#endif
                 }
 
                 // if current spot is valid for collision and collision x not ended yet or x position is within start and end x bounds (when y is different)
                 if (tiles[x][y].collisionID == c && !tiles[x][y].collisiontaken && (collisionendx == -1 || x >= collisionstartx && x < collisionendx))
                 {
-                    // std::cout << collisionstartx << " <= " << x << " < " << collisionendx << " adding box to collision\n";
                     tiles[x][y].collisiontaken = true;
                 }
 
-                // if collision x started and collision x not ended and x hits the end or the next tile lacks collision or the next tile is part of a different box, set end x to next tile
+                // if collision x started and collision x not ended and x hits the end or the next tile lacks collision or the next tile is part of a
+                // different box, set end x to next tile
                 if (collisionstartx != -1 && collisionendx == -1 && (x + 1 > roomWidth || tiles[x + 1][y].collisionID != c || tiles[x + 1][y].collisiontaken))
                 {
-                    // std::cout << x << ", rw " << roomWidth << ", next collisionid " << tiles[x + 1][y].collisionID
-                    //           << ", current c " << c << ", next taken " << tiles[x + 1][y].collisiontaken << " x end found\n";
+#ifdef DEBUG_COLLISIONS
+                    std::cout << x << " found x\n";
+#endif
                     collisionendx = x + 1;
-                    // collisionendy = y + 1;
+                    lookXLimit = collisionendx;
                 }
-                // if (collisionendy != -1 && collisionendx == -1 && (tiles[x][y].collisionID != c || tiles[x][y].collisiontaken))
-                // {
-                //     collisionendx = x;
-                // }
 
-                // if end x found and current y is not start y and current x is between box bounds and either next y has no collision or is part of another box, set end y to next y tile
-                if (collisionendy == -1 && (collisionendx != -1 && x >= collisionstartx && x < collisionendx &&
-                                                (!tiles[x][y + 1].collisionID == c || tiles[x][y + 1].collisiontaken) ||
-                                            y + 1 == roomHeight))
+                // if collision x started and end x found and current y is not start y
+                // and current x is between box bounds (or endx is not found) and either next y has no collision
+                // or is part of another box, set end y to next y tile
+
+#ifdef DEBUG_COLLISIONS
+                if (collisionstartx != -1 && collisionendy == -1 && collisionendx == -1)
                 {
-                    collisionendy = y + 1;
+                    std::cout << tiles[x][y + 1].collisionID << ", " << tiles[x][y + 1].collisiontaken << " test\n";
                 }
-                // if the current tile is not part of the collision group and an x end has been found but not a y end, and x is inside it's bounds, set y to the current block
-                if (collisionendy == -1 && collisionendx != -1 && x >= collisionstartx && x < collisionendx && tiles[x][y].collisionID != c)
+#endif
+                if (collisionstartx != -1 && collisionendy == -1 &&
+                    (collisionendx != -1 && x >= collisionstartx && x < collisionendx &&
+                         (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisiontaken) ||
+                     y + 1 == roomHeight || collisionendx == -1 && x >= collisionstartx && (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisiontaken)))
                 {
-                    collisionendy = y;
+#ifdef DEBUG_COLLISIONS
+                    std::cout << y << " found y\n";
+#endif
+                    collisionendy = y + 1;
                 }
 
                 // if collision is not being finished in both directions, skip to next tile
                 if (collisionendx == -1 || collisionendy == -1)
+                {
+#ifdef DEBUG_COLLISIONS
+                    if (collisionendx != -1 || collisionendy != -1)
+                    {
+                        std::cout << c << ", " << tiles[x][y + 1].collisionID << " loop\n";
+                    }
+#endif
                     continue;
+                }
+
+#ifdef DEBUG_COLLISIONS
+                // std::cout << "xs = " << collisionstartx << ", ys = " << collisionstarty << ", xw = " << collisionendx << ", yw = " << collisionendy << "\n";
+                std::cout << "x = " << collisionstartx << "-" << collisionendx << ", y = " << collisionstarty << "-" << collisionendy << ", id = " << c << "\n";
+                std::cout << "<---------------------------------------------------------------------->\n";
+#endif
 
                 int newystart = roomHeight - collisionstarty + 1;
                 int newyend = roomHeight - collisionendy + 1;
@@ -193,12 +222,16 @@ void dungeon::readRoomFile(const char *path)
                 }
 
                 x = collisionstartx; // bad practice, make efficient
-                y = collisionstarty; // no
+                y = collisionstarty; // no, it's actually perfect so shut up
 
                 collisionstartx = -1;
                 collisionstarty = -1;
                 collisionendx = -1;
                 collisionendy = -1;
+
+                lookXLimit = roomWidth;
+                lookXMin = 0;
+                lookYMin = 0;
             }
         }
     }

@@ -54,7 +54,7 @@ struct character
     IDENTIFICATION id = CH_MONSTER;
     float attackTimer = 0.0f;
     int hp = 10, maxhp = 10;
-    float runSpeed = 1.0f;
+    float runSpeed = 3.0f;
 
     bool animationFinished = true, animationLooping = false;
     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
