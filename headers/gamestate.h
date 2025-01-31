@@ -25,14 +25,16 @@ struct ui_element
     game_system *func_gs;
     dungeon *func_d;
     int func_i;
+    bool background = false;
 
     ui_element_type utype;
     animation anim;
 
-    ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int),
+    ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
-    ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY, void func(character *, game_system *, dungeon *, int),
+    ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY,
+               void func(character *, game_system *, dungeon *, int), bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
 
@@ -54,11 +56,9 @@ enum game_state
 struct gui
 {
     std::vector<ui_element> elements;
-    sprite background;
-    animation bgAnim;
     bool quit = false;
 
-    void screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
+    void screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front);
 };
 
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv);

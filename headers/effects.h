@@ -59,12 +59,12 @@ struct particlesystem
     bool fadewithlife = true;
 
     float variables[pv_variable_limit] = {0.0f};
-    // float *variable_pointers[pv_variable_limit];
+    float *variable_pointers[pv_variable_limit];
 
     sprite visual;
 
     particlesystem();
-    particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
+    particlesystem(const char *path, object *obj, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
                    float sX, float sY, float sW, float sH);
 
     void spawn(float delta_time);
@@ -73,7 +73,7 @@ struct particlesystem
     void linkVariable(PARTICLE_VARIABLE pv, float *value);
 
     void update(float delta_time);
-    void draw(GLFWwindow *win, float delta_time);
+    void draw(GLFWwindow *win, shader &program, float delta_time);
 
     void kill();
 };

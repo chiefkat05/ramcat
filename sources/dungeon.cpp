@@ -96,7 +96,7 @@ void dungeon::readRoomFile(const char *path)
             case 's':
                 tiles[i][roomHeight].id = 2;
 
-                spawnLocationX = i * 0.125f;
+                spawnLocationX = i * 0.16f;
                 spawnLocationY = roomHeight;
                 tiles[i][roomHeight].collisionID = -1;
                 break;
@@ -118,7 +118,8 @@ void dungeon::readRoomFile(const char *path)
         ++roomHeight;
     }
     // add boolean to check if spawn exists pls
-    spawnLocationY = (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
+    spawnLocationY = -0.2f + (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
+    // spawnLocationY = (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
 
     file.close();
     if (file.is_open())
@@ -208,10 +209,13 @@ void dungeon::readRoomFile(const char *path)
                 std::cout << "<---------------------------------------------------------------------->\n";
 #endif
 
-                int newystart = roomHeight - collisionstarty + 1;
-                int newyend = roomHeight - collisionendy + 1;
+                int newystart = roomHeight - collisionstarty;
+                int newyend = roomHeight - collisionendy;
                 collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f,
                                                             collisionendx * 0.16f, newystart * 0.16f);
+
+                // collision_boxes[collision_box_count] = aabb(collisionstartx, newyend,
+                // collisionendx, newystart);
                 collision_boxes[collision_box_count].collisionID = c;
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)

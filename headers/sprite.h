@@ -77,7 +77,7 @@ struct animation
         _sprite = nullptr;
     }
 
-    animation(sprite *sp, unsigned int s, unsigned int e = 1, float spd = 1.0f) : _sprite(sp)
+    animation(sprite *sp, unsigned int s, unsigned int e = 1, float spd = 1.0f, float pri = 0) : _sprite(sp)
     {
         start = s;
         end = e;

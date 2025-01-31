@@ -2,14 +2,17 @@
 
 gui gui_data;
 game_state state;
+// #define PIXEL_DIVISION 360.0f
+const float pixel_divider = 36.0f;
 // connector host;
 // bool typingInput;
 
-ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int),
+ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
 {
+    background = bg;
     utype = t;
     posX = x;
     posY = y;
@@ -25,18 +28,19 @@ ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func
 }
 // linkvalue apparently doesn nothing, get rid of it please
 ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY,
-                       void func(character *, game_system *, dungeon *, int),
+                       void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
     : visual(obj, path, frX, frY), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
 {
+    background = bg;
     utype = t;
     posX = 640.0f + (x * 640.0f);
     posY = 360.0f - (y * 360.0f);
-    visual.Put(x * 1.7778f, y, 0.0f);
-    width = w;
-    height = h;
-    visual.Scale(w / 180.0f, h / 360.0f, 1.0f); // probably should be both the same division
+    visual.Put(x * 1.7778f, y, 0.0f); // idk if this is necessary
+    width = w / pixel_divider * 360.0f;
+    height = h / pixel_divider * 360.0f;
+    visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
     function = func;
     func_p = _func_p;
     func_gs = _func_gs;
@@ -45,6 +49,7 @@ ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x
     value = _linkValue;
 }
 
+// get ui element animations set up
 void ui_element::update(float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
 {
     switch (utype)
@@ -86,28 +91,24 @@ void ui_element::update(float mouseX, float mouseY, bool mousePressed, bool mous
     }
 }
 
-void gui::screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
+void gui::screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
 {
     if (quit)
         glfwSetWindowShouldClose(window, true);
 
     for (int i = 0; i < elements.size(); ++i)
     {
+        if (front && elements[i].background || !front && !elements[i].background)
+            continue;
+
         elements[i].update(mouseX, mouseY, mousePressed, mouseReleased, delta_time);
-        // if (elements[i].anim._sprite != nullptr)
-        // {
-        //     elements[i].anim.run(delta_time, true);
-        // }
-        // window->draw(elements[i].visual.rect);
-        // std::cout << elements[i].visual.texture_path << " huh\n";
-        // std::cout << i << " why " << elements[i].visual.framesX << ", " << elements[i].visual.h << "??\n";
         elements[i].visual.Draw(program);
     }
-    background.Draw(program);
-    if (bgAnim._sprite != nullptr)
-    {
-        bgAnim.run(delta_time, true);
-    }
+    // background.Draw(program);
+    // if (bgAnim._sprite != nullptr)
+    // {
+    //     bgAnim.run(delta_time, true);
+    // }
 }
 
 void startGame(character *p, game_system *gs, dungeon *d, int argv)

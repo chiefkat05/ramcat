@@ -73,34 +73,6 @@ sprite::sprite(object *_obj, const char *path, unsigned int _fx, unsigned int _f
         framesY = _fy;
 
     textureInit();
-
-    // bool foundMatchingTexture = false;
-    // for (unsigned int i = 0; i < tPile.count; ++i)
-    // {
-    //     if (tPile.paths[i] == _path)
-    //     {
-    //         img = i;
-    //         foundMatchingTexture = true;
-    //         break;
-    //     }
-    // }
-
-    // if (!foundMatchingTexture && !tPile.list[tPile.count].loadFromFile(_path))
-    // {
-    //     std::cout << "error: image " << _path << " failed to load.\n";
-    //     return;
-    // }
-    // tPile.list[tPile.count].setRepeated(true);
-
-    // if (!foundMatchingTexture)
-    // {
-    //     tPile.paths[tPile.count] = _path;
-    //     img = tPile.count;
-
-    //     ++tPile.count;
-    // }
-
-    // rect = sf::Sprite(tPile.list[img]);
 }
 void sprite::textureInit()
 {

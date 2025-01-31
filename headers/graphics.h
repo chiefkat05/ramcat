@@ -130,14 +130,26 @@ struct camera
         cameraLockZ = z;
     }
 
-    void update()
+    void update(float followSpeed)
     {
+        // if (cameraLockX != nullptr)
+        //     cameraPosition.x = *cameraLockX;
+        // if (cameraLockY != nullptr)
+        //     cameraPosition.y = *cameraLockY;
+        // if (cameraLockZ != nullptr)
+        //     cameraPosition.z = *cameraLockZ;
         if (cameraLockX != nullptr)
-            cameraPosition.x = *cameraLockX;
+        {
+            cameraPosition.x += followSpeed * (*cameraLockX - cameraPosition.x); // I tried to use std::lerp but it refused to exist for some reason even with cmath include
+        }
         if (cameraLockY != nullptr)
-            cameraPosition.y = *cameraLockY;
+        {
+            cameraPosition.y += followSpeed * (*cameraLockY - cameraPosition.y);
+        }
         if (cameraLockZ != nullptr)
-            cameraPosition.z = *cameraLockZ;
+        {
+            cameraPosition.z += followSpeed * (*cameraLockZ - cameraPosition.z);
+        }
 
         if (boundaryset)
         {

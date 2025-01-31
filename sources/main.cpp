@@ -24,6 +24,7 @@ float delta_time = 0.0f;
 bool mouseClicked = false, mousePressed = false, mouseReleased = false;
 float mouseX = 0.0f, mouseY = 0.0f;
 bool buttonHovered = false;
+int parryCooloff = 15, parryTimer = 0;
 
 extern gui gui_data;
 extern game_state state;
@@ -34,13 +35,14 @@ camera mainCam(CAMERA_STATIONARY);
 void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
 {
     p.velocityX = 0.0f;
+    // p.velocityY = 0.0f; // get rid pls
     bool walkingkeypressed = false;
     static bool stepsoundplayed = false;
     if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
     {
         p.velocityX = -p.runSpeed;
         p.visual.Rotate(0.0f, 180.0f, 0.0f);
-        if (p.onGround)
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
         walkingkeypressed = true;
     }
@@ -48,13 +50,16 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     {
         p.velocityX = p.runSpeed;
         p.visual.Rotate(0.0f, 0.0f, 0.0f);
-        if (p.onGround)
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
 
         walkingkeypressed = true;
     }
+    // if ((glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN)) && !p.onGround)
     if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
     {
+        p.velocityY = 3.0f * -p.runSpeed;
+        // p.velocityY = -p.runSpeed;
         // p.velocityY = -p.runSpeed;
         // p.PlayAnimation(ANIM_WALK, delta_time, true);
         // walkingkeypressed = true;
@@ -73,22 +78,40 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     {
         p.StopAnimation(ANIM_WALK);
     }
-    if (!p.onGround)
+    if (p.onGround && !glfwGetKey(window, GLFW_KEY_W) && !glfwGetKey(window, GLFW_KEY_UP))
     {
         p.jumped = false;
     }
-    // if (p.onGround && !p.jumped && (sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up)))
-    // {
-    //     // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-    //     p.velocityY -= 3.2f * p.runSpeed;
-    //     p.jumped = true;
-    // }
-    if (p.onGround && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
+    if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP))
+    // if ((p.onGround || p.parrySuccess) && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
-        // p.MoveTo(p.visual.rect.getPosition().x, p.visual.rect.getPosition().y - 4.0f, floor);
-        p.velocityY = 1.0f * p.runSpeed;
-        // p.visual.Move(0.0f, 0.1f, 0.0f);
-        // p.jumped = true;
+        // std::cout << "yumped\n";
+        p.velocityY = 1.8f * p.runSpeed;
+        p.jumped = true;
+        p.onGround = false;
+        p.parrySuccess = false;
+        // p.velocityY = p.runSpeed;
+    }
+
+    static bool parryButtonPressed = false;
+    if (p.parryTimer > 0)
+        --p.parryTimer;
+    if (p.parryTimer <= 0)
+    {
+        p.parrySuccess = false;
+    }
+    if (!glfwGetKey(window, GLFW_KEY_SPACE))
+    {
+        parryButtonPressed = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) && !parryButtonPressed)
+    {
+        if (parryTimer <= 0)
+        {
+            p.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
+            p.parryTimer = p.parryCooloff;
+        }
+        parryButtonPressed = true;
     }
     // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     // {
@@ -126,8 +149,10 @@ void mouseUpdate(GLFWwindow *window)
 void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy);
 
 int prevState = -1;
-int entityHP[entity_limit];
-int entityHP_UI_Index = 0;
+// int entityHP[entity_limit];
+// int entityHP_UI_Index = 0;
+sprite delots[20];
+sprite dePl;
 // edit all guis here
 void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_object, ma_engine &s_engine)
 {
@@ -136,7 +161,8 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
 
     gui_data.elements.clear();
     // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-    gui_data.background = sprite(&gui_object, "./null.png", 1, 1);
+    // gui_data.background = sprite(&gui_object, "./null.png", 1, 1);
+    // gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./null.png", 0.0f, 0.0f, 1.0f, 1.0f, 1, 1, nullFunc, true));
 
     std::string temp_path;
     // mainG.killParticles();
@@ -148,24 +174,24 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         mainG.stopSound(2);
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
-        gui_data.background = sprite(&gui_object, "./img/menu.png", 3, 1);
-        gui_data.bgAnim = animation(&gui_data.background, 0, 1, 30.0f);
-        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 64.0f, 128.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
-        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+        // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        // gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", 40.0f, 40.0f, 1.0f, 1.0f, 1, 1,
-                                               startGame, nullptr, nullptr, nullptr, prevState));
+                                               startGame, false, nullptr, nullptr, nullptr, prevState));
         gui_data.elements[gui_data.elements.size() - 1].anim = animation(&gui_data.elements[gui_data.elements.size() - 1].visual, 0, 3, 180.0f);
         break;
     case CHARACTER_CREATION_SCREEN:
-        gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-        gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 32.0f, 32.0f, 1, 1, startGame, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        // gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
+        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 32.0f, 32.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
         mainG.stopSound(0);
@@ -173,10 +199,11 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
         mainG.playSound(1, 1, 0);
-        gui_data.background = sprite(&gui_object, "./img/bg/01.png", 1, 1);
-        gui_data.background.x = 6.5f;
-        gui_data.background.y = 0.4f;
-        gui_data.background.Scale(17.778f, 2.0f, 1.0f);
+        // gui_data.background = sprite(&gui_object, "./img/bg/01.png", 1, 1);
+        // gui_data.background.x = 6.5f;
+        // gui_data.background.y = 0.4f;
+        // gui_data.background.Scale(17.778f, 2.0f, 1.0f);
+        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
 
         if (mainG.levelincreasing)
         {
@@ -214,6 +241,15 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             break;
         }
 
+        // debug
+        for (int i = 0; i < 20; ++i)
+        {
+            if (floor.collision_boxes[i].collisionID < 0)
+                continue;
+            delots[i] = sprite(&gui_object, "./img/debug.png", 1, 1);
+        }
+        dePl = sprite(&gui_object, "./img/debug.png", 1, 1);
+
         // gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
         // gui_data.bgAnim.setScale(2.0f, 1.0f);
 
@@ -234,11 +270,6 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
     prevState = state;
 }
 
-void loadtest(object &gui_object)
-{
-    gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-}
-
 bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
 void playerInit(character &pl, game_system &game, object *player_object)
 {
@@ -251,6 +282,7 @@ void playerInit(character &pl, game_system &game, object *player_object)
 
     pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
     pl.SetAnimation(ANIM_WALK, 0, 1, 100.0f);
+    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0f);
     // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
     // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
 
@@ -272,7 +304,7 @@ void updateView(shader &_program)
     glm::mat4 proj;
 
     mainCam.cameraPosition += mainCam.cameraVelocity;
-    mainCam.update();
+    mainCam.update(0.2f);
 
     _program.use();
     view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
@@ -313,9 +345,6 @@ int main()
 
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
-    sprite bg(&spriteRect, "./test.png");
-    sprite floor(&spriteRect, "./test.png");
-    sprite fren(&spriteCube, "./fren.png");
 
     // declare 'sprites' or game objects here
     // sprite yoursprite(&[spriteRect | spriteCube]);
@@ -365,16 +394,41 @@ int main()
         }
         // menuData(game, mainPlayer, mainDungeon, spriteRect);
         menuData(game, mainPlayer, mainDungeon, spriteRect, soundEngine);
+        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, true);
 
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
             // mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
             // window.setView(screen);
+            for (int i = 0; i < 20; ++i)
+            {
+                if (delots[i].empty)
+                    continue;
+                delots[i].Draw(shaderProgram);
+
+                if (mainDungeon.collision_boxes[i].collisionID < 0)
+                    continue;
+
+                float mdXScale = mainDungeon.collision_boxes[i].max_x - mainDungeon.collision_boxes[i].min_x;
+                float mdYScale = mainDungeon.collision_boxes[i].max_y - mainDungeon.collision_boxes[i].min_y;
+                delots[i].Scale(mdXScale,
+                                mdYScale, 1.0f);
+                delots[i].Put(mainDungeon.collision_boxes[i].min_x + 0.5f * mdXScale, mainDungeon.collision_boxes[i].min_y + 0.5f * mdYScale, 0.0f);
+                delots[i].SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+            }
 
             mainCam.lockTo(&mainPlayer.visual.x, &mainPlayer.visual.y);
 
-            game.update(mainDungeon, delta_time);
             playerControl(game, mainPlayer, window, &mainDungeon);
+            game.update(mainDungeon, delta_time);
+
+            float mpcXScale = mainPlayer.collider.max_x - mainPlayer.collider.min_x;
+            float mpcYScale = mainPlayer.collider.max_y - mainPlayer.collider.min_y;
+            dePl.Scale(mpcXScale, mpcYScale, 1.0f);
+            dePl.Put(mainPlayer.collider.min_x + 0.5f * mpcXScale, mainPlayer.collider.min_y + 0.5f * mpcYScale, 0.0f);
+            dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+            if (!dePl.empty)
+                dePl.Draw(shaderProgram); // debug pls get rid of this later
 
             mainDungeon.draw(window, shaderProgram);
 
@@ -387,7 +441,7 @@ int main()
                 game.characters[i]->visual.Draw(shaderProgram);
             }
 
-            if (mainPlayer.hp <= 0 || mainPlayer.velocityY < -100.0f)
+            if (mainPlayer.hp <= 0 || mainPlayer.visual.y < -20.0f)
             {
                 mainPlayer.visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0f);
                 mainPlayer.hp = mainPlayer.maxhp;
@@ -402,16 +456,7 @@ int main()
         // {
         //     game.particles[i]->draw(window, delta_time);
         // }
-        if (!uiKeyHeld && glfwGetKey(window, GLFW_KEY_TAB))
-        {
-            showUI = !showUI;
-        }
-        uiKeyHeld = false;
-        if (glfwGetKey(window, GLFW_KEY_TAB))
-        {
-            uiKeyHeld = true;
-        }
-        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
+        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, false);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

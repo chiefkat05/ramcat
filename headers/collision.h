@@ -15,7 +15,7 @@ struct aabb
 
     void moveCenterToPoint(float xPos, float yPos);
 
-    float response(float xVelocity, float yVelocity, aabb &test, float &xNormal, float &yNormal);
+    float response(float xV, float yV, float xV2, float yV2, aabb &test, float &xNormal, float &yNormal);
 };
 
 const unsigned int quadtree_object_limit = 5;
