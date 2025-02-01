@@ -10,7 +10,7 @@ const unsigned int width_limit = 128;
 const unsigned int height_limit = 128;
 const unsigned int collision_box_limit = 128;
 // const unsigned int collision_box_limit = 2;
-const unsigned int collision_id_limit = 3;
+const unsigned int collision_id_limit = 5;
 
 struct tile
 {

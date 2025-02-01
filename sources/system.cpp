@@ -19,7 +19,7 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
 
     // collider = aabb(visual.x - visual.spriteW * 0.5f, visual.y - visual.spriteH,
     //                 visual.x + visual.spriteW * 0.5f, visual.y);
-    collider = aabb(visual.x, visual.y - visual.spriteH * 0.16f, visual.x + visual.spriteW * 0.16f, visual.y);
+    collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24);
     // collider = aabb(visual.x, visual.y, visual.x + 0.01f, visual.y + 0.01f);
 }
 character::character(object *spriteObject, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
@@ -35,6 +35,7 @@ character::character(object *spriteObject, std::string filepath, float x, float 
     // walkToY = posY;
     id = _id;
     hp = maxhp;
+    collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24f);
 }
 
 void character::MoveTo(float _x, float _y, dungeon *currentDungeon)
@@ -60,11 +61,12 @@ void character::Update(float delta_time)
     // collider.max_x = visual.x + 0.01f;
     // collider.min_y = visual.y;
     // collider.max_y = visual.y + 0.01f;
-    // collider = aabb(visual.x, visual.y - visual.spriteH * 0.16f, visual.x + visual.spriteW * 0.16f, visual.y);
-    collider.min_x = visual.x;
-    collider.max_x = visual.x + 0.16f;
-    collider.min_y = visual.y;
-    collider.max_y = visual.y + 0.16f;
+    // collider = aabb(visual.x, visual.y - 0.16f, visual.x + 0.16f, visual.y);
+    // collider.min_x = visual.x;
+    // collider.max_x = visual.x + 0.16f;
+    // collider.min_y = visual.y;
+    // collider.max_y = visual.y + 0.16f;
+    collider.Put(visual.x, visual.y, 0.16f, 0.24f);
 
     if (hp <= 0)
     {
@@ -101,9 +103,7 @@ void character::updatePosition(float delta_time)
 
     // std::cout << visual.x << ", " << visual.y << ", vel = " << velocityY * delta_time << ", without dt: " << velocityY << ", onground: " << onGround << " hmm\n";
 
-    visual.Move(velocityX * delta_time * collisionValueX, velocityY * delta_time * collisionValueY, 0.0f);
-    // collisionValueX = 1.0f;
-    // collisionValueY = 1.0f;
+    visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0f);
     // std::cout << visual.x << ", " << visual.y << "\n";
 }
 
@@ -256,32 +256,21 @@ void game_system::update(dungeon &floor, float delta_time)
             float firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                            characters[i]->velocityY * delta_time,
                                                                            0.0f, 0.0f, floor.collision_boxes[j], xNormal, yNormal);
+            // if (firstCollisionHitTest < 1.0f)
+            //     std::cout << "collision\n";
 
             switch (floor.collision_boxes[j].collisionID)
             {
             case 1:
-                // if (firstCollisionHitTest < 1.0f && yNormal > 0.0f)
-                // {
-                //     if (characters[i]->parryTimer >= characters[i]->parryCooloff - characters[i]->parryWindow && !characters[i]->jumped)
-                //     {
-                //         characters[i]->parrySuccess = true;
-                //     }
-                //     if (!characters[i]->parrySuccess)
-                //         characters[i]->hp = 0;
-                // }
-                // if (firstCollisionHitTest < 1.0f && xNormal < 0.0f)
-                // {
-                //     characters[i]->velocityX *= firstCollisionHitTest;
-                // }
-                // if (firstCollisionHitTest < 1.0f && xNormal > 0.0f)
-                // {
-                //     characters[i]->velocityX *= firstCollisionHitTest;
-                // }
-                // if (firstCollisionHitTest < 1.0f && yNormal < 0.0f)
-                // {
-                //     if (!characters[i]->parrySuccess)
-                //         characters[i]->hp = 0;
-                // }
+                if (xNormal != 0.0f)
+                    characters[i]->velocityX *= firstCollisionHitTest;
+                if (yNormal != 0.0f)
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                if (yNormal < 0.0f)
+                {
+                    if (!characters[i]->parrySuccess)
+                        characters[i]->hp = 0;
+                }
                 break;
             case 2:
                 if (firstCollisionHitTest < 1.0f && characters[i]->isAPlayer)
@@ -290,76 +279,14 @@ void game_system::update(dungeon &floor, float delta_time)
                 }
                 break;
             default:
-                // characters[i]->velocityX *= firstCollisionHitTest;
-                // characters[i]->velocityY *= firstCollisionHitTest;
-                // characters[i]->velocityX *= xNormal;
-                // characters[i]->velocityY *= yNormal;
-                // if (xNormal != 0.0f)
-                //     characters[i]->collisionValueX = std::min(characters[i]->collisionValueX, firstCollisionHitTest);
-                // if (yNormal != 0.0f)
-                //     characters[i]->collisionValueY = std::min(characters[i]->collisionValueY, firstCollisionHitTest);
-                // std::cout << "first " << characters[i]->velocityX << ", " << characters[i]->velocityY << " hmm\n";
-                // std::cout << characters[i]->velocityY << " * " << 1.0f - yNormal << " = " << characters[i]->velocityY * (1.0f - yNormal) << " ???\n";
-                // if (xNormal > 0.0f)
-                //     xNormal = 1.0f;
-                // if (yNormal > 0.0f)
-                // {
-                //     yNormal = 1.0f;
-                //     characters[i]->onGround = true;
-                // }
-                // characters[i]->velocityX *= (1.0f - xNormal);
-                // characters[i]->velocityY *= (1.0f - yNormal);
-                // std::cout << xNormal << ", " << yNormal << " and " << characters[i]->velocityX << ", " << characters[i]->velocityY << " sigh\n";
-                // if (yNormal > 0.0f)
-                // {
-                //     characters[i]->onGround = true;
-                // }
-                // if (xNormal < 1.0f && xNormal > -1.0f)
-                //     characters[i]->velocityX *= xNormal;
-                // if (yNormal < 1.0f && yNormal > -1.0f)
-                //     characters[i]->velocityY *= yNormal;
-                // if (firstCollisionHitTest < 1.0f)
-                // {
-                //     // characters[i]->velocityX *= firstCollisionHitTest;
-                //     // characters[i]->velocityY *= firstCollisionHitTest;
-
-                // }
-
-                // if (firstCollisionHitTest < 1.0f && xNormal < 0.0f)
-                // {
-                //     characters[i]->velocityX *= firstCollisionHitTest;
-                // }
-                // if (firstCollisionHitTest < 1.0f && xNormal > 0.0f)
-                // {
-                //     characters[i]->velocityX *= firstCollisionHitTest;
-                // }
-                // if (firstCollisionHitTest < 1.0f && yNormal < 0.0f)
-                // {
-                //     characters[i]->velocityY *= firstCollisionHitTest;
-                // }
-                // characters[i]->velocityX *= (1.0f - std::abs(xNormal)) * firstCollisionHitTest;
-                // characters[i]->velocityY *= (1.0f - std::abs(yNormal)) * firstCollisionHitTest;
-                characters[i]->velocityX *= firstCollisionHitTest;
-                characters[i]->velocityY *= firstCollisionHitTest;
-                if (firstCollisionHitTest < 1.0f && yNormal > 0.0f)
+                if (yNormal != 0.0f)
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                if (xNormal != 0.0f)
+                    characters[i]->velocityX *= firstCollisionHitTest;
+                if (yNormal < 0.0f)
                 {
-                    // if (firstCollisionHitTest == 0.0f && characters[i]->velocityY <= 0.0f)
-                    // {
-                    // characters[i]->onGround = true;
-                    // }
-
-                    // std::cout << characters[i]->velocityY << ", fcht = " << firstCollisionHitTest << "\n";
-                    // characters[i]->velocityY *= firstCollisionHitTest;
-                    // std::cout << characters[i]->velocityY << ", fcht = " << firstCollisionHitTest << " 2\n";
+                    characters[i]->onGround = true;
                 }
-                // if (firstCollisionHitTest < 1.0f && xNormal == 0.0f && yNormal == 0.0f)
-                // {
-                //     characters[i]->onGround = true;
-                //     std::cout << characters[i]->velocityX << " hmm?\n";
-                //     characters[i]->velocityX = -characters[i]->velocityX * (firstCollisionHitTest);
-                //     characters[i]->velocityY = -characters[i]->velocityY * (firstCollisionHitTest);
-                //     std::cout << characters[i]->velocityX << " hmm?\n";
-                // }
                 break;
             }
         }

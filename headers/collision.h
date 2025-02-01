@@ -14,6 +14,7 @@ struct aabb
     bool colliding(aabb &test);
 
     void moveCenterToPoint(float xPos, float yPos);
+    void Put(float x, float y, float w, float h);
 
     float response(float xV, float yV, float xV2, float yV2, aabb &test, float &xNormal, float &yNormal);
 };

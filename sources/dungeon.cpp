@@ -138,9 +138,6 @@ void dungeon::readRoomFile(const char *path)
         {
             for (int x = lookXMin; x < lookXLimit; ++x)
             {
-                // if (tiles[x][y].id == -1 || !tiles[x][y].collision || tiles[x][y].collisiontaken)
-                //     continue;
-
                 // if current spot is valid for collision and collision box not started yet, start collision box
                 if (tiles[x][y].collisionID == c && !tiles[x][y].collisiontaken && collisionstartx == -1)
                 {
@@ -209,13 +206,11 @@ void dungeon::readRoomFile(const char *path)
                 std::cout << "<---------------------------------------------------------------------->\n";
 #endif
 
-                int newystart = roomHeight - collisionstarty;
-                int newyend = roomHeight - collisionendy;
-                collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f,
-                                                            collisionendx * 0.16f, newystart * 0.16f);
+                int newystart = static_cast<int>(roomHeight) - collisionstarty + 1;
+                int newyend = static_cast<int>(roomHeight) - collisionendy + 1;
+                collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f + 0.08f,
+                                                            collisionendx * 0.16f, newystart * 0.16f + 0.08f);
 
-                // collision_boxes[collision_box_count] = aabb(collisionstartx, newyend,
-                // collisionendx, newystart);
                 collision_boxes[collision_box_count].collisionID = c;
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)

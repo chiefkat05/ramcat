@@ -41,7 +41,7 @@ enum ANIMATION_MAPPINGS
 
 struct character
 {
-    float velocityX = 0.0f, velocityY = 0.0f, collisionValueX = 1.0f, collisionValueY = 1.0f;
+    float velocityX = 0.0f, velocityY = 0.0f;
     bool onGround = false, jumped = false;
     bool isAPlayer = false;
     int parryCooloff = 23, parryTimer = 0, parryWindow = 5;

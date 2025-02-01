@@ -9,6 +9,7 @@
 
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
+// #define COLLISION_DEBUG
 
 float texCoords[] = {
     0.0f, 0.0f,
@@ -35,7 +36,6 @@ camera mainCam(CAMERA_STATIONARY);
 void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
 {
     p.velocityX = 0.0f;
-    // p.velocityY = 0.0f; // get rid pls
     bool walkingkeypressed = false;
     static bool stepsoundplayed = false;
     if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
@@ -55,15 +55,9 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
 
         walkingkeypressed = true;
     }
-    // if ((glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN)) && !p.onGround)
-    if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
+    if ((glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN)) && !p.onGround)
     {
         p.velocityY = 3.0f * -p.runSpeed;
-        // p.velocityY = -p.runSpeed;
-        // p.velocityY = -p.runSpeed;
-        // p.PlayAnimation(ANIM_WALK, delta_time, true);
-        // walkingkeypressed = true;
-        // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
     }
     if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
     {
@@ -82,15 +76,12 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     {
         p.jumped = false;
     }
-    if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP))
-    // if ((p.onGround || p.parrySuccess) && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
+    if ((p.onGround || p.parrySuccess) && !p.jumped && (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP)))
     {
-        // std::cout << "yumped\n";
         p.velocityY = 1.8f * p.runSpeed;
         p.jumped = true;
         p.onGround = false;
         p.parrySuccess = false;
-        // p.velocityY = p.runSpeed;
     }
 
     static bool parryButtonPressed = false;
@@ -113,15 +104,6 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
         }
         parryButtonPressed = true;
     }
-    // if (sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-    // {
-    //     // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
-    // }
-    // if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
-    // {
-    //     p.velocityY = p.runSpeed;
-    //     // p.allies[i].MoveTo(p.allies[i].visual.rect.getPosition().x, p.allies[i].visual.rect.getPosition().y + 4.0f, floor);
-    // }
 }
 
 float current_time = 0.0f;
@@ -241,7 +223,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             break;
         }
 
-        // debug
+#ifdef COLLISION_DEBUG
         for (int i = 0; i < 20; ++i)
         {
             if (floor.collision_boxes[i].collisionID < 0)
@@ -249,9 +231,7 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
             delots[i] = sprite(&gui_object, "./img/debug.png", 1, 1);
         }
         dePl = sprite(&gui_object, "./img/debug.png", 1, 1);
-
-        // gui_data.bgAnim = animation(&gui_data.background, 0, 1, 50.0f);
-        // gui_data.bgAnim.setScale(2.0f, 1.0f);
+#endif
 
         mainP.visual.Put(floor.spawnLocationX, -floor.spawnLocationY, 0.0f);
 
@@ -398,8 +378,9 @@ int main()
 
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
-            // mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
-            // window.setView(screen);
+// mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
+// window.setView(screen);
+#ifdef COLLISION_DEBUG
             for (int i = 0; i < 20; ++i)
             {
                 if (delots[i].empty)
@@ -416,6 +397,7 @@ int main()
                 delots[i].Put(mainDungeon.collision_boxes[i].min_x + 0.5f * mdXScale, mainDungeon.collision_boxes[i].min_y + 0.5f * mdYScale, 0.0f);
                 delots[i].SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             }
+#endif
 
             mainCam.lockTo(&mainPlayer.visual.x, &mainPlayer.visual.y);
 
