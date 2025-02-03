@@ -195,31 +195,31 @@ void menuData(game_system &mainG, character &mainP, dungeon &floor, object &gui_
         switch (mainG.level)
         {
         case 0:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", &gui_object, 4, 2);
             break;
         case 1:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", &gui_object, 4, 2);
             break;
         case 2:
             state = START_SCREEN;
             return;
-            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.wer", &gui_object, 4, 2);
+            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", &gui_object, 4, 2);
             // break;
         case 3:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", &gui_object, 4, 2);
             break;
         case 4:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.lvl", &gui_object, 4, 2);
             break;
         case 5:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.lvl", &gui_object, 4, 2);
             break;
         case 6:
             state = MENU_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.wer", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", &gui_object, 4, 2);
             break;
         }
 
@@ -341,7 +341,7 @@ int main()
     // mainCam.lockTo();
     // mainCam.setBoundary(-50, -50, -50, 50, 50, 50);
     dungeon mainDungeon("./img/tiles.png", &spriteRect, 4, 2); // lmao
-    // mainDungeon.readRoomFile("./levels/01.wer");
+    // mainDungeon.readRoomFile("./levels/01.lvl");
     mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
     character mainPlayer;
     playerInit(mainPlayer, game, &spriteRect);
