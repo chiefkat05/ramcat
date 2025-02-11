@@ -5,6 +5,30 @@
 
 // soundhandler soundplayer;
 
+bool player::getInput(GLFWwindow *window, controlset action)
+{
+    if (gamepad_id > -1)
+    {
+        // int count;
+        // const unsigned char *gamepadbuttons = glfwGetJoystickButtons(gamepad_id, &count);
+        GLFWgamepadstate state;
+        glfwGetGamepadState(gamepad_id, &state);
+        if (state.buttons[gamepad_inputs[action]])
+        {
+            return true;
+        }
+    }
+    if (gamepad_id == -1)
+    {
+        if (glfwGetKey(window, inputs[action]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 character::character() {}
 character::character(sprite &v, IDENTIFICATION _id) : visual(v)
 {
@@ -265,15 +289,13 @@ void game_system::update(dungeon &floor, float delta_time)
                 if (xNormal != 0.0f)
                     characters[i]->velocityX *= firstCollisionHitTest;
                 if (yNormal != 0.0f)
-                    characters[i]->velocityY *= firstCollisionHitTest;
-                if (yNormal < 0.0f)
                 {
                     if (!characters[i]->parrySuccess)
                         characters[i]->hp = 0;
                 }
                 break;
             case 2:
-                if (firstCollisionHitTest < 1.0f && characters[i]->isAPlayer)
+                if (firstCollisionHitTest < 1.0f && characters[i]->plControl != nullptr)
                 {
                     levelincreasing = true;
                 }

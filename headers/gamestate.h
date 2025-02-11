@@ -17,6 +17,7 @@ enum ui_element_type
 struct ui_element
 {
     sprite visual;
+    float trueX, trueY;
     float posX, posY, width, height;
     int *value;
 
@@ -38,7 +39,7 @@ struct ui_element
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
 
-    void update(float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
+    void update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
 };
 
 enum game_state

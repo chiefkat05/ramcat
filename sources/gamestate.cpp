@@ -2,7 +2,7 @@
 
 gui gui_data;
 game_state state;
-// #define PIXEL_DIVISION 360.0f
+
 const float pixel_divider = 36.0f;
 // connector host;
 // bool typingInput;
@@ -16,6 +16,8 @@ ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func
     utype = t;
     posX = x;
     posY = y;
+    trueX = x;
+    trueY = y;
     visual.Put(x, y, 0.0f);
     width = visual.spriteW;
     height = visual.spriteH;
@@ -26,7 +28,6 @@ ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func
     func_i = _func_i;
     value = _linkValue;
 }
-// linkvalue apparently doesn nothing, get rid of it please
 ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY,
                        void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
@@ -35,11 +36,13 @@ ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x
 {
     background = bg;
     utype = t;
-    posX = 640.0f + (x * 640.0f);
-    posY = 360.0f - (y * 360.0f);
+    trueX = x;
+    trueY = y;
+    posX = window_width / 2 + (x * (window_width / 2));
+    posY = window_height / 2 - (y * (window_height / 2));
     visual.Put(x * 1.7778f, y, 0.0f); // idk if this is necessary
-    width = w / pixel_divider * 360.0f;
-    height = h / pixel_divider * 360.0f;
+    width = w / pixel_divider * (window_height / 2);
+    height = h / pixel_divider * (window_height / 2);
     visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
     function = func;
     func_p = _func_p;
@@ -50,8 +53,13 @@ ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x
 }
 
 // get ui element animations set up
-void ui_element::update(float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
+void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
 {
+    int win_width, win_height;
+    glfwGetFramebufferSize(window, &win_width, &win_height);
+    posX = win_width / 2 + (trueX * (win_width / 2));
+    posY = win_height / 2 - (trueY * (win_height / 2));
+    visual.Put(trueX * 1.7778f, trueY, 0.0f);
     switch (utype)
     {
     case UI_CLICKABLE:
@@ -101,7 +109,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, float mouseX, float mo
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
-        elements[i].update(mouseX, mouseY, mousePressed, mouseReleased, delta_time);
+        elements[i].update(window, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
         elements[i].visual.Draw(program);
     }
     // background.Draw(program);

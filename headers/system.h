@@ -12,6 +12,9 @@ const unsigned int entity_limit = 64; // also change in dungeon.h since there's 
 const unsigned int character_limit = 6;
 const unsigned int animation_limit = 24;
 const unsigned int sound_limit = 32;
+const unsigned int window_width = 1280;
+const unsigned int window_height = 720;
+const unsigned int player_limit = 12;
 
 struct character;
 
@@ -39,11 +42,61 @@ enum ANIMATION_MAPPINGS
     ANIM_ABILITY_8
 };
 
+enum controlset
+{
+    CONTROL_UP,
+    CONTROL_LEFT,
+    CONTROL_RIGHT,
+    CONTROL_DOWN,
+    CONTROL_SHIELD,
+    CONTROL_SWORD,
+    CONTROL_BUBBLE,
+    CONTROL_SPAWN_PLAYER,
+    control_limit
+};
+enum GAMEPAD_MAP
+{
+    PAD_BUTTON_A,
+    PAD_BUTTON_B,
+    PAD_BUTTON_X,
+    PAD_BUTTON_Y,
+    PAD_DPAD_LEFT,
+    PAD_DPAD_RIGHT,
+    PAD_DPAD_UP,
+    PAD_DPAD_DOWN,
+    PAD_START,
+    PAD_SELECT,
+    PAD_STICK_LEFT,
+    PAD_STICK_RIGHT,
+    PAD_STICK_UP,
+    PAD_STICK_DOWN,
+    PAD_BUTTON_R,
+    PAD_BUTTON_L,
+    PAD_TRIGGER_R,
+    PAD_TRIGGER_L,
+    PAD_RSTICK_LEFT,
+    PAD_RSTICK_RIGHT,
+    PAD_RSTICK_UP,
+    PAD_RSTICK_DOWN
+};
+
+struct player
+{
+    int inputs[control_limit] = {265, 263, 262, 264, 44, 46, GLFW_KEY_BACKSLASH, GLFW_KEY_1};
+    int gamepad_inputs[control_limit] = {GLFW_GAMEPAD_BUTTON_X, GLFW_GAMEPAD_BUTTON_DPAD_LEFT, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,
+                                         GLFW_GAMEPAD_BUTTON_DPAD_DOWN, GLFW_GAMEPAD_BUTTON_A, GLFW_GAMEPAD_BUTTON_B, GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER,
+                                         GLFW_GAMEPAD_BUTTON_BACK};
+    int gamepad_id = -1;
+    // int p2inputs[control_limit] = {87, 65, 68, 83, 86, 67};
+
+    bool getInput(GLFWwindow *window, controlset action);
+};
+
 struct character
 {
     float velocityX = 0.0f, velocityY = 0.0f;
     bool onGround = false, jumped = false;
-    bool isAPlayer = false;
+    player *plControl;
     int parryCooloff = 23, parryTimer = 0, parryWindow = 5;
     bool parrySuccess = false;
 
