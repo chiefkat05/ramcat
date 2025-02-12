@@ -5,7 +5,7 @@
 #include <string>
 #include "collision.h"
 #include "dungeon.h"
-// #include "effects.h"
+#include "effects.h"
 #include "miniaudio.h"
 
 const unsigned int entity_limit = 64; // also change in dungeon.h since there's another one there, also delete one of these so that there's only one pls
@@ -134,8 +134,8 @@ struct game_system
 {
     character *characters[entity_limit];
     sprite *sortedSprites[entity_limit];
-    // particlesystem *particles[particle_system_limit];
-    // int particlesystemcount;
+    particlesystem *particles[particle_system_limit];
+    int particlesystemcount;
     int level = 0;
     bool levelincreasing = false;
 
@@ -146,7 +146,7 @@ struct game_system
     bool music_playing = false;
 
     void Add(character *e);
-    // void Add(particlesystem *p);
+    void Add(particlesystem *p);
 
     // void initSoundEngine();
     // void handleMusic();
@@ -158,7 +158,7 @@ struct game_system
 
     void update(dungeon &floor, float delta_time);
 
-    // void killParticles();
+    void killParticles();
 };
 
 #endif

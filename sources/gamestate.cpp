@@ -93,6 +93,9 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
         anim.frame = *value;
         anim.timer = 1.0f;
         anim.run(delta_time, false);
+        // std::cout << *value << " is value\n";
+        // visual.textureX = *value % visual.framesX;
+        // visual.textureY = *value / visual.framesX;
         break;
     default:
         break;

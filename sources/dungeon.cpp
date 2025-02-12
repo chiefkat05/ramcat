@@ -108,6 +108,26 @@ void dungeon::readRoomFile(const char *path)
                 tiles[i][roomHeight].id = 1;
                 tiles[i][roomHeight].collisionID = 1;
                 break;
+            case '3':
+                tiles[i][roomHeight].id = 8;
+                tiles[i][roomHeight].collisionID = 3;
+                break;
+            case '4':
+                tiles[i][roomHeight].id = 3;
+                tiles[i][roomHeight].collisionID = 4;
+                break;
+            case '5':
+                tiles[i][roomHeight].id = 4;
+                tiles[i][roomHeight].collisionID = 5;
+                break;
+            case '6':
+                tiles[i][roomHeight].id = 0;
+                tiles[i][roomHeight].collisionID = 6;
+                break;
+            case '7':
+                tiles[i][roomHeight].id = 6;
+                tiles[i][roomHeight].collisionID = 7;
+                break;
             default:
                 tiles[i][roomHeight].id = -1;
                 tiles[i][roomHeight].collisionID = -1;

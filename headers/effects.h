@@ -4,7 +4,6 @@
 #include "sprite.h"
 #include <random>
 
-const unsigned int sound_limit = 16;
 const unsigned int particle_limit = 2512;
 const unsigned int particle_system_limit = 6;
 

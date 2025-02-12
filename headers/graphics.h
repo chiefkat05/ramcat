@@ -61,6 +61,7 @@ struct camera
     glm::vec3 boundaryCorner, boundarySizeCorner;
     bool boundaryset = false;
     float *cameraLockX, *cameraLockY, *cameraLockZ;
+    float offsetX = 0.0f, offsetY = 0.0f, offsetZ = 0.0f;
 
     camera(simple_camera_types _type)
     {
@@ -140,15 +141,15 @@ struct camera
         //     cameraPosition.z = *cameraLockZ;
         if (cameraLockX != nullptr)
         {
-            cameraPosition.x += followSpeed * (*cameraLockX - cameraPosition.x); // I tried to use std::lerp but it refused to exist for some reason even with cmath include
+            cameraPosition.x += followSpeed * (*cameraLockX - cameraPosition.x + offsetX); // I tried to use std::lerp but it refused to exist for some reason even with cmath include
         }
         if (cameraLockY != nullptr)
         {
-            cameraPosition.y += followSpeed * (*cameraLockY - cameraPosition.y);
+            cameraPosition.y += followSpeed * (*cameraLockY - cameraPosition.y + offsetY);
         }
         if (cameraLockZ != nullptr)
         {
-            cameraPosition.z += followSpeed * (*cameraLockZ - cameraPosition.z);
+            cameraPosition.z += followSpeed * (*cameraLockZ - cameraPosition.z + offsetZ);
         }
 
         if (boundaryset)

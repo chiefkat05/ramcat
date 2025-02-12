@@ -188,11 +188,11 @@ void game_system::Add(character *e)
     sortedSprites[characterCount] = &characters[characterCount]->visual;
     ++characterCount;
 }
-// void game_system::Add(particlesystem *p)
-// {
-//     particles[particlesystemcount] = p;
-//     ++particlesystemcount;
-// }
+void game_system::Add(particlesystem *p)
+{
+    particles[particlesystemcount] = p;
+    ++particlesystemcount;
+}
 
 // void game_system::handleMusic()
 // {
@@ -232,6 +232,7 @@ void game_system::stopSound(unsigned int id)
 {
     ma_sound_stop(&game_sounds[id]);
 }
+
 void game_system::update(dungeon &floor, float delta_time)
 {
     // if (paused)
@@ -300,6 +301,59 @@ void game_system::update(dungeon &floor, float delta_time)
                     levelincreasing = true;
                 }
                 break;
+            case 3:
+                if (yNormal != 0.0f && characters[i]->velocityY <= 0.0f)
+                {
+                    // if (characters[i]->plControl == nullptr || characters[i]->plControl != nullptr && characters[i]->animations[ANIM_ABILITY_0].finished)
+                    // {
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i]->onGround = true;
+                    // }
+                }
+                break;
+            case 4:
+                if (xNormal != 0.0f || yNormal != 0.0f)
+                {
+                    characters[i]->velocityX *= 6.0f;
+                    characters[i]->velocityY = 0.2f;
+                    characters[i]->visual.Put(floor.collision_boxes[j].min_x, floor.collision_boxes[j].min_y, 0.0f);
+                }
+                break;
+            case 7:
+                if (yNormal != 0.0f && characters[i]->velocityY < 0.0f)
+                {
+                    characters[i]->velocityY = 4.0f;
+                }
+            case 5:
+                if (firstCollisionHitTest < 1.0f)
+                {
+                    for (int x = 0; x < floor.roomWidth; ++x)
+                    {
+                        for (int y = 0; y < floor.roomHeight; ++y)
+                        {
+                            if (floor.tiles[x][y].id == 4)
+                            {
+                                floor.tiles[x][y].id = 5;
+                                floor.tiles[x][y].collisionID = -1;
+                            }
+
+                            if (floor.tiles[x][y].collisionID != 6)
+                                continue;
+
+                            floor.tiles[x][y].id = -1;
+                            floor.tiles[x][y].collisionID = -1;
+                        }
+                    }
+                    for (int x = 0; x < floor.collision_box_count; ++x)
+                    {
+                        if (floor.collision_boxes[x].collisionID == 6)
+                        {
+                            floor.collision_boxes[x].collisionID = -1;
+                            floor.collision_boxes[x] = aabb(-100.0f, -100.0f, -100.0f, -100.0f);
+                        }
+                    }
+                }
+                break;
             default:
                 if (yNormal != 0.0f)
                     characters[i]->velocityY *= firstCollisionHitTest;
@@ -315,17 +369,17 @@ void game_system::update(dungeon &floor, float delta_time)
         characters[i]->updatePosition(delta_time);
     }
 
-    // for (int i = 0; i < particlesystemcount; ++i)
-    // {
-    //     particles[i]->spawn(delta_time);
-    //     particles[i]->update(delta_time);
-    // }
+    for (int i = 0; i < particlesystemcount; ++i)
+    {
+        particles[i]->spawn(delta_time);
+        particles[i]->update(delta_time);
+    }
 }
 
-// void game_system::killParticles()
-// {
-//     for (int i = 0; i < particlesystemcount; ++i)
-//     {
-//         particles[i]->kill();
-//     }
-// }
+void game_system::killParticles()
+{
+    for (int i = 0; i < particlesystemcount; ++i)
+    {
+        particles[i]->kill();
+    }
+}
