@@ -2,6 +2,11 @@
 #define SPRITE_H
 
 #include "graphics.h"
+#include <map>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include <freetype/freetype.h>
 
 const unsigned int texture_limit = 32;
 
@@ -18,6 +23,8 @@ enum object_type
     OBJ_QUAD,
     OBJ_CUBE,
     OBJ_MODEL,
+    OBJ_TEXT,
+    OBJ_INSTANCED,
     OBJ_NULL
 };
 
@@ -127,6 +134,16 @@ struct animation
         //                                          _sprite->spriteW * xScale, _sprite->spriteH * yScale));
     }
 };
+
+struct textCharacter
+{
+    unsigned int TextureID;
+    glm::ivec2 Size;
+    glm::ivec2 Bearing;
+    unsigned int Advance;
+};
+int loadFont(const char *path);
+void renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color);
 
 // void clearAllTextures();
 

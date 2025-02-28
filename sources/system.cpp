@@ -226,6 +226,7 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
 void game_system::playSound(unsigned int id, float volume, int start_time)
 {
     ma_sound_set_volume(&game_sounds[id], volume);
+    ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
     ma_sound_start(&game_sounds[id]);
 }
 void game_system::stopSound(unsigned int id)
@@ -281,8 +282,11 @@ void game_system::update(dungeon &floor, float delta_time)
             float firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                            characters[i]->velocityY * delta_time,
                                                                            0.0f, 0.0f, floor.collision_boxes[j], xNormal, yNormal);
+
             // if (firstCollisionHitTest < 1.0f)
-            //     std::cout << "collision\n";
+            // {
+            //     std::cout << floor.collision_boxes[j].collisionID << ", " << floor.collision_boxes[j].specialTileID << " collision\n";
+            // }
 
             switch (floor.collision_boxes[j].collisionID)
             {
@@ -324,6 +328,7 @@ void game_system::update(dungeon &floor, float delta_time)
                 {
                     characters[i]->velocityY = 4.0f;
                 }
+                break;
             case 5:
                 if (firstCollisionHitTest < 1.0f)
                 {
@@ -331,8 +336,10 @@ void game_system::update(dungeon &floor, float delta_time)
                     {
                         for (int y = 0; y < floor.roomHeight; ++y)
                         {
-                            if (floor.tiles[x][y].id == 4)
+                            // std::cout << floor.tiles[x][y].specialTileID << " hmm\n";
+                            if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
                             {
+                                // std::cout << floor.tiles[x][y].specialTileID << " correct\n";
                                 floor.tiles[x][y].id = 5;
                                 floor.tiles[x][y].collisionID = -1;
                             }

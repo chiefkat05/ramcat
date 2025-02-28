@@ -7,6 +7,7 @@ struct aabb
 {
     float min_x, min_y, max_x, max_y;
     int collisionID = 0;
+    int specialTileID = -1;
 
     aabb() : min_x(0.0f), min_y(0.0f), max_x(0.0f), max_y(0.0f) {}
     aabb(float x, float y, float x2, float y2) : min_x(x), min_y(y), max_x(x2), max_y(y2) {}

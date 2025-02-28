@@ -149,8 +149,69 @@ void mouseUpdate(GLFWwindow *window)
     }
 }
 
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy);
-void addPlayer(character *ch, game_system *gs, dungeon *dg, int x);
+bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
+player playerControllers[player_limit];
+character players[player_limit];
+
+std::string controlsetstrings[] = {
+    "Up", "Left", "Right", "Down", "Shield", "Sword", "Bubble", "Spawn"};
+
+void playerInit(character &pl, game_system &game, object *player_object, player &controller)
+{
+    pl = character(player_object, "./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
+    pl.visual.Scale(0.32f, 0.32f, 1.0f);
+    if (glfwJoystickIsGamepad(playerGamepadCount + 1))
+    {
+        ++playerGamepadCount;
+        controller.gamepad_id = playerGamepadCount;
+    }
+    pl.plControl = &controller;
+
+    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
+    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0f);
+    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0f);
+    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0f);
+    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0f);
+    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0f);
+    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0f);
+    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
+    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
+
+    game.Add(&pl);
+}
+
+void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy)
+{
+    dg = dungeon(tilePath.c_str(), dungeon_object, fx, fy);
+    dg.readRoomFile(levelPath.c_str());
+}
+
+// feh
+void updateView(shader &_program)
+{
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 proj;
+
+    mainCam.cameraPosition += mainCam.cameraVelocity;
+    mainCam.update(0.2f);
+
+    _program.use();
+    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.01f, 200.0f);
+    _program.setUniformMat4("projection", proj);
+    _program.setUniformMat4("view", view);
+}
+void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    if (playerCount >= player_limit)
+        return;
+
+    playerInit(players[playerCount], *gs, ch->visual.sprite_object, playerControllers[playerCount]);
+    playerCount++;
+}
 
 int prevState = -1;
 #ifdef COLLISION_DEBUG
@@ -169,6 +230,10 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
     // gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./null.png", 0.0f, 0.0f, 1.0f, 1.0f, 1, 1, nullFunc, true));
 
     std::string temp_path;
+    for (int i = 0; i < sound_limit; ++i)
+    {
+        mainG.stopSound(i);
+    }
     // mainG.killParticles();
     switch (state)
     {
@@ -181,16 +246,27 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
         mainCam.offsetY = 0.0f;
         mainCam.offsetZ = 0.0f;
 
-        mainG.stopSound(1);
-        mainG.stopSound(2);
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
         gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/quit.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
+    case MENU_SCREEN:
+        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
+        mainG.playSound(0, 1, 0);
+
+        // put list of input changing buttons here
+
+        break;
     case CHARACTER_CREATION_SCREEN:
+        for (int i = 0; i < playerCount; ++i)
+        {
+            players[i].visual.Scale(0.48f, 0.48f, 1.0f);
+        }
         // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
         // gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
         gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
@@ -198,12 +274,10 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
-        mainCam.setBoundary(1.9f, -0.0f, -1.0f, 15.0f, 5.0f, 1.0f);
         mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
-        mainG.stopSound(0);
         // sound cuts out on level 2
-        mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
+        mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.playSound(1, 1, 0);
         // gui_data.background = sprite(&gui_object, "./img/bg/01.png", 1, 1);
         // gui_data.background.x = 6.5f;
@@ -246,6 +320,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", &gui_object, 4, 2);
             break;
         }
+        mainCam.setBoundary(1.9f, -0.0f, -1.0f, floor.roomWidth * 0.16f, 50.0f, 1.0f);
 
 #ifdef COLLISION_DEBUG
         for (int i = 0; i < 20; ++i)
@@ -283,65 +358,6 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
     prevState = state;
 }
 
-bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
-player playerControllers[player_limit];
-character players[player_limit];
-void playerInit(character &pl, game_system &game, object *player_object, player &controller)
-{
-    pl = character(player_object, "./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
-    pl.visual.Scale(0.32f, 0.32f, 1.0f);
-    if (glfwJoystickIsGamepad(playerGamepadCount + 1))
-    {
-        ++playerGamepadCount;
-        controller.gamepad_id = playerGamepadCount;
-    }
-    pl.plControl = &controller;
-
-    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
-    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0f);
-    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0f);
-    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0f);
-    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
-    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
-
-    game.Add(&pl);
-}
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy)
-{
-    dg = dungeon(tilePath.c_str(), dungeon_object, fx, fy);
-    dg.readRoomFile(levelPath.c_str());
-}
-
-// feh
-void updateView(shader &_program)
-{
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glm::mat4 view = glm::mat4(1.0f);
-    glm::mat4 proj;
-
-    mainCam.cameraPosition += mainCam.cameraVelocity;
-    mainCam.update(0.2f);
-
-    _program.use();
-    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.01f, 200.0f);
-    _program.setUniformMat4("projection", proj);
-    _program.setUniformMat4("view", view);
-}
-void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
-{
-    if (playerCount >= player_limit)
-        return;
-
-    playerInit(players[playerCount], *gs, ch->visual.sprite_object, playerControllers[playerCount]);
-    playerCount++;
-}
-
 game_system game;
 int main()
 {
@@ -370,10 +386,13 @@ int main()
     }
 
     shader shaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
-    shader testProgram("./shaders/default.vertex", "./shaders/white.fragment");
+    shader textShaderProgram("./shaders/text.vertex", "./shaders/text.fragment");
 
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
+    object spriteText(OBJ_TEXT);
+
+    // int fonterror = loadFont("./stb/rainyhearts.ttf");
 
     // declare 'sprites' or game objects here
     // sprite yoursprite(&[spriteRect | spriteCube]);
@@ -386,9 +405,11 @@ int main()
     float current_time = 0;
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     dungeon mainDungeon("./img/tiles.png", &spriteRect, 4, 2); // lmao
-    // mainDungeon.readRoomFile("./levels/01.lvl");
+    mainDungeon.readRoomFile("./levels/01.lvl");
     mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
     playerInit(players[0], game, &spriteRect, playerControllers[0]);
     prevState = WIN_SCREEN;
@@ -401,6 +422,11 @@ int main()
         std::cout << game_sound_result << " sound error\n";
     }
 
+    loadFont("./stb/rainyhearts.ttf");
+    glm::mat4 textProjection = glm::ortho(0.0f, static_cast<float>(window_width), 0.0f, static_cast<float>(window_height));
+    textShaderProgram.use();
+    textShaderProgram.setUniformMat4("projection", textProjection);
+
     while (!glfwWindowShouldClose(window))
     {
         float past_time = current_time;
@@ -410,15 +436,17 @@ int main()
         mouseUpdate(window);
         processInput(window);
 
-        updateView(shaderProgram);
+        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // window.clear();
+        updateView(shaderProgram);
+        // textrender(spriteText, textShaderProgram, "pacman is the best package manager", 25.0f, 25.0f, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+
         if (state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
             state = DUNGEON_SCREEN;
         }
-        // menuData(game, mainPlayer, mainDungeon, spriteRect);
         menuData(game, players[0], mainDungeon, spriteRect, soundEngine);
         gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, true);
         for (int i = 0; i < game.particlesystemcount; ++i)
@@ -432,6 +460,16 @@ int main()
             {
                 players[i].visual.Put(-1.4f + i * 0.22f, 0.0f, 0.0f);
                 players[i].visual.Draw(shaderProgram);
+            }
+            renderText(spriteText, textShaderProgram, "Character Select", 25.0f, 625.0f, 2.0f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        }
+        if (state == MENU_SCREEN)
+        {
+            renderText(spriteText, textShaderProgram, "Settings", 25.0f, 625.0f, 2.0f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            renderText(spriteText, textShaderProgram, "Controls", 50.0f, 525.0f, 1.6f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            for (int i = 0; i < control_limit; ++i)
+            {
+                renderText(spriteText, textShaderProgram, controlsetstrings[i], 50.0f, 425.0f - i * 50.0f, 1.6f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
             }
         }
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
@@ -452,8 +490,6 @@ int main()
             {
                 lowestCamYLevel -= 2.0f * delta_time;
             }
-// mainDungeon.changeScreenViewPosition(screen, mainPlayer.visual.rect.getPosition().x, mainPlayer.visual.rect.getPosition().y);
-// window.setView(screen);
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < 20; ++i)
             {
@@ -492,7 +528,6 @@ int main()
                 if (game.characters[i]->visual.empty)
                     continue;
 
-                // window.draw(game.characters[i]->visual.rect);
                 game.characters[i]->visual.Draw(shaderProgram);
 
                 if (game.characters[i]->plControl == nullptr)
@@ -522,8 +557,8 @@ int main()
         }
         gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, false);
 
-        glfwSwapBuffers(window);
         glfwPollEvents();
+        glfwSwapBuffers(window);
     }
     // ma_engine_uninit(&soundEngine);
 
@@ -659,9 +694,23 @@ void processInput(GLFWwindow *window)
             mainCam.cameraPosition.x += 10.0f * delta_time;
         }
     }
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+
+    static bool menuKeyHeld = false;
+    static game_state returnState;
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS)
     {
-        glfwSetWindowShouldClose(window, true);
+        menuKeyHeld = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && state != MENU_SCREEN)
+    {
+        returnState = state;
+        state = MENU_SCREEN;
+        menuKeyHeld = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && state == MENU_SCREEN)
+    {
+        state = returnState;
+        menuKeyHeld = true;
     }
 
     if (glfwGetKey(window, GLFW_KEY_C))

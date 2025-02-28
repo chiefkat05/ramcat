@@ -15,8 +15,32 @@ const unsigned int collision_id_limit = 8;
 struct tile
 {
     unsigned int id = 0;
-    int collisionID = -1;
-    bool collisiontaken = false;
+    int collisionID = -1, specialTileID = -1;
+    bool collisionTaken = false;
+};
+
+enum specialTiles
+{
+    TILE_BUTTON_0,
+    TILE_BUTTON_1,
+    TILE_BUTTON_2,
+    TILE_BUTTON_3,
+    TILE_BUTTON_4,
+    TILE_SPRING_0,
+    TILE_SPRING_1,
+    TILE_SPRING_2,
+    TILE_SPRING_3,
+    TILE_SPRING_4,
+    TILE_SPRING_5,
+    TILE_SPRING_6,
+    TILE_SPRING_7,
+    TILE_SPRING_8,
+    TILE_SPRING_9,
+    TILE_WALL_BUTTON_0,
+    TILE_WALL_BUTTON_1,
+    TILE_WALL_BUTTON_2,
+    TILE_WALL_BUTTON_3,
+    TILE_WALL_BUTTON_4
 };
 
 struct dungeon

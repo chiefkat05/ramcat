@@ -75,6 +75,7 @@ void dungeon::readRoomFile(const char *path)
         }
     }
 
+    int uTileIDIncrement = 0;
     while (std::getline(file, line))
     {
         if (line.size() > roomWidth)
@@ -119,6 +120,8 @@ void dungeon::readRoomFile(const char *path)
             case '5':
                 tiles[i][roomHeight].id = 4;
                 tiles[i][roomHeight].collisionID = 5;
+                // std::cout << "set 5: collisionID = " << tiles[i][roomHeight].collisionID << " hmm\n";
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case '6':
                 tiles[i][roomHeight].id = 0;
@@ -127,6 +130,7 @@ void dungeon::readRoomFile(const char *path)
             case '7':
                 tiles[i][roomHeight].id = 6;
                 tiles[i][roomHeight].collisionID = 7;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             default:
                 tiles[i][roomHeight].id = -1;
@@ -142,10 +146,6 @@ void dungeon::readRoomFile(const char *path)
     // spawnLocationY = (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
 
     file.close();
-    if (file.is_open())
-    {
-        std::cout << "file didn't close!\n";
-    }
 
     // it's not as good as it could be, but I love this thing
     int collisionstartx = -1, collisionstarty = -1, collisionendx = -1, collisionendy = -1;
@@ -158,8 +158,18 @@ void dungeon::readRoomFile(const char *path)
         {
             for (int x = lookXMin; x < lookXLimit; ++x)
             {
+                if (tiles[x][y].collisionID == c && collisionstartx == -1 && tiles[x][y].specialTileID > -1 && !tiles[x][y].collisionTaken)
+                {
+                    collisionstartx = x;
+                    collisionstarty = y;
+                    collisionendx = x + 1;
+                    collisionendy = y + 1;
+                    tiles[x][y].collisionTaken = true;
+                    std::cout << c << " ?? skip true\n";
+                    goto collisionAddition; // I think this is correct usage
+                }
                 // if current spot is valid for collision and collision box not started yet, start collision box
-                if (tiles[x][y].collisionID == c && !tiles[x][y].collisiontaken && collisionstartx == -1)
+                if (tiles[x][y].collisionID == c && !tiles[x][y].collisionTaken && collisionstartx == -1)
                 {
                     collisionstartx = x;
                     collisionstarty = y;
@@ -171,14 +181,14 @@ void dungeon::readRoomFile(const char *path)
                 }
 
                 // if current spot is valid for collision and collision x not ended yet or x position is within start and end x bounds (when y is different)
-                if (tiles[x][y].collisionID == c && !tiles[x][y].collisiontaken && (collisionendx == -1 || x >= collisionstartx && x < collisionendx))
+                if (tiles[x][y].collisionID == c && !tiles[x][y].collisionTaken && (collisionendx == -1 || x >= collisionstartx && x < collisionendx))
                 {
-                    tiles[x][y].collisiontaken = true;
+                    tiles[x][y].collisionTaken = true;
                 }
 
                 // if collision x started and collision x not ended and x hits the end or the next tile lacks collision or the next tile is part of a
                 // different box, set end x to next tile
-                if (collisionstartx != -1 && collisionendx == -1 && (x + 1 > roomWidth || tiles[x + 1][y].collisionID != c || tiles[x + 1][y].collisiontaken))
+                if (collisionstartx != -1 && collisionendx == -1 && (x + 1 > roomWidth || tiles[x + 1][y].collisionID != c || tiles[x + 1][y].collisionTaken))
                 {
 #ifdef DEBUG_COLLISIONS
                     std::cout << x << " found x\n";
@@ -194,13 +204,13 @@ void dungeon::readRoomFile(const char *path)
 #ifdef DEBUG_COLLISIONS
                 if (collisionstartx != -1 && collisionendy == -1 && collisionendx == -1)
                 {
-                    std::cout << tiles[x][y + 1].collisionID << ", " << tiles[x][y + 1].collisiontaken << " test\n";
+                    std::cout << tiles[x][y + 1].collisionID << ", " << tiles[x][y + 1].collisionTaken << " test\n";
                 }
 #endif
                 if (collisionstartx != -1 && collisionendy == -1 &&
                     (collisionendx != -1 && x >= collisionstartx && x < collisionendx &&
-                         (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisiontaken) ||
-                     y + 1 == roomHeight || collisionendx == -1 && x >= collisionstartx && (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisiontaken)))
+                         (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisionTaken) ||
+                     y + 1 == roomHeight || collisionendx == -1 && x >= collisionstartx && (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisionTaken)))
                 {
 #ifdef DEBUG_COLLISIONS
                     std::cout << y << " found y\n";
@@ -226,12 +236,16 @@ void dungeon::readRoomFile(const char *path)
                 std::cout << "<---------------------------------------------------------------------->\n";
 #endif
 
+            collisionAddition:
                 int newystart = static_cast<int>(roomHeight) - collisionstarty + 1;
                 int newyend = static_cast<int>(roomHeight) - collisionendy + 1;
                 collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f + 0.08f,
                                                             collisionendx * 0.16f, newystart * 0.16f + 0.08f);
 
+                collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
                 collision_boxes[collision_box_count].collisionID = c;
+                // std::cout << "collisionID = " << c << " and collision.collisionID = " << collision_boxes[collision_box_count].collisionID
+                //           << " also utid = " << collision_boxes[collision_box_count].specialTileID << " hmm\n";
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)
                 {
@@ -254,9 +268,4 @@ void dungeon::readRoomFile(const char *path)
             }
         }
     }
-
-    viewBoundsX = 128.0f;
-    viewBoundsY = 64.0f;
-    viewBoundsWidth = roomWidth * dungeonSprite.spriteW;
-    viewBoundsHeight = -64.0f + (roomHeight / 2) * dungeonSprite.spriteH; // idk rn do later pls
 }
