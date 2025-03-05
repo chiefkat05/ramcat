@@ -156,9 +156,189 @@ character players[player_limit];
 std::string controlsetstrings[] = {
     "Up", "Left", "Right", "Down", "Shield", "Sword", "Bubble", "Spawn"};
 
-void playerInit(character &pl, game_system &game, object *player_object, player &controller)
+// special thanks to https://gist.github.com/0xD34DC0DE/910855d41786b962127ae401da2a3441 for the strings so I don't have to do this myself
+constexpr const char *const LUT44To96[]{"Comma",
+                                        "Minus",
+                                        "Period",
+                                        "Slash",
+                                        "Num0",
+                                        "Num1",
+                                        "Num2",
+                                        "Num3",
+                                        "Num4",
+                                        "Num5",
+                                        "Num6",
+                                        "Num7",
+                                        "Num8",
+                                        "Num9",
+                                        "Invalid",
+                                        "Semicolon",
+                                        "Invalid",
+                                        "Equal",
+                                        "Invalid",
+                                        "Invalid",
+                                        "Invalid",
+                                        "A",
+                                        "B",
+                                        "C",
+                                        "D",
+                                        "E",
+                                        "F",
+                                        "G",
+                                        "H",
+                                        "I",
+                                        "J",
+                                        "K",
+                                        "L",
+                                        "M",
+                                        "N",
+                                        "O",
+                                        "P",
+                                        "Q",
+                                        "R",
+                                        "S",
+                                        "T",
+                                        "U",
+                                        "V",
+                                        "W",
+                                        "X",
+                                        "Y",
+                                        "Z",
+                                        "LeftBracket",
+                                        "Backslash",
+                                        "RightBracket",
+                                        "Invalid",
+                                        "Invalid",
+                                        "GraveAccent"};
+
+constexpr const char *const LUT256To348[]{"Escape",
+                                          "Enter",
+                                          "Tab",
+                                          "Backspace",
+                                          "Insert",
+                                          "Delete",
+                                          "Right",
+                                          "Left",
+                                          "Down",
+                                          "Up",
+                                          "PageUp",
+                                          "PageDown",
+                                          "Home",
+                                          "End",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "CapsLock",
+                                          "ScrollLock",
+                                          "NumLock",
+                                          "PrintScreen",
+                                          "Pause",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "F1",
+                                          "F2",
+                                          "F3",
+                                          "F4",
+                                          "F5",
+                                          "F6",
+                                          "F7",
+                                          "F8",
+                                          "F9",
+                                          "F10",
+                                          "F11",
+                                          "F12",
+                                          "F13",
+                                          "F14",
+                                          "F15",
+                                          "F16",
+                                          "F17",
+                                          "F18",
+                                          "F19",
+                                          "F20",
+                                          "F21",
+                                          "F22",
+                                          "F23",
+                                          "F24",
+                                          "F25",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Keypad0",
+                                          "Keypad1",
+                                          "Keypad2",
+                                          "Keypad3",
+                                          "Keypad4",
+                                          "Keypad5",
+                                          "Keypad6",
+                                          "Keypad7",
+                                          "Keypad8",
+                                          "Keypad9",
+                                          "KeypadDecimal",
+                                          "KeypadDivide",
+                                          "KeypadMultiply",
+                                          "KeypadSubtract",
+                                          "KeypadAdd",
+                                          "KeypadEnter",
+                                          "KeypadEqual",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "LeftShift",
+                                          "LeftControl",
+                                          "LeftAlt",
+                                          "LeftSuper",
+                                          "RightShift",
+                                          "RightControl",
+                                          "RightAlt",
+                                          "RightSuper",
+                                          "Menu"};
+
+constexpr const char *KeyCodeToString(int keycode) noexcept
 {
-    pl = character(player_object, "./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
+    if (keycode == 32)
+    {
+        return "Space";
+    } // Common key, don't treat as an unlikely scenario
+
+    if (keycode >= 44 && keycode <= 96) [[likely]]
+    {
+        return LUT44To96[keycode - 44];
+    }
+
+    if (keycode >= 256 && keycode <= 348) [[likely]]
+    {
+        return LUT256To348[keycode - 256];
+    }
+
+    // Unlikely scenario where the keycode didn't fall inside one of the two lookup tables
+    switch (keycode)
+    {
+    case 39:
+        return "Apostrophe";
+    case 161:
+        return "World1";
+    case 162:
+        return "Wordl2";
+    default:
+        return "Unknown";
+    }
+}
+
+void playerInit(character &pl, game_system &game, player &controller)
+{
+    pl = character("./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
     pl.visual.Scale(0.32f, 0.32f, 1.0f);
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
@@ -180,9 +360,9 @@ void playerInit(character &pl, game_system &game, object *player_object, player 
     game.Add(&pl);
 }
 
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, object *dungeon_object, unsigned int fx, unsigned int fy)
+void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    dg = dungeon(tilePath.c_str(), dungeon_object, fx, fy);
+    dg = dungeon(tilePath.c_str(), fx, fy);
     dg.readRoomFile(levelPath.c_str());
 }
 
@@ -209,7 +389,8 @@ void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
     if (playerCount >= player_limit)
         return;
 
-    playerInit(players[playerCount], *gs, ch->visual.sprite_object, playerControllers[playerCount]);
+    playerInit(players[playerCount], *gs, playerControllers[playerCount]);
+    players[playerCount].visual.Scale(0.48f, 0.48f, 1.0f);
     playerCount++;
 }
 
@@ -219,7 +400,7 @@ sprite delots[20];
 sprite dePl;
 #endif
 // edit all guis here
-void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_object, ma_engine &s_engine)
+void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_engine)
 {
     if (state == prevState)
         return;
@@ -248,42 +429,57 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/quit.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
-        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
+        mainCam.setBoundary(0.0f, -0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
+        mainCam.lockTo(nullptr, nullptr, nullptr);
+        mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
+        mainCam.offsetX = 0.0f;
+        mainCam.offsetY = 0.0f;
+        mainCam.offsetZ = 0.0f;
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
         mainG.playSound(0, 1, 0);
 
-        // put list of input changing buttons here
-
+        // put text in here as ui_element instead of using renderText() in main func! Not hard and keeps it standard! So do it!
+        // also make text UI_CLICKABLE_TEXT and code in the text button stuff pls
+        for (int i = 0; i < control_limit; ++i)
+        {
+            // control buttons here
+            gui_data.elements.push_back(ui_element(UI_TEXT, KeyCodeToString(players[0].plControl->inputs[i]), 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f, 1, 1, nullFunc));
+        }
         break;
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
             players[i].visual.Scale(0.48f, 0.48f, 1.0f);
         }
-        // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
+        // gui_data.background = sprit, "./test.png", 1, 1);
         // gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/add_player.png", 0.2f, 0.4f, 16.0f, 16.0f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, &gui_object, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0f, 16.0f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
+        for (int i = 0; i < playerCount; ++i)
+        {
+            players[i].visual.Scale(0.32f, 0.32f, 1.0f);
+        }
         mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
         // sound cuts out on level 2
         mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
         mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
         mainG.playSound(1, 1, 0);
-        // gui_data.background = sprite(&gui_object, "./img/bg/01.png", 1, 1);
+        // gui_data.background = sprit, "./img/bg/01.png", 1, 1);
         // gui_data.background.x = 6.5f;
         // gui_data.background.y = 0.4f;
         // gui_data.background.Scale(17.778f, 2.0f, 1.0f);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
         if (mainG.levelincreasing)
         {
             mainG.levelincreasing = false;
@@ -292,24 +488,24 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
         switch (mainG.level)
         {
         case 0:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", &gui_object, 4, 4);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 4);
             break;
         case 1:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", &gui_object, 4, 4);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 4);
             break;
         case 2:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", &gui_object, 4, 4);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 4);
             break;
             // break;
         case 3:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", &gui_object, 4, 4);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 4);
             break;
         case 4:
             state = START_SCREEN;
-            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.lvl", &gui_object, 4, 4);
+            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.lvl", 4, 4);
             return;
         case 5:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.lvl", &gui_object, 4, 4);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.lvl", 4, 4);
             break;
         case 6:
             // state = MENU_SCREEN;
@@ -317,7 +513,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, object &gui_obj
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", &gui_object, 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 2);
             break;
         }
         mainCam.setBoundary(1.9f, -0.0f, -1.0f, floor.roomWidth * 0.16f, 50.0f, 1.0f);
@@ -408,10 +604,10 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    dungeon mainDungeon("./img/tiles.png", &spriteRect, 4, 2); // lmao
+    dungeon mainDungeon("./img/tiles.png", 4, 2); // lmao
     mainDungeon.readRoomFile("./levels/01.lvl");
     mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
-    playerInit(players[0], game, &spriteRect, playerControllers[0]);
+    playerInit(players[0], game, playerControllers[0]);
     prevState = WIN_SCREEN;
 
     ma_engine soundEngine;
@@ -427,6 +623,8 @@ int main()
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
 
+    // sprite testText("Test Text Here", 0.0f, 0.0f);
+
     while (!glfwWindowShouldClose(window))
     {
         float past_time = current_time;
@@ -441,17 +639,18 @@ int main()
 
         updateView(shaderProgram);
         // textrender(spriteText, textShaderProgram, "pacman is the best package manager", 25.0f, 25.0f, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+        // testText.Draw(textShaderProgram, spriteText);
 
         if (state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
             state = DUNGEON_SCREEN;
         }
-        menuData(game, players[0], mainDungeon, spriteRect, soundEngine);
-        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, true);
+        menuData(game, players[0], mainDungeon, soundEngine);
+        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, mousePressed, mouseReleased, delta_time, true);
         for (int i = 0; i < game.particlesystemcount; ++i)
         {
-            game.particles[i]->draw(window, shaderProgram, delta_time);
+            game.particles[i]->draw(window, shaderProgram, spriteRect, delta_time);
         }
 
         if (state == CHARACTER_CREATION_SCREEN)
@@ -459,7 +658,7 @@ int main()
             for (int i = 0; i < playerCount; ++i)
             {
                 players[i].visual.Put(-1.4f + i * 0.22f, 0.0f, 0.0f);
-                players[i].visual.Draw(shaderProgram);
+                players[i].visual.Draw(shaderProgram, spriteRect);
             }
             renderText(spriteText, textShaderProgram, "Character Select", 25.0f, 625.0f, 2.0f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         }
@@ -521,14 +720,14 @@ int main()
                 dePl.Draw(shaderProgram); // debug pls get rid of this later
 #endif
 
-            mainDungeon.draw(window, shaderProgram);
+            mainDungeon.draw(window, shaderProgram, spriteRect);
 
             for (int i = 0; i < game.characterCount; ++i)
             {
                 if (game.characters[i]->visual.empty)
                     continue;
 
-                game.characters[i]->visual.Draw(shaderProgram);
+                game.characters[i]->visual.Draw(shaderProgram, spriteRect);
 
                 if (game.characters[i]->plControl == nullptr)
                     continue;
@@ -555,7 +754,7 @@ int main()
                 state = WON_LEVEL_STATE;
             }
         }
-        gui_data.screenDraw(window, shaderProgram, mouseX, mouseY, mousePressed, mouseReleased, delta_time, false);
+        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, mousePressed, mouseReleased, delta_time, false);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

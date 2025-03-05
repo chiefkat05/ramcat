@@ -118,7 +118,7 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(object *spriteObject, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
     void MoveTo(float _x, float _y, dungeon *currentDungeon);
 

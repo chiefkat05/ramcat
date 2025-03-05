@@ -49,11 +49,10 @@ struct sprite
     unsigned int sprite_texture;
     bool empty = true;
     // object_type obj_type;
-    object *sprite_object = nullptr;
     const char *texture_path;
 
     sprite();
-    sprite(object *_obj, const char *path, unsigned int _fx = 1, unsigned int _fy = 1);
+    sprite(const char *path, unsigned int _fx = 1, unsigned int _fy = 1);
 
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
     void textureInit();
@@ -64,7 +63,7 @@ struct sprite
     void Rotate(float _rx, float _ry, float _rz);
     void SetColor(float _r, float _g, float _b, float _a);
 
-    void Draw(shader &program);
+    void Draw(shader &program, object &sprite_object);
 };
 
 struct animation

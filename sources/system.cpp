@@ -46,12 +46,12 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24);
     // collider = aabb(visual.x, visual.y, visual.x + 0.01f, visual.y + 0.01f);
 }
-character::character(object *spriteObject, std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
     // visual = sprite(filepath.c_str(), x, y, fx, fy);
     // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
     // visual.rect.setOrigin(sf::Vector2(static_cast<float>(visual.spriteW) * 0.5f, static_cast<float>(visual.spriteH)));
-    visual = sprite(spriteObject, filepath.c_str(), fx, fy);
+    visual = sprite(filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0f);
     // posX = visual.rect.getPosition().x;
     // posY = visual.rect.getPosition().y;

@@ -28,7 +28,7 @@ particlesystem::particlesystem()
 
     particle_count = 0.0f;
 }
-particlesystem::particlesystem(const char *path, object *obj, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
+particlesystem::particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
                                float sX, float sY, float sW, float sH)
 {
     variables[PV_SPAWN_TIMER] = 0.0f;
@@ -44,7 +44,7 @@ particlesystem::particlesystem(const char *path, object *obj, unsigned int frame
         particle_count = _particle_count;
 
     // visual = sprite(path, 0.0f, 0.0f, 1, 1);
-    visual = sprite(obj, path, 1, 1);
+    visual = sprite(path, 1, 1);
     // visual.rect.setTextureRect(sf::IntRect(visual.spriteW * ((frame % visual.framesX) - 1), visual.spriteH * (frame / visual.framesX),
     //                                        visual.spriteW, visual.spriteH));
     // visual.textureX = visual.spriteW * ((frame % visual.framesX) - 1);
@@ -107,7 +107,7 @@ void particlesystem::update(float delta_time)
         //     particles[i].visual.rect.setColor(sf::Color(255, 255, 255, static_cast<int>(particles[i].life * particles[i].lifestartalphamultiple)));
     }
 }
-void particlesystem::draw(GLFWwindow *win, shader &program, float delta_time)
+void particlesystem::draw(GLFWwindow *win, shader &program, object &sprite_object, float delta_time)
 {
     for (int i = 0; i < particle_count; ++i)
     {
@@ -119,7 +119,7 @@ void particlesystem::draw(GLFWwindow *win, shader &program, float delta_time)
         // std::cout << visual.rect.getPosition().x << ", " << visual.rect.getPosition().y << " pos\n";
 
         // win.draw(visual.rect);
-        visual.Draw(program);
+        visual.Draw(program, sprite_object);
     }
 }
 

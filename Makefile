@@ -6,7 +6,7 @@ all:
 windows:
 	x86_64-w64-mingw32-g++ -c ./sources/*.cpp ./sources/*.c
 	x86_64-w64-mingw32-g++ -c ./glad/glad.c
-	x86_64-w64-mingw32-g++ ./*.o -o main -lglfw3 -lopengl32 -lwinmm -lgdi32 -lfreetype -static -O2
+	x86_64-w64-mingw32-g++ ./*.o -o main -lglfw3 -lopengl32 -lwinmm -lfreetype -lgdi32 -O2
 
 clean:
 	rm -f ./*.o

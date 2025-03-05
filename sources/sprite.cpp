@@ -57,9 +57,8 @@ float cube_vertices[] = {
 sprite::sprite()
 {
 }
-sprite::sprite(object *_obj, const char *path, unsigned int _fx, unsigned int _fy)
+sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy)
 {
-    sprite_object = _obj;
     textureWidth = 1.0f;
     textureHeight = 1.0f;
 
@@ -147,35 +146,42 @@ void sprite::SetColor(float _r, float _g, float _b, float _a)
     cola = _a;
 }
 
-void sprite::Draw(shader &program)
+void sprite::Draw(shader &program, object &sprite_object)
 {
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(x, y, z));
-    model = glm::rotate(model, glm::radians(rx), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, glm::vec3(w, h, d));
     program.use();
-    program.setUniformInt("tex", 0);
-    program.setUniformMat4("model", model);
-    program.setUniformVec2("tex_offset", textureX, textureY);
-    program.setUniformVec2("tex_scale", textureWidth, textureHeight);
-    program.setUniformVec4("color", colr, colg, colb, cola);
+    if (sprite_object.obj_type != OBJ_TEXT)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(x, y, z));
+        model = glm::rotate(model, glm::radians(rx), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, glm::vec3(w, h, d));
+        program.setUniformInt("tex", 0);
+        program.setUniformMat4("model", model);
+        program.setUniformVec2("tex_offset", textureX, textureY);
+        program.setUniformVec2("tex_scale", textureWidth, textureHeight);
+        program.setUniformVec4("color", colr, colg, colb, cola);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, sprite_texture);
-    switch (sprite_object->obj_type)
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, sprite_texture);
+    }
+
+    switch (sprite_object.obj_type)
     {
     case OBJ_QUAD:
-        glBindVertexArray(sprite_object->VAO);
-        glBindBuffer(1, sprite_object->EBO);
+        glBindVertexArray(sprite_object.VAO);
+        glBindBuffer(1, sprite_object.EBO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         break;
     case OBJ_CUBE:
-        glBindVertexArray(sprite_object->VAO);
+        glBindVertexArray(sprite_object.VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         break;
     case OBJ_NULL:
+        break;
+    case OBJ_TEXT:
+        renderText(sprite_object, program, texture_path, x, y, w, glm::vec4(colr, colg, colb, cola));
         break;
     default:
         break;

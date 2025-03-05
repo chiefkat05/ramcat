@@ -61,11 +61,11 @@ struct dungeon
     unsigned int collision_box_count = 0;
 
     dungeon();
-    dungeon(const char *_tileSetPath, object *_spriteObject, unsigned int _fx, unsigned int _fy);
+    dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy);
 
     // void changeScreenViewPosition(glview &view, float newX, float newY);
 
-    void draw(GLFWwindow *win, shader &program);
+    void draw(GLFWwindow *win, shader &program, object &sprite_object);
 
     void readRoomFile(const char *path);
 };

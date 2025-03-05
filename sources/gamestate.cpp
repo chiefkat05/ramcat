@@ -7,33 +7,38 @@ const float pixel_divider = 36.0f;
 // connector host;
 // bool typingInput;
 
-ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg,
-                       character *_func_p, game_system *_func_gs, dungeon *_func_d,
-                       int _func_i, int *_linkValue)
-    : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
-{
-    background = bg;
-    utype = t;
-    posX = x;
-    posY = y;
-    trueX = x;
-    trueY = y;
-    visual.Put(x, y, 0.0f);
-    width = visual.spriteW;
-    height = visual.spriteH;
-    function = func;
-    func_p = _func_p;
-    func_gs = _func_gs;
-    func_d = _func_d;
-    func_i = _func_i;
-    value = _linkValue;
-}
-ui_element::ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY,
+// ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg,
+//                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
+//                        int _func_i, int *_linkValue)
+//     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
+// {
+//     background = bg;
+//     utype = t;
+//     posX = x;
+//     posY = y;
+//     trueX = x;
+//     trueY = y;
+//     visual.Put(x, y, 0.0f);
+//     width = visual.spriteW;
+//     height = visual.spriteH;
+//     function = func;
+//     func_p = _func_p;
+//     func_gs = _func_gs;
+//     func_d = _func_d;
+//     func_i = _func_i;
+//     value = _linkValue;
+// }
+ui_element::ui_element(ui_element_type t, const char *path, float x, float y, float w, float h, int frX, int frY,
                        void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
-    : visual(obj, path, frX, frY), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
+    : visual(path, frX, frY), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
 {
+    // if (t != UI_TEXT && t != UI_CLICKABLE_TEXT)
+    // {
+    //     visual = sprite(path, frX, frY);
+    //     anim = animation(&visual, 0, visual.framesX * visual.framesY, 1.0f);
+    // }
     background = bg;
     utype = t;
     trueX = x;
@@ -97,24 +102,35 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
         // visual.textureX = *value % visual.framesX;
         // visual.textureY = *value / visual.framesX;
         break;
+    case UI_TEXT:
+        break;
+    case UI_CLICKABLE_TEXT:
+        break;
     default:
         break;
     }
 }
 
-void gui::screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
+void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
 {
     if (quit)
         glfwSetWindowShouldClose(window, true);
 
     for (int i = 0; i < elements.size(); ++i)
     {
+
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
         elements[i].update(window, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
-        elements[i].visual.Draw(program);
+        if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
+        {
+            elements[i].visual.Draw(text_program, sprite_text_object);
+        }
+        else
+            elements[i].visual.Draw(program, sprite_object);
     }
+
     // background.Draw(program);
     // if (bgAnim._sprite != nullptr)
     // {

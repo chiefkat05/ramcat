@@ -12,7 +12,9 @@ enum ui_element_type
 {
     UI_CLICKABLE,
     UI_VALUEISFRAME,
-    UI_IMAGE
+    UI_IMAGE,
+    UI_TEXT,
+    UI_CLICKABLE_TEXT
 };
 struct ui_element
 {
@@ -31,10 +33,10 @@ struct ui_element
     ui_element_type utype;
     animation anim;
 
-    ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg = false,
-               character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
-               int _func_i = 0, int *_linkValue = nullptr);
-    ui_element(ui_element_type t, object *obj, const char *path, float x, float y, float w, float h, int frX, int frY,
+    // ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg = false,
+    //            character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
+    //            int _func_i = 0, int *_linkValue = nullptr);
+    ui_element(ui_element_type t, const char *path, float x, float y, float w, float h, int frX, int frY,
                void func(character *, game_system *, dungeon *, int), bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
@@ -59,7 +61,7 @@ struct gui
     std::vector<ui_element> elements;
     bool quit = false;
 
-    void screenDraw(GLFWwindow *window, shader &program, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front);
+    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front);
 };
 
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
