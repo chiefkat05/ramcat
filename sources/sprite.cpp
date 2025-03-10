@@ -57,7 +57,7 @@ float cube_vertices[] = {
 sprite::sprite()
 {
 }
-sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy)
+sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy, bool text)
 {
     textureWidth = 1.0f;
     textureHeight = 1.0f;
@@ -71,7 +71,8 @@ sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy)
     if (_fy > 1)
         framesY = _fy;
 
-    textureInit();
+    if (!text)
+        textureInit();
 }
 void sprite::textureInit()
 {
@@ -255,13 +256,15 @@ void object::objectKill()
 std::map<char, textCharacter> textCharacters;
 FT_Library font_ft;
 FT_Face font_face;
-void renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color)
+glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color)
 {
     shaderProgram.use();
     shaderProgram.setUniformVec4("textColor", color.x, color.y, color.z, color.w);
 
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(spriteObject.VAO);
+
+    glm::vec4 returnVec = glm::vec4(x, y, 0, 0);
 
     std::string::const_iterator c;
     for (c = text.begin(); c != text.end(); c++)
@@ -293,9 +296,16 @@ void renderText(object &spriteObject, shader &shaderProgram, std::string text, f
         unsigned int testAdvance = ch.Advance;
 
         x += (ch.Advance >> 6) * scale;
+
+        if (h > returnVec.w)
+            returnVec.w = h;
     }
+    returnVec = glm::vec4(returnVec.x, returnVec.y, x, returnVec.y + returnVec.w);
+
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    return returnVec;
 }
 
 int loadFont(const char *path)

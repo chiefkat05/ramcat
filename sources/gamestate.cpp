@@ -32,7 +32,7 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
                        void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
-    : visual(path, frX, frY), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
+    : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
 {
     // if (t != UI_TEXT && t != UI_CLICKABLE_TEXT)
     // {
@@ -45,7 +45,7 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
     trueY = y;
     posX = window_width / 2 + (x * (window_width / 2));
     posY = window_height / 2 - (y * (window_height / 2));
-    visual.Put(x * 1.7778f, y, 0.0f); // idk if this is necessary
+    visual.Put(x * (static_cast<float>(window_width) / static_cast<float>(window_height)), y, 0.0f);
     width = w / pixel_divider * (window_height / 2);
     height = h / pixel_divider * (window_height / 2);
     visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
@@ -58,13 +58,16 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
 }
 
 // get ui element animations set up
+int current_win_width, current_win_height;
 void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
 {
-    int win_width, win_height;
-    glfwGetFramebufferSize(window, &win_width, &win_height);
-    posX = win_width / 2 + (trueX * (win_width / 2));
-    posY = win_height / 2 - (trueY * (win_height / 2));
-    visual.Put(trueX * 1.7778f, trueY, 0.0f);
+    glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
+    if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
+    {
+        posX = current_win_width / 2 + (trueX * (current_win_width / 2));
+        posY = current_win_height / 2 - (trueY * (current_win_height / 2));
+    }
+    visual.Put(trueX * (static_cast<float>(window_width) / static_cast<float>(window_height)), trueY, 0.0f);
     switch (utype)
     {
     case UI_CLICKABLE:
@@ -105,6 +108,28 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
     case UI_TEXT:
         break;
     case UI_CLICKABLE_TEXT:
+        if (mouseX < posX || mouseX > width ||
+            mouseY > posY || mouseY < height)
+        {
+            if (visual.colr < 1.0f)
+            {
+                visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+            }
+            return;
+        }
+        buttonHovered = true;
+
+        if (!mousePressed)
+            visual.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+        else
+            visual.SetColor(0.7f, 0.7f, 0.7f, 0.7f);
+
+        if (!mouseReleased)
+            return;
+
+        visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+        function(func_p, func_gs, func_d, func_i);
         break;
     default:
         break;
@@ -113,19 +138,32 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
 
 void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
 {
+    float win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
+    float win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
+
     if (quit)
         glfwSetWindowShouldClose(window, true);
 
     for (int i = 0; i < elements.size(); ++i)
     {
-
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
         elements[i].update(window, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            elements[i].visual.Draw(text_program, sprite_text_object);
+            // elements[i].visual.Draw(text_program, sprite_text_object);
+            glm::vec4 boundingbox = renderText(sprite_text_object, text_program, elements[i].visual.texture_path,
+                                               elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
+                                               glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
+
+            boundingbox.y = window_height - boundingbox.y;
+            boundingbox.w = window_height - boundingbox.w;
+
+            elements[i].posX = boundingbox.x * win_ratio_x;
+            elements[i].posY = boundingbox.y * win_ratio_y;
+            elements[i].width = boundingbox.z * win_ratio_x;
+            elements[i].height = boundingbox.w * win_ratio_y;
         }
         else
             elements[i].visual.Draw(program, sprite_object);
@@ -136,6 +174,10 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
     // {
     //     bgAnim.run(delta_time, true);
     // }
+}
+ui_element *gui::mostRecentCreatedElement()
+{
+    return &elements[elements.size() - 1];
 }
 
 void startGame(character *p, game_system *gs, dungeon *d, int argv)

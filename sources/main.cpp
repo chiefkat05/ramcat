@@ -3,6 +3,8 @@
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
 
+// clean this up and put all functions at the bottom so menuData and main can be easiest to access
+
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
 #include "../headers/miniaudio.h"
@@ -18,6 +20,7 @@ float texCoords[] = {
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 float delta_time = 0.0f;
 bool mouseClicked = false, mousePressed = false, mouseReleased = false;
@@ -32,6 +35,7 @@ bool playerFacingRight = true;
 
 extern gui gui_data;
 extern game_state state;
+// std::string GAMEPAD_MAP_STRINGS[];
 
 camera mainCam(CAMERA_STATIONARY);
 // planning time
@@ -81,7 +85,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
     {
-        game.playSound(2, 0.15f, 0);
+        game.playSound(1, 0.15f, 0);
         stepsoundplayed = true;
     }
     if (!walkingkeypressed)
@@ -393,7 +397,50 @@ void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
     players[playerCount].visual.Scale(0.48f, 0.48f, 1.0f);
     playerCount++;
 }
+void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    if (playerCount <= 1)
+        return;
 
+    // delete (&players[playerCount]);
+    playerCount--;
+}
+/**
+    CONTROL_UP,
+    CONTROL_LEFT,
+    CONTROL_RIGHT,
+    CONTROL_DOWN,
+    CONTROL_SHIELD,
+    CONTROL_SWORD,
+    CONTROL_BUBBLE,
+    CONTROL_SPAWN_PLAYER,
+    control_limit **/
+controlset changingControl = control_limit;
+int uiElementForControlChangeIndex = 0;
+int playerIDForControl = 0;
+void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    changingControl = static_cast<controlset>(x);
+}
+void incrementPlayerIDForControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    playerIDForControl += x;
+    if (playerIDForControl < 0)
+    {
+        int cycleDifference = playerIDForControl;
+        playerIDForControl = playerCount;
+        playerIDForControl += cycleDifference;
+    }
+    if (playerIDForControl >= playerCount)
+    {
+        int cycleDifference = playerIDForControl - playerCount;
+        playerIDForControl = cycleDifference;
+    }
+}
+void goMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
+void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
+
+int playerIDForControlStrElementIndex = 0;
 int prevState = -1;
 #ifdef COLLISION_DEBUG
 sprite delots[20];
@@ -406,15 +453,14 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         return;
 
     gui_data.elements.clear();
-    // gui_data.background = sprite(&gui_object, "./test.png", 1, 1);
-    // gui_data.background = sprite(&gui_object, "./null.png", 1, 1);
-    // gui_data.elements.push_back(ui_element(UI_IMAGE, &gui_object, "./null.png", 0.0f, 0.0f, 1.0f, 1.0f, 1, 1, nullFunc, true));
 
-    std::string temp_path;
-    for (int i = 0; i < sound_limit; ++i)
-    {
-        mainG.stopSound(i);
-    }
+    std::string playerIDForControlStr = "Player " + std::to_string(playerIDForControl);
+
+    // sound channels system
+    // for (int i = 0; i < sound_limit; ++i) // sounds need to stop but also play lmao // maybe also need fade out or stuff // maybe fade out implementation will fix the other problem try it! // just use sound channels to overwrite on new state
+    // {
+    //     mainG.stopSound(i);
+    // }
     // mainG.killParticles();
     switch (state)
     {
@@ -430,7 +476,8 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, goMenuScreen));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
@@ -443,26 +490,54 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         mainCam.offsetY = 0.0f;
         mainCam.offsetZ = 0.0f;
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0f, 10.0f, 1, 1, leaveMenuScreen));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
+        mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 1, 0);
 
-        // put text in here as ui_element instead of using renderText() in main func! Not hard and keeps it standard! So do it!
-        // also make text UI_CLICKABLE_TEXT and code in the text button stuff pls
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", 25.0f, 625.0f, 64.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", 100.0f, 575.0f, 1.6f * 32.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), 125.0f, 500.0f, 1.2f * 32.0f, 0.0f, 1, 1));
+        playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
+        for (int i = 0; i < control_limit; ++i)
+        {
+            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), 50.0f, 425.0f - i * 50.0f, 1.6f * 32.0f, 0.0f, 1, 1));
+        }
+        if (playerIDForControl >= playerCount)
+            playerIDForControl = playerCount - 1;
+
+        uiElementForControlChangeIndex = gui_data.elements.size();
         for (int i = 0; i < control_limit; ++i)
         {
             // control buttons here
-            gui_data.elements.push_back(ui_element(UI_TEXT, KeyCodeToString(players[0].plControl->inputs[i]), 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f, 1, 1, nullFunc));
+            if (players[playerIDForControl].plControl == nullptr)
+            {
+                continue;
+            }
+            if (players[playerIDForControl].plControl->gamepad_id <= -1)
+            {
+                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
+                                                       1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
+            }
+            else
+            {
+                gui_data.elements.push_back(ui_element(UI_TEXT, "[Using Gamepad]", 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
+                                                       1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
+            }
         }
+
         break;
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
             players[i].visual.Scale(0.48f, 0.48f, 1.0f);
         }
-        // gui_data.background = sprit, "./test.png", 1, 1);
-        // gui_data.background.Scale(3.5556f, 2.0f, 1.0f);
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0f, 16.0f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.4f, 0.4f, 16.0f, 16.0f, 1, 1, removePlayer, false, &p1, &mainG, &floor));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
@@ -471,14 +546,9 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             players[i].visual.Scale(0.32f, 0.32f, 1.0f);
         }
         mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
-        // sound cuts out on level 2
-        mainG.initSound("./snd/mus/castle-1.mp3", 1, &s_engine);
-        mainG.initSound("./snd/fx/kstep.wav", 2, &s_engine);
-        mainG.playSound(1, 1, 0);
-        // gui_data.background = sprit, "./img/bg/01.png", 1, 1);
-        // gui_data.background.x = 6.5f;
-        // gui_data.background.y = 0.4f;
-        // gui_data.background.Scale(17.778f, 2.0f, 1.0f);
+        mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
+        mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine);
+        mainG.playSound(0, 1.5f, 0);
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
         if (mainG.levelincreasing)
         {
@@ -529,19 +599,18 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
 #endif
 
         playerSpawnDist = 0;
-        for (int i = 0; i < mainG.characterCount; ++i)
+        for (int i = 0; i < playerCount; ++i)
         {
-            if (mainG.characters[i]->plControl == nullptr)
+            if (players[i].plControl == nullptr)
                 continue;
 
-            mainG.characters[i]->visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0f);
-            playerSpawnDist += mainG.characters[i]->visual.h + 0.02f;
+            players[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0f);
+            playerSpawnDist += players[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
 
         break;
     case WON_LEVEL_STATE:
-        std::cout << "wow\n";
         if (!mainG.levelincreasing)
         {
             std::cout << "how did you do this\n";
@@ -573,6 +642,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -587,16 +657,6 @@ int main()
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
     object spriteText(OBJ_TEXT);
-
-    // int fonterror = loadFont("./stb/rainyhearts.ttf");
-
-    // declare 'sprites' or game objects here
-    // sprite yoursprite(&[spriteRect | spriteCube]);
-    // yoursprite.setTexture([path], yoursprite.sprite_texture);
-    // yoursprite.Put(10.0f, 10.0f, 0.0f);
-    // yoursprite.Scale(2.0f, 2.0f, 2.0f);
-    // yoursprite.Rotate(0.0f, 0.0f, 45.0f);
-    // yoursprite.Draw(shader, [spriteRect | spriteCube].VAO, [spriteRect | spriteCube].EBO);
 
     float current_time = 0;
 
@@ -623,9 +683,7 @@ int main()
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
 
-    // sprite testText("Test Text Here", 0.0f, 0.0f);
-
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window)) // now what // screen resolution options, fullscreen toggle, volume sliders // or just volume buttons no pressure
     {
         float past_time = current_time;
         current_time = glfwGetTime();
@@ -638,8 +696,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         updateView(shaderProgram);
-        // textrender(spriteText, textShaderProgram, "pacman is the best package manager", 25.0f, 25.0f, 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-        // testText.Draw(textShaderProgram, spriteText);
 
         if (state == WON_LEVEL_STATE && game.levelincreasing)
         {
@@ -664,11 +720,29 @@ int main()
         }
         if (state == MENU_SCREEN)
         {
-            renderText(spriteText, textShaderProgram, "Settings", 25.0f, 625.0f, 2.0f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-            renderText(spriteText, textShaderProgram, "Controls", 50.0f, 525.0f, 1.6f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            std::string playerIDTextStr = std::string("Player ") + std::to_string(playerIDForControl);
+            gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr.c_str();
+
             for (int i = 0; i < control_limit; ++i)
             {
-                renderText(spriteText, textShaderProgram, controlsetstrings[i], 50.0f, 425.0f - i * 50.0f, 1.6f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+                if (players[playerIDForControl].plControl == nullptr)
+                {
+                    gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path = "[No Player]";
+                    gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_TEXT;
+                    continue;
+                }
+
+                gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_CLICKABLE_TEXT;
+                if (players[playerIDForControl].plControl->gamepad_id <= -1)
+                {
+                    gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
+                        KeyCodeToString(players[playerIDForControl].plControl->inputs[i]);
+                }
+                else
+                {
+                    gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_TEXT;
+                    gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path = "[Using Gamepad]";
+                }
             }
         }
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
@@ -836,6 +910,25 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
         break;
     }
 }
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    if (state == MENU_SCREEN && changingControl != control_limit)
+    {
+        players[playerIDForControl].plControl->inputs[changingControl] = key;
+        changingControl = control_limit;
+    }
+}
+
+static game_state returnState;
+void goMenuScreen(character *p, game_system *gs, dungeon *d, int argv)
+{
+    returnState = state;
+    state = MENU_SCREEN;
+}
+void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv)
+{
+    state = returnState;
+}
 void processInput(GLFWwindow *window)
 {
     if (mainCam.type == CAMERA_3D)
@@ -895,7 +988,6 @@ void processInput(GLFWwindow *window)
     }
 
     static bool menuKeyHeld = false;
-    static game_state returnState;
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS)
     {
         menuKeyHeld = false;
@@ -912,19 +1004,19 @@ void processInput(GLFWwindow *window)
         menuKeyHeld = true;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_C))
+    if (glfwGetKey(window, GLFW_KEY_F1))
     {
         mainCam.current_fov = mainCam.zoomed_fov;
     }
-    if (!glfwGetKey(window, GLFW_KEY_C))
+    if (!glfwGetKey(window, GLFW_KEY_F1))
     {
         mainCam.current_fov = mainCam.fov;
     }
 
-    if (!glfwGetKey(window, GLFW_KEY_F) && mainCam.swappedFullscreen)
+    if (!glfwGetKey(window, GLFW_KEY_F2) && mainCam.swappedFullscreen)
         mainCam.swappedFullscreen = false;
 
-    if (glfwGetKey(window, GLFW_KEY_F) && !mainCam.swappedFullscreen)
+    if (glfwGetKey(window, GLFW_KEY_F2) && !mainCam.swappedFullscreen)
     {
         mainCam.fullscreen = !mainCam.fullscreen;
         if (mainCam.fullscreen)

@@ -120,7 +120,6 @@ void dungeon::readRoomFile(const char *path)
             case '5':
                 tiles[i][roomHeight].id = 4;
                 tiles[i][roomHeight].collisionID = 5;
-                // std::cout << "set 5: collisionID = " << tiles[i][roomHeight].collisionID << " hmm\n";
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case '6':
@@ -165,7 +164,6 @@ void dungeon::readRoomFile(const char *path)
                     collisionendx = x + 1;
                     collisionendy = y + 1;
                     tiles[x][y].collisionTaken = true;
-                    std::cout << c << " ?? skip true\n";
                     goto collisionAddition; // I think this is correct usage
                 }
                 // if current spot is valid for collision and collision box not started yet, start collision box
@@ -244,8 +242,7 @@ void dungeon::readRoomFile(const char *path)
 
                 collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
                 collision_boxes[collision_box_count].collisionID = c;
-                // std::cout << "collisionID = " << c << " and collision.collisionID = " << collision_boxes[collision_box_count].collisionID
-                //           << " also utid = " << collision_boxes[collision_box_count].specialTileID << " hmm\n";
+
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)
                 {

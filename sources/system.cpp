@@ -5,6 +5,10 @@
 
 // soundhandler soundplayer;
 
+// std::string GAMEPAD_MAP_STRINGS[] = {"PAD_A", "PAD_B", "PAD_X", "PAD_Y", "PAD_DPAD_LEFT", "PAD_DPAD_RIGHT", "PAD_DPAD_UP", "PAD_DPAD_DOWN",
+//                                      "PAD_START", "PAD_SELECT", "PAD_STICK_LEFT", "PAD_STICK_RIGHT", "PAD_STICK_UP", "PAD_STICK_DOWN", "PAD_BUTTON_R", "PAD_BUTTON_L",
+//                                      "PAD_TRIGGER_R", "PAD_TRIGGER_L", "PAD_RSTICK_LEFT", "PAD_RSTICK_RIGHT", "PAD_RSTICK_UP", "PAD_RSTICK_DOWN"};
+
 bool player::getInput(GLFWwindow *window, controlset action)
 {
     if (gamepad_id > -1)
@@ -124,11 +128,7 @@ void character::updatePosition(float delta_time)
     {
         return;
     }
-
-    // std::cout << visual.x << ", " << visual.y << ", vel = " << velocityY * delta_time << ", without dt: " << velocityY << ", onground: " << onGround << " hmm\n";
-
     visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0f);
-    // std::cout << visual.x << ", " << visual.y << "\n";
 }
 
 void character::SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd)
@@ -215,9 +215,17 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
 {
     if (game_sounds[id].pDataSource != nullptr)
     {
-        return;
+        if (sound_paths[id] != path)
+        {
+            ma_sound_uninit(&game_sounds[id]);
+        }
+        else
+        {
+            return;
+        }
     }
-    game_sound_result = ma_sound_init_from_file(engine, path, 0, NULL, NULL, &game_sounds[id]);
+    sound_paths[id] = path;
+    game_sound_result = ma_sound_init_from_file(engine, sound_paths[id], 0, NULL, NULL, &game_sounds[id]);
     if (game_sound_result != MA_SUCCESS)
     {
         std::cout << game_sound_result << " sound error\n";
@@ -225,6 +233,10 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
 }
 void game_system::playSound(unsigned int id, float volume, int start_time)
 {
+    if (ma_sound_is_playing(&game_sounds[id]))
+    {
+        return;
+    }
     ma_sound_set_volume(&game_sounds[id], volume);
     ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
     ma_sound_start(&game_sounds[id]);
@@ -336,7 +348,6 @@ void game_system::update(dungeon &floor, float delta_time)
                     {
                         for (int y = 0; y < floor.roomHeight; ++y)
                         {
-                            // std::cout << floor.tiles[x][y].specialTileID << " hmm\n";
                             if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
                             {
                                 // std::cout << floor.tiles[x][y].specialTileID << " correct\n";

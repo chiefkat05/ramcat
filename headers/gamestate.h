@@ -16,6 +16,9 @@ enum ui_element_type
     UI_TEXT,
     UI_CLICKABLE_TEXT
 };
+
+void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
+
 struct ui_element
 {
     sprite visual;
@@ -37,7 +40,7 @@ struct ui_element
     //            character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
     //            int _func_i = 0, int *_linkValue = nullptr);
     ui_element(ui_element_type t, const char *path, float x, float y, float w, float h, int frX, int frY,
-               void func(character *, game_system *, dungeon *, int), bool bg = false,
+               void func(character *, game_system *, dungeon *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
 
@@ -62,9 +65,8 @@ struct gui
     bool quit = false;
 
     void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front);
+    ui_element *mostRecentCreatedElement();
 };
-
-void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
 
 void startGame(character *p, game_system *gs, dungeon *d, int argv);
 void optionsTab(character *p, game_system *gs, dungeon *d, int argv);

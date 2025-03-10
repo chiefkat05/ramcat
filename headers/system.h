@@ -54,31 +54,31 @@ enum controlset
     CONTROL_SPAWN_PLAYER,
     control_limit
 };
-enum GAMEPAD_MAP
-{
-    PAD_BUTTON_A,
-    PAD_BUTTON_B,
-    PAD_BUTTON_X,
-    PAD_BUTTON_Y,
-    PAD_DPAD_LEFT,
-    PAD_DPAD_RIGHT,
-    PAD_DPAD_UP,
-    PAD_DPAD_DOWN,
-    PAD_START,
-    PAD_SELECT,
-    PAD_STICK_LEFT,
-    PAD_STICK_RIGHT,
-    PAD_STICK_UP,
-    PAD_STICK_DOWN,
-    PAD_BUTTON_R,
-    PAD_BUTTON_L,
-    PAD_TRIGGER_R,
-    PAD_TRIGGER_L,
-    PAD_RSTICK_LEFT,
-    PAD_RSTICK_RIGHT,
-    PAD_RSTICK_UP,
-    PAD_RSTICK_DOWN
-};
+// enum GAMEPAD_MAP
+// {
+//     PAD_BUTTON_A,
+//     PAD_BUTTON_B,
+//     PAD_BUTTON_X,
+//     PAD_BUTTON_Y,
+//     PAD_DPAD_LEFT,
+//     PAD_DPAD_RIGHT,
+//     PAD_DPAD_UP,
+//     PAD_DPAD_DOWN,
+//     PAD_START,
+//     PAD_SELECT,
+//     PAD_STICK_LEFT,
+//     PAD_STICK_RIGHT,
+//     PAD_STICK_UP,
+//     PAD_STICK_DOWN,
+//     PAD_BUTTON_R,
+//     PAD_BUTTON_L,
+//     PAD_TRIGGER_R,
+//     PAD_TRIGGER_L,
+//     PAD_RSTICK_LEFT,
+//     PAD_RSTICK_RIGHT,
+//     PAD_RSTICK_UP,
+//     PAD_RSTICK_DOWN
+// };
 
 struct player
 {
@@ -87,7 +87,6 @@ struct player
                                          GLFW_GAMEPAD_BUTTON_DPAD_DOWN, GLFW_GAMEPAD_BUTTON_A, GLFW_GAMEPAD_BUTTON_B, GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER,
                                          GLFW_GAMEPAD_BUTTON_BACK};
     int gamepad_id = -1;
-    // int p2inputs[control_limit] = {87, 65, 68, 83, 86, 67};
 
     bool getInput(GLFWwindow *window, controlset action);
 };
@@ -143,6 +142,7 @@ struct game_system
     bool paused = false;
     ma_result game_sound_result;
     ma_sound game_sounds[sound_limit];
+    const char *sound_paths[sound_limit];
     bool music_playing = false;
 
     void Add(character *e);

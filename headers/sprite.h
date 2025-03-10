@@ -52,7 +52,7 @@ struct sprite
     const char *texture_path;
 
     sprite();
-    sprite(const char *path, unsigned int _fx = 1, unsigned int _fy = 1);
+    sprite(const char *path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
 
     // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
     void textureInit();
@@ -142,7 +142,7 @@ struct textCharacter
     unsigned int Advance;
 };
 int loadFont(const char *path);
-void renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color);
+glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color);
 
 // void clearAllTextures();
 
