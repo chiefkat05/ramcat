@@ -340,6 +340,12 @@ constexpr const char *KeyCodeToString(int keycode) noexcept
     }
 }
 
+const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON_X", "PAD_BUTTON_Y", "PAD_BUTTON_LBUTTON",
+                                     "PAD_BUTTON_RBUTTON", "PAD_BUTTON_BACK", "PAD_BUTTON_START", "PAD_BUTTON_HOME", "PAD_BUTTON_LSTICK",
+                                     "PAD_BUTTON_RSTICK", "PAD_DPAD_UP", "PAD_DPAD_RIGHT", "PAD_DPAD_DOWN", "PAD_DPAD_LEFT", "how did you do this",
+                                     "PAD_LSTICK_LEFT", "PAD_LSTICK_RIGHT", "PAD_LSTICK_UP", "PAD_LSTICK_DOWN", "PAD_RSTICK_LEFT", "PAD_RSTICK_RIGHT",
+                                     "PAD_RSTICK_UP", "PAD_RSTICK_DOWN", "PAD_LTRIGGER", "PAD_RTRIGGER"};
+
 void playerInit(character &pl, game_system &game, player &controller)
 {
     pl = character("./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
@@ -418,9 +424,81 @@ void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
 controlset changingControl = control_limit;
 int uiElementForControlChangeIndex = 0;
 int playerIDForControl = 0;
+int watchGamepadID = -1;
 void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
 {
     changingControl = static_cast<controlset>(x);
+
+    if (ch->plControl == nullptr)
+        return;
+
+    watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
+}
+
+extern float gamepad_stick_sensitivity;
+int gamepadInputWatch()
+{
+    if (watchGamepadID <= -1)
+        return -1;
+
+    GLFWgamepadstate gState;
+
+    if (!glfwGetGamepadState(GLFW_JOYSTICK_1 + watchGamepadID, &gState))
+        return -1;
+
+    for (int i = 0; i < GLFW_GAMEPAD_BUTTON_LAST + 1; ++i)
+    {
+        if (gState.buttons[i])
+        {
+            return i;
+            break;
+        }
+    }
+    if (gState.axes[0] < -gamepad_stick_sensitivity)
+    {
+        return PAD_LSTICK_LEFT;
+    }
+    if (gState.axes[0] > gamepad_stick_sensitivity)
+    {
+        return PAD_LSTICK_RIGHT;
+    }
+    if (gState.axes[1] < -gamepad_stick_sensitivity)
+    {
+        return PAD_LSTICK_UP;
+    }
+    if (gState.axes[1] > gamepad_stick_sensitivity)
+    {
+        return PAD_LSTICK_DOWN;
+    }
+    if (gState.axes[2] < -gamepad_stick_sensitivity)
+    {
+        return PAD_RSTICK_LEFT;
+    }
+    if (gState.axes[2] > gamepad_stick_sensitivity)
+    {
+        return PAD_RSTICK_RIGHT;
+    }
+    if (gState.axes[3] < -gamepad_stick_sensitivity)
+    {
+        return PAD_RSTICK_UP;
+    }
+    if (gState.axes[3] > gamepad_stick_sensitivity)
+    {
+        return PAD_RSTICK_DOWN;
+    }
+    if (gState.axes[4] > gamepad_stick_sensitivity)
+    {
+        return PAD_TRIGGER_L;
+    }
+    if (gState.axes[5] > gamepad_stick_sensitivity)
+    {
+        return PAD_TRIGGER_R;
+    }
+    return -1;
+    // for (int i = 0; i < GLFW_GAMEPAD_AXIS_LAST; ++i)
+    // {
+
+    // }
 }
 void incrementPlayerIDForControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
 {
@@ -436,6 +514,10 @@ void incrementPlayerIDForControlFunc(character *ch, game_system *gs, dungeon *dg
         int cycleDifference = playerIDForControl - playerCount;
         playerIDForControl = cycleDifference;
     }
+}
+void fullScreenToggleFunc(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    mainCam.fullscreen = !mainCam.fullscreen;
 }
 void goMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
 void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
@@ -524,7 +606,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             }
             else
             {
-                gui_data.elements.push_back(ui_element(UI_TEXT, "[Using Gamepad]", 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
+                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
                                                        1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
             }
         }
@@ -720,6 +802,13 @@ int main()
         }
         if (state == MENU_SCREEN)
         {
+            int gamepadButtonPressedLast = gamepadInputWatch();
+            if (changingControl != control_limit && gamepadButtonPressedLast != -1 && players[playerIDForControl].plControl != nullptr)
+            {
+                players[playerIDForControl].plControl->gamepad_inputs[changingControl] = static_cast<GAMEPAD_MAP>(gamepadButtonPressedLast);
+                changingControl = control_limit;
+            }
+
             std::string playerIDTextStr = std::string("Player ") + std::to_string(playerIDForControl);
             gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr.c_str();
 
@@ -740,10 +829,12 @@ int main()
                 }
                 else
                 {
-                    gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_TEXT;
-                    gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path = "[Using Gamepad]";
+                    gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
+                        gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]];
                 }
             }
+
+            gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 500.0f, 700.0f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
         }
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
@@ -912,7 +1003,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 }
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    if (state == MENU_SCREEN && changingControl != control_limit)
+    if (state == MENU_SCREEN && changingControl != control_limit && players[playerIDForControl].plControl->gamepad_id <= -1)
     {
         players[playerIDForControl].plControl->inputs[changingControl] = key;
         changingControl = control_limit;

@@ -5,10 +5,18 @@
 
 // soundhandler soundplayer;
 
-// std::string GAMEPAD_MAP_STRINGS[] = {"PAD_A", "PAD_B", "PAD_X", "PAD_Y", "PAD_DPAD_LEFT", "PAD_DPAD_RIGHT", "PAD_DPAD_UP", "PAD_DPAD_DOWN",
-//                                      "PAD_START", "PAD_SELECT", "PAD_STICK_LEFT", "PAD_STICK_RIGHT", "PAD_STICK_UP", "PAD_STICK_DOWN", "PAD_BUTTON_R", "PAD_BUTTON_L",
-//                                      "PAD_TRIGGER_R", "PAD_TRIGGER_L", "PAD_RSTICK_LEFT", "PAD_RSTICK_RIGHT", "PAD_RSTICK_UP", "PAD_RSTICK_DOWN"};
-
+/**
+    PAD_LSTICK_LEFT,
+    PAD_LSTICK_RIGHT,
+    PAD_LSTICK_UP,
+    PAD_LSTICK_DOWN,
+    PAD_RSTICK_LEFT,
+    PAD_RSTICK_RIGHT,
+    PAD_RSTICK_UP,
+    PAD_RSTICK_DOWN,
+    PAD_TRIGGER_L,
+    PAD_TRIGGER_R */
+float gamepad_stick_sensitivity = 0.5f;
 bool player::getInput(GLFWwindow *window, controlset action)
 {
     if (gamepad_id > -1)
@@ -17,9 +25,48 @@ bool player::getInput(GLFWwindow *window, controlset action)
         // const unsigned char *gamepadbuttons = glfwGetJoystickButtons(gamepad_id, &count);
         GLFWgamepadstate state;
         glfwGetGamepadState(gamepad_id, &state);
-        if (state.buttons[gamepad_inputs[action]])
+
+        if (gamepad_inputs[action] < PAD_seperation_value && state.buttons[gamepad_inputs[action]])
         {
             return true;
+        }
+        else if (gamepad_inputs[action] > PAD_seperation_value)
+        {
+            switch (gamepad_inputs[action])
+            {
+            case PAD_LSTICK_LEFT:
+                return (state.axes[0] < -gamepad_stick_sensitivity);
+                break;
+            case PAD_LSTICK_RIGHT:
+                return (state.axes[0] > gamepad_stick_sensitivity);
+                break;
+            case PAD_LSTICK_DOWN:
+                return (state.axes[1] > gamepad_stick_sensitivity);
+                break;
+            case PAD_LSTICK_UP:
+                return (state.axes[1] < -gamepad_stick_sensitivity);
+                break;
+            case PAD_RSTICK_LEFT:
+                return (state.axes[2] < -gamepad_stick_sensitivity);
+                break;
+            case PAD_RSTICK_RIGHT:
+                return (state.axes[2] > gamepad_stick_sensitivity);
+                break;
+            case PAD_RSTICK_DOWN:
+                return (state.axes[3] > gamepad_stick_sensitivity);
+                break;
+            case PAD_RSTICK_UP:
+                return (state.axes[3] < -gamepad_stick_sensitivity);
+                break;
+            case PAD_TRIGGER_L:
+                return (state.axes[4] > gamepad_stick_sensitivity);
+                break;
+            case PAD_TRIGGER_R:
+                return (state.axes[5] > gamepad_stick_sensitivity);
+                break;
+            default:
+                break;
+            }
         }
     }
     if (gamepad_id == -1)

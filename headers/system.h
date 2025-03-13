@@ -54,38 +54,70 @@ enum controlset
     CONTROL_SPAWN_PLAYER,
     control_limit
 };
-// enum GAMEPAD_MAP
-// {
-//     PAD_BUTTON_A,
-//     PAD_BUTTON_B,
-//     PAD_BUTTON_X,
-//     PAD_BUTTON_Y,
-//     PAD_DPAD_LEFT,
-//     PAD_DPAD_RIGHT,
-//     PAD_DPAD_UP,
-//     PAD_DPAD_DOWN,
-//     PAD_START,
-//     PAD_SELECT,
-//     PAD_STICK_LEFT,
-//     PAD_STICK_RIGHT,
-//     PAD_STICK_UP,
-//     PAD_STICK_DOWN,
-//     PAD_BUTTON_R,
-//     PAD_BUTTON_L,
-//     PAD_TRIGGER_R,
-//     PAD_TRIGGER_L,
-//     PAD_RSTICK_LEFT,
-//     PAD_RSTICK_RIGHT,
-//     PAD_RSTICK_UP,
-//     PAD_RSTICK_DOWN
-// };
+
+/**
+#define GLFW_GAMEPAD_BUTTON_A               0
+#define GLFW_GAMEPAD_BUTTON_B               1
+#define GLFW_GAMEPAD_BUTTON_X               2
+#define GLFW_GAMEPAD_BUTTON_Y               3
+#define GLFW_GAMEPAD_BUTTON_LEFT_BUMPER     4
+#define GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER    5
+#define GLFW_GAMEPAD_BUTTON_BACK            6
+#define GLFW_GAMEPAD_BUTTON_START           7
+#define GLFW_GAMEPAD_BUTTON_GUIDE           8
+#define GLFW_GAMEPAD_BUTTON_LEFT_THUMB      9
+#define GLFW_GAMEPAD_BUTTON_RIGHT_THUMB     10
+#define GLFW_GAMEPAD_BUTTON_DPAD_UP         11
+#define GLFW_GAMEPAD_BUTTON_DPAD_RIGHT      12
+#define GLFW_GAMEPAD_BUTTON_DPAD_DOWN       13
+#define GLFW_GAMEPAD_BUTTON_DPAD_LEFT       14
+#define GLFW_GAMEPAD_BUTTON_LAST            GLFW_GAMEPAD_BUTTON_DPAD_LEFT
+
+#define GLFW_GAMEPAD_AXIS_LEFT_X        0
+#define GLFW_GAMEPAD_AXIS_LEFT_Y        1
+#define GLFW_GAMEPAD_AXIS_RIGHT_X       2
+#define GLFW_GAMEPAD_AXIS_RIGHT_Y       3
+#define GLFW_GAMEPAD_AXIS_LEFT_TRIGGER  4
+#define GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER 5
+#define GLFW_GAMEPAD_AXIS_LAST          GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER*/
+enum GAMEPAD_MAP
+{
+    PAD_BUTTON_A,
+    PAD_BUTTON_B,
+    PAD_BUTTON_X,
+    PAD_BUTTON_Y,
+    PAD_BUTTON_L,
+    PAD_BUTTON_R,
+    PAD_SELECT,
+    PAD_START,
+    PAD_HOME,
+    PAD_THUMB_L,
+    PAD_THUMB_R,
+    PAD_DPAD_UP,
+    PAD_DPAD_RIGHT,
+    PAD_DPAD_DOWN,
+    PAD_DPAD_LEFT,
+
+    PAD_seperation_value,
+
+    PAD_LSTICK_LEFT,
+    PAD_LSTICK_RIGHT,
+    PAD_LSTICK_UP,
+    PAD_LSTICK_DOWN,
+    PAD_RSTICK_LEFT,
+    PAD_RSTICK_RIGHT,
+    PAD_RSTICK_UP,
+    PAD_RSTICK_DOWN,
+    PAD_TRIGGER_L,
+    PAD_TRIGGER_R
+};
 
 struct player
 {
     int inputs[control_limit] = {265, 263, 262, 264, 44, 46, GLFW_KEY_BACKSLASH, GLFW_KEY_1};
-    int gamepad_inputs[control_limit] = {GLFW_GAMEPAD_BUTTON_X, GLFW_GAMEPAD_BUTTON_DPAD_LEFT, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,
-                                         GLFW_GAMEPAD_BUTTON_DPAD_DOWN, GLFW_GAMEPAD_BUTTON_A, GLFW_GAMEPAD_BUTTON_B, GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER,
-                                         GLFW_GAMEPAD_BUTTON_BACK};
+    GAMEPAD_MAP gamepad_inputs[control_limit] = {PAD_BUTTON_X, PAD_DPAD_LEFT, PAD_DPAD_RIGHT,
+                                                 PAD_DPAD_DOWN, PAD_BUTTON_A, PAD_BUTTON_B, PAD_TRIGGER_R,
+                                                 PAD_SELECT};
     int gamepad_id = -1;
 
     bool getInput(GLFWwindow *window, controlset action);
