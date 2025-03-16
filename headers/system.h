@@ -179,6 +179,8 @@ struct game_system
 
     void Add(character *e);
     void Add(particlesystem *p);
+    void Remove(character *e);
+    void Remove(particlesystem *p);
 
     // void initSoundEngine();
     // void handleMusic();

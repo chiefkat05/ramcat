@@ -14,7 +14,10 @@ enum ui_element_type
     UI_VALUEISFRAME,
     UI_IMAGE,
     UI_TEXT,
-    UI_CLICKABLE_TEXT
+    UI_CLICKABLE_TEXT,
+    UI_SLIDER,    // can use value for slider position?
+    UI_DROPDOWN,  // can use value for index number?
+    UI_TEXT_INPUT // can use visual.texture_path for text
 };
 
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
@@ -23,7 +26,7 @@ struct ui_element
 {
     sprite visual;
     float trueX, trueY;
-    float posX, posY, width, height;
+    float posX, posY, width, height, sliderPos = 0.0f, sliderLimit = 1.0f;
     int *value;
 
     void (*function)(character *, game_system *, dungeon *, int);

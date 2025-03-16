@@ -42,18 +42,8 @@ camera mainCam(CAMERA_STATIONARY);
 
 void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
 {
-    if (p.onGround)
-    {
-        p.velocityX = 0.0f;
-    }
-    else if (!p.onGround && p.velocityX > 0.0f)
-    {
-        p.velocityX -= 15.0f * delta_time;
-    }
-    else if (!p.onGround && p.velocityX < 0.0f)
-    {
-        p.velocityX += 15.0f * delta_time;
-    }
+    p.velocityX = 0.0f;
+
     bool walkingkeypressed = false;
     static bool stepsoundplayed = false;
     if (p.plControl->getInput(window, CONTROL_LEFT))
@@ -408,8 +398,8 @@ void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
     if (playerCount <= 1)
         return;
 
-    // delete (&players[playerCount]);
     playerCount--;
+    gs->Remove(&players[playerCount]);
 }
 /**
     CONTROL_UP,
@@ -611,6 +601,8 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             }
         }
 
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/arrow_left.png", 0.1f, 0.1f, 10.0f, 10.0f, 1, 1));
+
         break;
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
@@ -619,7 +611,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         }
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0f, 16.0f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.4f, 0.4f, 16.0f, 16.0f, 1, 1, removePlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0f, 16.0f, 1, 1, removePlayer, false, &p1, &mainG, &floor));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:

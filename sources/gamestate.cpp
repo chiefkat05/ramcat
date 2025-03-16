@@ -34,11 +34,6 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
                        int _func_i, int *_linkValue)
     : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
 {
-    // if (t != UI_TEXT && t != UI_CLICKABLE_TEXT)
-    // {
-    //     visual = sprite(path, frX, frY);
-    //     anim = animation(&visual, 0, visual.framesX * visual.framesY, 1.0f);
-    // }
     background = bg;
     utype = t;
     trueX = x;
@@ -131,6 +126,21 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
 
         function(func_p, func_gs, func_d, func_i);
         break;
+    case UI_SLIDER:
+        if (mouseX < posX - width * 0.5f || mouseX > posX + width * 0.5f ||
+            mouseY < posY - height * 0.5f || mouseY > posY + height * 0.5f)
+        {
+            return;
+        }
+
+        if (mousePressed)
+        {
+            // another valuefor slidervalue
+            sliderPos = ((mouseX - (posX - width * 0.5f)) / 300.0f); // limit // figure out what's special about 300 - is it simply width * 3?
+            std::cout << (mouseX - (posX - width * 0.5f)) << ", " << width << ", " << sliderPos << " hmm\n";
+            // *value = sliderPos * sliderLimit;
+        }
+        break;
     default:
         break;
     }
@@ -166,7 +176,18 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
             elements[i].height = boundingbox.w * win_ratio_y;
         }
         else
+        {
             elements[i].visual.Draw(program, sprite_object);
+            if (elements[i].utype == UI_SLIDER)
+            {
+                float holdPosition = elements[i].visual.x;
+                elements[i].visual.x = elements[i].sliderPos;
+                elements[i].visual.w *= 0.1f;
+                elements[i].visual.Draw(program, sprite_object);
+                elements[i].visual.x = holdPosition;
+                elements[i].visual.w *= 10.0f;
+            }
+        }
     }
 
     // background.Draw(program);

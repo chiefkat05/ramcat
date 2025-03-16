@@ -240,6 +240,29 @@ void game_system::Add(particlesystem *p)
     particles[particlesystemcount] = p;
     ++particlesystemcount;
 }
+void game_system::Remove(character *e)
+{
+    int removeIndex = -1;
+    for (int i = 0; i < characterCount; ++i)
+    {
+        if (characters[i] == e)
+        {
+            removeIndex = i;
+            break;
+        }
+    }
+    if (removeIndex == -1)
+    {
+        std::cout << "\n\tWarning - character not found in game_system and could not be removed.\n";
+        return;
+    }
+
+    for (int i = removeIndex; i < characterCount; ++i)
+    {
+        characters[i] = characters[i + 1];
+    }
+    --characterCount;
+}
 
 // void game_system::handleMusic()
 // {
