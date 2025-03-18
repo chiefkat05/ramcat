@@ -25,7 +25,7 @@ void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
 struct ui_element
 {
     sprite visual;
-    float trueX, trueY;
+    float trueX, trueY, trueWidth, trueHeight;
     float posX, posY, width, height, sliderPos = 0.0f, sliderLimit = 1.0f;
     int *value;
 
@@ -46,6 +46,15 @@ struct ui_element
                void func(character *, game_system *, dungeon *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
+    void slider_values(float sP, float sL)
+    {
+        sliderPos = visual.x + sP;
+
+        if (sP > sL)
+            sliderPos = visual.x + sL;
+
+        sliderLimit = sL;
+    }
 
     void update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
 };

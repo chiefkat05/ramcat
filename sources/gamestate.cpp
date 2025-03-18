@@ -4,6 +4,10 @@ gui gui_data;
 game_state state;
 
 const float pixel_divider = 36.0f;
+const float windowAspectDivision = (static_cast<float>(window_width) / static_cast<float>(window_height));
+int current_win_width = window_width, current_win_height = window_height;
+float win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
+float win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
 // connector host;
 // bool typingInput;
 
@@ -38,9 +42,11 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
     utype = t;
     trueX = x;
     trueY = y;
+    trueWidth = w;
+    trueHeight = h;
     posX = window_width / 2 + (x * (window_width / 2));
     posY = window_height / 2 - (y * (window_height / 2));
-    visual.Put(x * (static_cast<float>(window_width) / static_cast<float>(window_height)), y, 0.0f);
+    visual.Put(x * windowAspectDivision, y, 0.0f);
     width = w / pixel_divider * (window_height / 2);
     height = h / pixel_divider * (window_height / 2);
     visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
@@ -50,19 +56,25 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
     func_d = _func_d;
     func_i = _func_i;
     value = _linkValue;
+    sliderPos = visual.x;
 }
 
 // get ui element animations set up
-int current_win_width, current_win_height;
 void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
+
+    // float trueMouseX = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision;
+    // float trueMouseY = (mouseY / window_height) * 2.0f - 1.0f;
+
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
     {
         posX = current_win_width / 2 + (trueX * (current_win_width / 2));
-        posY = current_win_height / 2 - (trueY * (current_win_height / 2));
+        posY = current_win_height / 2 - (visual.y * (current_win_height / 2));
+        width = trueWidth / pixel_divider * (current_win_height / 2);
+        height = trueHeight / pixel_divider * (current_win_height / 2);
     }
-    visual.Put(trueX * (static_cast<float>(window_width) / static_cast<float>(window_height)), trueY, 0.0f);
+    visual.Put(trueX * windowAspectDivision, trueY, 0.0f);
     switch (utype)
     {
     case UI_CLICKABLE:
@@ -135,10 +147,13 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
 
         if (mousePressed)
         {
-            // another valuefor slidervalue
-            sliderPos = ((mouseX - (posX - width * 0.5f)) / 300.0f); // limit // figure out what's special about 300 - is it simply width * 3?
-            std::cout << (mouseX - (posX - width * 0.5f)) << ", " << width << ", " << sliderPos << " hmm\n";
-            // *value = sliderPos * sliderLimit;
+            // equation for converting pixel mouseX to window coords
+            // might make an actual variable if is needed
+            // sliderPos = (((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision); // strange and funny
+
+            sliderPos = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision; // limit
+            if (value != nullptr)
+                *value = sliderPos * sliderLimit;
         }
         break;
     default:
@@ -148,8 +163,8 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
 
 void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
 {
-    float win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
-    float win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
+    win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
+    win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
 
     if (quit)
         glfwSetWindowShouldClose(window, true);
@@ -177,7 +192,6 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
         }
         else
         {
-            elements[i].visual.Draw(program, sprite_object);
             if (elements[i].utype == UI_SLIDER)
             {
                 float holdPosition = elements[i].visual.x;
@@ -187,6 +201,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
                 elements[i].visual.x = holdPosition;
                 elements[i].visual.w *= 10.0f;
             }
+            elements[i].visual.Draw(program, sprite_object);
         }
     }
 

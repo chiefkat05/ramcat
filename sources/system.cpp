@@ -16,7 +16,7 @@
     PAD_RSTICK_DOWN,
     PAD_TRIGGER_L,
     PAD_TRIGGER_R */
-float gamepad_stick_sensitivity = 0.5f;
+int gamepad_stick_sensitivity = 50;
 bool player::getInput(GLFWwindow *window, controlset action)
 {
     if (gamepad_id > -1)

@@ -425,7 +425,7 @@ void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
     watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
 }
 
-extern float gamepad_stick_sensitivity;
+extern int gamepad_stick_sensitivity;
 int gamepadInputWatch()
 {
     if (watchGamepadID <= -1)
@@ -444,43 +444,46 @@ int gamepadInputWatch()
             break;
         }
     }
-    if (gState.axes[0] < -gamepad_stick_sensitivity)
+
+    float realSensitivity = gamepad_stick_sensitivity * 0.001f;
+    std::cout << realSensitivity << " hmm\n";
+    if (gState.axes[0] < -realSensitivity)
     {
         return PAD_LSTICK_LEFT;
     }
-    if (gState.axes[0] > gamepad_stick_sensitivity)
+    if (gState.axes[0] > realSensitivity)
     {
         return PAD_LSTICK_RIGHT;
     }
-    if (gState.axes[1] < -gamepad_stick_sensitivity)
+    if (gState.axes[1] < -realSensitivity)
     {
         return PAD_LSTICK_UP;
     }
-    if (gState.axes[1] > gamepad_stick_sensitivity)
+    if (gState.axes[1] > realSensitivity)
     {
         return PAD_LSTICK_DOWN;
     }
-    if (gState.axes[2] < -gamepad_stick_sensitivity)
+    if (gState.axes[2] < -realSensitivity)
     {
         return PAD_RSTICK_LEFT;
     }
-    if (gState.axes[2] > gamepad_stick_sensitivity)
+    if (gState.axes[2] > realSensitivity)
     {
         return PAD_RSTICK_RIGHT;
     }
-    if (gState.axes[3] < -gamepad_stick_sensitivity)
+    if (gState.axes[3] < -realSensitivity)
     {
         return PAD_RSTICK_UP;
     }
-    if (gState.axes[3] > gamepad_stick_sensitivity)
+    if (gState.axes[3] > realSensitivity)
     {
         return PAD_RSTICK_DOWN;
     }
-    if (gState.axes[4] > gamepad_stick_sensitivity)
+    if (gState.axes[4] > realSensitivity)
     {
         return PAD_TRIGGER_L;
     }
-    if (gState.axes[5] > gamepad_stick_sensitivity)
+    if (gState.axes[5] > realSensitivity)
     {
         return PAD_TRIGGER_R;
     }
@@ -601,7 +604,11 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             }
         }
 
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/arrow_left.png", 0.1f, 0.1f, 10.0f, 10.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 500.0f, 600.0f, 24.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.65f, 0.55f, 30.0f, 6.0f, 1, 1, nullFunc,
+                                               false, nullptr, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
+        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 2.0f);
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 500.0f, 650.0f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
 
         break;
     case CHARACTER_CREATION_SCREEN:
@@ -623,7 +630,6 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
         mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine);
         mainG.playSound(0, 1.5f, 0);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
         if (mainG.levelincreasing)
         {
             mainG.levelincreasing = false;
@@ -632,28 +638,39 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         switch (mainG.level)
         {
         case 0:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 4);
             break;
         case 1:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 4);
             break;
         case 2:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 4);
             break;
             // break;
         case 3:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 4);
             break;
         case 4:
-            state = START_SCREEN;
-            // dungeonInit(mainG, floor, "./img/tiles.png", "./levels/B.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             return;
         case 5:
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/W.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             break;
         case 6:
-            // state = MENU_SCREEN;
-            state = START_SCREEN;
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            return;
+        case 7:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            return;
+        case 8:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            break;
+        case 9:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             return;
         default:
             std::cout << ":megamind: no level?\n";
@@ -825,8 +842,6 @@ int main()
                         gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]];
                 }
             }
-
-            gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 500.0f, 700.0f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
         }
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
