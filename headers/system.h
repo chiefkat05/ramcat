@@ -12,6 +12,7 @@ const unsigned int entity_limit = 64; // also change in dungeon.h since there's 
 const unsigned int character_limit = 6;
 const unsigned int animation_limit = 24;
 const unsigned int sound_limit = 32;
+const unsigned int sound_is_music_cutoff = 2;
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 const unsigned int player_limit = 12;
@@ -177,6 +178,8 @@ struct game_system
     const char *sound_paths[sound_limit];
     bool music_playing = false;
 
+    int music_volume = 100, sound_volume = 100;
+
     void Add(character *e);
     void Add(particlesystem *p);
     void Remove(character *e);
@@ -186,7 +189,7 @@ struct game_system
     // void handleMusic();
     void loopSound(unsigned int id);
     void initSound(const char *path, unsigned int id, ma_engine *engine);
-    void playSound(unsigned int id, float volume, int start_time);
+    void playSound(unsigned int id, int start_time, bool interrupt = false);
     void stopSound(unsigned int id);
     // void uninitMusic();
 

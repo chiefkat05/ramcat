@@ -6,8 +6,6 @@
 #include "system.h"
 #include <vector>
 
-extern bool buttonHovered;
-
 enum ui_element_type
 {
     UI_CLICKABLE,
@@ -26,8 +24,11 @@ struct ui_element
 {
     sprite visual;
     float trueX, trueY, trueWidth, trueHeight;
-    float posX, posY, width, height, sliderPos = 0.0f, sliderLimit = 1.0f;
+    float posX, posY, width, height, sliderPos = 0.0f;
+    int sliderLimit = 1;
     int *value;
+    bool selected = false;
+    glm::vec4 color;
 
     void (*function)(character *, game_system *, dungeon *, int);
     character *func_p;
@@ -46,17 +47,9 @@ struct ui_element
                void func(character *, game_system *, dungeon *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
-    void slider_values(float sP, float sL)
-    {
-        sliderPos = visual.x + sP;
+    void slider_values(float sP, int sL);
 
-        if (sP > sL)
-            sliderPos = visual.x + sL;
-
-        sliderLimit = sL;
-    }
-
-    void update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time);
+    void update(GLFWwindow *window, float mouseX, float mouseY, float delta_time);
 };
 
 enum game_state
@@ -76,7 +69,7 @@ struct gui
     std::vector<ui_element> elements;
     bool quit = false;
 
-    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front);
+    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, float delta_time, bool front);
     ui_element *mostRecentCreatedElement();
 };
 

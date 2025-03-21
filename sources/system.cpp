@@ -16,7 +16,7 @@
     PAD_RSTICK_DOWN,
     PAD_TRIGGER_L,
     PAD_TRIGGER_R */
-int gamepad_stick_sensitivity = 50;
+int gamepad_stick_sensitivity = 500;
 bool player::getInput(GLFWwindow *window, controlset action)
 {
     if (gamepad_id > -1)
@@ -25,6 +25,8 @@ bool player::getInput(GLFWwindow *window, controlset action)
         // const unsigned char *gamepadbuttons = glfwGetJoystickButtons(gamepad_id, &count);
         GLFWgamepadstate state;
         glfwGetGamepadState(gamepad_id, &state);
+
+        float realSensitivity = static_cast<float>(gamepad_stick_sensitivity) * 0.001f;
 
         if (gamepad_inputs[action] < PAD_seperation_value && state.buttons[gamepad_inputs[action]])
         {
@@ -35,34 +37,34 @@ bool player::getInput(GLFWwindow *window, controlset action)
             switch (gamepad_inputs[action])
             {
             case PAD_LSTICK_LEFT:
-                return (state.axes[0] < -gamepad_stick_sensitivity);
+                return (state.axes[0] < -realSensitivity);
                 break;
             case PAD_LSTICK_RIGHT:
-                return (state.axes[0] > gamepad_stick_sensitivity);
+                return (state.axes[0] > realSensitivity);
                 break;
             case PAD_LSTICK_DOWN:
-                return (state.axes[1] > gamepad_stick_sensitivity);
+                return (state.axes[1] > realSensitivity);
                 break;
             case PAD_LSTICK_UP:
-                return (state.axes[1] < -gamepad_stick_sensitivity);
+                return (state.axes[1] < -realSensitivity);
                 break;
             case PAD_RSTICK_LEFT:
-                return (state.axes[2] < -gamepad_stick_sensitivity);
+                return (state.axes[2] < -realSensitivity);
                 break;
             case PAD_RSTICK_RIGHT:
-                return (state.axes[2] > gamepad_stick_sensitivity);
+                return (state.axes[2] > realSensitivity);
                 break;
             case PAD_RSTICK_DOWN:
-                return (state.axes[3] > gamepad_stick_sensitivity);
+                return (state.axes[3] > realSensitivity);
                 break;
             case PAD_RSTICK_UP:
-                return (state.axes[3] < -gamepad_stick_sensitivity);
+                return (state.axes[3] < -realSensitivity);
                 break;
             case PAD_TRIGGER_L:
-                return (state.axes[4] > gamepad_stick_sensitivity);
+                return (state.axes[4] > realSensitivity);
                 break;
             case PAD_TRIGGER_R:
-                return (state.axes[5] > gamepad_stick_sensitivity);
+                return (state.axes[5] > realSensitivity);
                 break;
             default:
                 break;
@@ -301,13 +303,19 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
         std::cout << game_sound_result << " sound error\n";
     }
 }
-void game_system::playSound(unsigned int id, float volume, int start_time)
+void game_system::playSound(unsigned int id, int start_time, bool interrupt)
 {
-    if (ma_sound_is_playing(&game_sounds[id]))
-    {
+    if (!interrupt && ma_sound_is_playing(&game_sounds[id]))
         return;
+
+    if (id < sound_is_music_cutoff)
+    {
+        ma_sound_set_volume(&game_sounds[id], static_cast<float>(music_volume) / 100.0f);
     }
-    ma_sound_set_volume(&game_sounds[id], volume);
+    else
+    {
+        ma_sound_set_volume(&game_sounds[id], static_cast<float>(sound_volume) / 100.0f);
+    }
     ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
     ma_sound_start(&game_sounds[id]);
 }

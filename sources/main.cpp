@@ -1,7 +1,29 @@
+/**
+ *  Copyright (c) 2025 James Mathis. Licensed under MIT (see LICENSE.txt for more details)
+ *
+ *  I apologize in advance for the psuedo-organized, chaotic nature of this code.
+ **/
+
+// TO-DO LIST
+
 // animation commands should be inside sprite class and have the following public functions:
 //  sprite.runFrames(x, y, spd)
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
+
+// Particle effects should be re-written from scratch that whole system is just a mess :)
+
+// Add the quadtree for collision detection and other stuff
+
+// Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
+// Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
+// Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
+
+// Online multiplayer with asio
+
+// More efficient text rendering
+
+// Make the actual game
 
 // clean this up and put all functions at the bottom so menuData and main can be easiest to access
 
@@ -32,6 +54,8 @@ float playerSpawnDist = 0.0f;
 float lowestCamYLevel = 0.0f;
 bool playerSpawned = false;
 bool playerFacingRight = true;
+
+const float windowAspectDivision = (static_cast<float>(window_width) / static_cast<float>(window_height));
 
 extern gui gui_data;
 extern game_state state;
@@ -75,7 +99,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
     {
-        game.playSound(1, 0.15f, 0);
+        game.playSound(1, 0.15f, true);
         stepsoundplayed = true;
     }
     if (!walkingkeypressed)
@@ -150,7 +174,8 @@ character players[player_limit];
 std::string controlsetstrings[] = {
     "Up", "Left", "Right", "Down", "Shield", "Sword", "Bubble", "Spawn"};
 
-// special thanks to https://gist.github.com/0xD34DC0DE/910855d41786b962127ae401da2a3441 for the strings so I don't have to do this myself
+// special thanks to https://gist.github.com/0xD34DC0DE/910855d41786b962127ae401da2a3441
+// for the string arrays and convertion functions so I don't have to do this myself
 constexpr const char *const LUT44To96[]{"Comma",
                                         "Minus",
                                         "Period",
@@ -384,6 +409,21 @@ void updateView(shader &_program)
     _program.setUniformMat4("projection", proj);
     _program.setUniformMat4("view", view);
 }
+void fullscreenChangeFunction(GLFWwindow *window)
+{
+    static bool fullscreenLast;
+    if (mainCam.fullscreen == fullscreenLast)
+        return;
+
+    if (mainCam.fullscreen)
+    {
+        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+    }
+    if (!mainCam.fullscreen)
+        glfwSetWindowMonitor(window, NULL, 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+
+    fullscreenLast = mainCam.fullscreen;
+}
 void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
 {
     if (playerCount >= player_limit)
@@ -423,6 +463,10 @@ void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
         return;
 
     watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
+}
+void volumeChangeSoundPlayFunc(character *ch, game_system *gs, dungeon *dg, int x)
+{
+    gs->playSound(30, 0.0f, true);
 }
 
 extern int gamepad_stick_sensitivity;
@@ -549,7 +593,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         mainCam.offsetZ = 0.0f;
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
-        mainG.playSound(0, 1, 0);
+        mainG.playSound(0, 0.0f);
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, goMenuScreen));
@@ -569,17 +613,18 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
-        mainG.playSound(0, 1, 0);
+        mainG.playSound(0, 0.0f);
+        mainG.initSound("./snd/fx/volume.wav", 30, &s_engine);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", 25.0f, 625.0f, 64.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", 100.0f, 575.0f, 1.6f * 32.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), 125.0f, 500.0f, 1.2f * 32.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 64.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 51.2f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 38.4f, 0.0f, 1, 1));
         playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
         for (int i = 0; i < control_limit; ++i)
         {
-            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), 50.0f, 425.0f - i * 50.0f, 1.6f * 32.0f, 0.0f, 1, 1));
+            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 51.2f, 0.0f, 1, 1));
         }
         if (playerIDForControl >= playerCount)
             playerIDForControl = playerCount - 1;
@@ -594,21 +639,32 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             }
             if (players[playerIDForControl].plControl->gamepad_id <= -1)
             {
-                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
+                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0f, 1.0f,
                                                        1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
+                gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0f);
             }
             else
             {
-                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], 250.0f, 430.0f - i * 50.0f, 50.0f, 1.0f,
+                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0f, 1.0f,
                                                        1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
             }
         }
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 500.0f, 600.0f, 24.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.65f, 0.55f, 30.0f, 6.0f, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 24.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 30.0f, 3.0f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 2.0f);
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 500.0f, 650.0f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
+        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 1000.0f);
+
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 24.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 30.0f, 3.0f, 1, 1, nullFunc,
+                                               false, nullptr, nullptr, nullptr, 0, &mainG.music_volume));
+        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 125.0f);
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 24.0f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 30.0f, 3.0f, 1, 1, volumeChangeSoundPlayFunc,
+                                               false, nullptr, &mainG, nullptr, 0, &mainG.sound_volume));
+        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 125.0f);
+
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.5f, 0.9f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
 
         break;
     case CHARACTER_CREATION_SCREEN:
@@ -628,8 +684,8 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         }
         mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
-        mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine);
-        mainG.playSound(0, 1.5f, 0);
+        mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine); // volume needs to change while in menu!
+        mainG.playSound(0, 0.0f);
         if (mainG.levelincreasing)
         {
             mainG.levelincreasing = false;
@@ -794,7 +850,7 @@ int main()
             state = DUNGEON_SCREEN;
         }
         menuData(game, players[0], mainDungeon, soundEngine);
-        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, mousePressed, mouseReleased, delta_time, true);
+        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
         for (int i = 0; i < game.particlesystemcount; ++i)
         {
             game.particles[i]->draw(window, shaderProgram, spriteRect, delta_time);
@@ -811,6 +867,30 @@ int main()
         }
         if (state == MENU_SCREEN)
         {
+            static float currentMusicVolume = 0, currentSoundVolume = 0;
+            if (currentMusicVolume != game.music_volume)
+            {
+                for (int i = 0; i < sound_is_music_cutoff; ++i)
+                {
+                    if (ma_sound_is_playing(&game.game_sounds[i]))
+                    {
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<float>(game.music_volume) / 100.0f);
+                    }
+                }
+            }
+            if (currentSoundVolume != game.sound_volume)
+            {
+                for (int i = sound_is_music_cutoff; i < sound_limit; ++i)
+                {
+                    if (ma_sound_is_playing(&game.game_sounds[i]))
+                    {
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<float>(game.sound_volume) / 100.0f);
+                    }
+                }
+            }
+            currentMusicVolume = game.music_volume;
+            currentSoundVolume = game.sound_volume;
+
             int gamepadButtonPressedLast = gamepadInputWatch();
             if (changingControl != control_limit && gamepadButtonPressedLast != -1 && players[playerIDForControl].plControl != nullptr)
             {
@@ -842,6 +922,8 @@ int main()
                         gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]];
                 }
             }
+
+            fullscreenChangeFunction(window);
         }
         if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
         {
@@ -926,7 +1008,7 @@ int main()
                 state = WON_LEVEL_STATE;
             }
         }
-        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, mousePressed, mouseReleased, delta_time, false);
+        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, false);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

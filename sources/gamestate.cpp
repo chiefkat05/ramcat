@@ -8,6 +8,11 @@ const float windowAspectDivision = (static_cast<float>(window_width) / static_ca
 int current_win_width = window_width, current_win_height = window_height;
 float win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
 float win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
+
+extern bool buttonHovered;
+extern bool mouseClicked;
+extern bool mousePressed;
+extern bool mouseReleased;
 // connector host;
 // bool typingInput;
 
@@ -46,7 +51,14 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
     trueHeight = h;
     posX = window_width / 2 + (x * (window_width / 2));
     posY = window_height / 2 - (y * (window_height / 2));
-    visual.Put(x * windowAspectDivision, y, 0.0f);
+    if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
+    {
+        visual.Put(x * windowAspectDivision, y, 0.0f);
+    }
+    else
+    {
+        visual.Put(((trueX + 1.0f) * 0.5f) * window_width, ((trueY + 1.0f) * 0.5f) * window_height, 0.0f);
+    }
     width = w / pixel_divider * (window_height / 2);
     height = h / pixel_divider * (window_height / 2);
     visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
@@ -56,11 +68,10 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
     func_d = _func_d;
     func_i = _func_i;
     value = _linkValue;
-    sliderPos = visual.x;
 }
 
 // get ui element animations set up
-void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time)
+void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, float delta_time)
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
 
@@ -73,8 +84,13 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
         posY = current_win_height / 2 - (visual.y * (current_win_height / 2));
         width = trueWidth / pixel_divider * (current_win_height / 2);
         height = trueHeight / pixel_divider * (current_win_height / 2);
+
+        visual.Put(trueX * windowAspectDivision, trueY, 0.0f);
     }
-    visual.Put(trueX * windowAspectDivision, trueY, 0.0f);
+    else
+    {
+        visual.Put(((trueX + 1.0f) * 0.5f) * window_width, ((trueY + 1.0f) * 0.5f) * window_height, 0.0f);
+    }
     switch (utype)
     {
     case UI_CLICKABLE:
@@ -139,29 +155,57 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, bool mou
         function(func_p, func_gs, func_d, func_i);
         break;
     case UI_SLIDER:
-        if (mouseX < posX - width * 0.5f || mouseX > posX + width * 0.5f ||
-            mouseY < posY - height * 0.5f || mouseY > posY + height * 0.5f)
+        if (selected && !mousePressed)
+        {
+            function(func_p, func_gs, func_d, func_i);
+            selected = false;
+        }
+
+        if (!selected && (mouseX < posX - width * 0.5f || mouseX > posX + width * 0.5f ||
+                          mouseY < posY - height * 0.5f || mouseY > posY + height * 0.5f))
         {
             return;
         }
-
-        if (mousePressed)
+        if (mouseClicked)
         {
-            // equation for converting pixel mouseX to window coords
-            // might make an actual variable if is needed
-            // sliderPos = (((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision); // strange and funny
+            selected = true;
+        }
 
-            sliderPos = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision; // limit
+        if (selected)
+        {
+            float position = ((mouseX / current_win_width) * 2.0f - 1.0f);
+            if (position > trueX + (visual.w / windowAspectDivision) * 0.5f)
+                position = trueX + (visual.w / windowAspectDivision) * 0.5f;
+            if (position < trueX - (visual.w / windowAspectDivision) * 0.5f)
+                position = trueX - (visual.w / windowAspectDivision) * 0.5f;
+
+            sliderPos = position * windowAspectDivision; // limit
             if (value != nullptr)
-                *value = sliderPos * sliderLimit;
+            {
+                *value = (sliderPos - (visual.x - visual.w * 0.5f)) * 1.2f * sliderLimit;
+            }
         }
         break;
     default:
         break;
     }
 }
+void ui_element::slider_values(float sP, int sL)
+{
+    sliderPos = visual.x + sP;
 
-void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, bool mousePressed, bool mouseReleased, float delta_time, bool front)
+    if (sP > sL)
+        sliderPos = visual.x + sL;
+
+    sliderLimit = sL;
+
+    if (value != nullptr)
+    {
+        sliderPos = static_cast<float>(*value) / (1.2f * static_cast<float>(sliderLimit)) + (visual.x - (visual.w * 0.5f));
+    }
+}
+
+void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, float delta_time, bool front)
 {
     win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
     win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
@@ -174,10 +218,9 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
-        elements[i].update(window, mouseX, mouseY, mousePressed, mouseReleased, delta_time);
+        elements[i].update(window, mouseX, mouseY, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            // elements[i].visual.Draw(text_program, sprite_text_object);
             glm::vec4 boundingbox = renderText(sprite_text_object, text_program, elements[i].visual.texture_path,
                                                elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
                                                glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
@@ -204,12 +247,6 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
             elements[i].visual.Draw(program, sprite_object);
         }
     }
-
-    // background.Draw(program);
-    // if (bgAnim._sprite != nullptr)
-    // {
-    //     bgAnim.run(delta_time, true);
-    // }
 }
 ui_element *gui::mostRecentCreatedElement()
 {
@@ -226,13 +263,6 @@ void startGame(character *p, game_system *gs, dungeon *d, int argv)
 void optionsTab(character *p, game_system *gs, dungeon *d, int argv)
 {
     state = MENU_SCREEN;
-    // gs->game_music.stop();
-    // if (!gs->game_music.openFromFile("../snd/mus/options.mp3"))
-    // {
-    //     std::cout << "failed to load audio file ../snd/mus/options.mp3\n";
-    //     return;
-    // }
-    // gs->game_music.play();
 }
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv) {}
 
