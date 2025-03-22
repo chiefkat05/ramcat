@@ -20,20 +20,6 @@ dungeon::dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
     } // the pointer to the ui_element's visual object is incorrect inside the element's update function
 }
 
-// void dungeon::changeScreenViewPosition(sf::View &view, float newX, float newY)
-// {
-//     view.setCenter(sf::Vector2f(newX, newY));
-
-//     if (view.getCenter().x > viewBoundsWidth)
-//         view.setCenter(sf::Vector2f(viewBoundsWidth, view.getCenter().y));
-//     if (view.getCenter().x < viewBoundsX)
-//         view.setCenter(sf::Vector2f(viewBoundsX, view.getCenter().y));
-//     if (view.getCenter().y > viewBoundsHeight)
-//         view.setCenter(sf::Vector2f(view.getCenter().x, viewBoundsHeight));
-//     if (view.getCenter().y < viewBoundsY)
-//         view.setCenter(sf::Vector2f(view.getCenter().x, viewBoundsY));
-// }
-
 void dungeon::draw(GLFWwindow *win, shader &program, object &sprite_object)
 {
     for (unsigned int x = 0; x < roomWidth; ++x)
@@ -141,8 +127,8 @@ void dungeon::readRoomFile(const char *path)
         ++roomHeight;
     }
     // add boolean to check if spawn exists pls
-    spawnLocationY = -0.2f + (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
-    // spawnLocationY = (-static_cast<float>(roomHeight) + spawnLocationY) * 0.16f;
+    spawnLocationY = -0.2f + (-static_cast<double>(roomHeight) + spawnLocationY) * 0.16f;
+    // spawnLocationY = (-static_cast<double>(roomHeight) + spawnLocationY) * 0.16f;
 
     file.close();
 

@@ -3,11 +3,11 @@
 gui gui_data;
 game_state state;
 
-const float pixel_divider = 36.0f;
-const float windowAspectDivision = (static_cast<float>(window_width) / static_cast<float>(window_height));
+const double pixel_divider = 36.0f;
+const double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
 int current_win_width = window_width, current_win_height = window_height;
-float win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
-float win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
+double win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
+double win_ratio_y = static_cast<double>(current_win_height) / static_cast<double>(window_height);
 
 extern bool buttonHovered;
 extern bool mouseClicked;
@@ -16,7 +16,7 @@ extern bool mouseReleased;
 // connector host;
 // bool typingInput;
 
-// ui_element::ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg,
+// ui_element::ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, dungeon *, int), bool bg,
 //                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
 //                        int _func_i, int *_linkValue)
 //     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
@@ -37,7 +37,7 @@ extern bool mouseReleased;
 //     func_i = _func_i;
 //     value = _linkValue;
 // }
-ui_element::ui_element(ui_element_type t, const char *path, float x, float y, float w, float h, int frX, int frY,
+ui_element::ui_element(ui_element_type t, const char *path, double x, double y, double w, double h, int frX, int frY,
                        void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
@@ -71,12 +71,12 @@ ui_element::ui_element(ui_element_type t, const char *path, float x, float y, fl
 }
 
 // get ui element animations set up
-void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, float delta_time)
+void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double delta_time)
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
 
-    // float trueMouseX = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision;
-    // float trueMouseY = (mouseY / window_height) * 2.0f - 1.0f;
+    // double trueMouseX = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision;
+    // double trueMouseY = (mouseY / window_height) * 2.0f - 1.0f;
 
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
     {
@@ -173,7 +173,7 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, float de
 
         if (selected)
         {
-            float position = ((mouseX / current_win_width) * 2.0f - 1.0f);
+            double position = ((mouseX / current_win_width) * 2.0f - 1.0f);
             if (position > trueX + (visual.w / windowAspectDivision) * 0.5f)
                 position = trueX + (visual.w / windowAspectDivision) * 0.5f;
             if (position < trueX - (visual.w / windowAspectDivision) * 0.5f)
@@ -190,7 +190,7 @@ void ui_element::update(GLFWwindow *window, float mouseX, float mouseY, float de
         break;
     }
 }
-void ui_element::slider_values(float sP, int sL)
+void ui_element::slider_values(double sP, int sL)
 {
     sliderPos = visual.x + sP;
 
@@ -201,14 +201,14 @@ void ui_element::slider_values(float sP, int sL)
 
     if (value != nullptr)
     {
-        sliderPos = static_cast<float>(*value) / (1.2f * static_cast<float>(sliderLimit)) + (visual.x - (visual.w * 0.5f));
+        sliderPos = static_cast<double>(*value) / (1.2f * static_cast<double>(sliderLimit)) + (visual.x - (visual.w * 0.5f));
     }
 }
 
-void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, float delta_time, bool front)
+void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, double mouseX, double mouseY, double delta_time, bool front)
 {
-    win_ratio_x = static_cast<float>(current_win_width) / static_cast<float>(window_width);
-    win_ratio_y = static_cast<float>(current_win_height) / static_cast<float>(window_height);
+    win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
+    win_ratio_y = static_cast<double>(current_win_height) / static_cast<double>(window_height);
 
     if (quit)
         glfwSetWindowShouldClose(window, true);
@@ -237,7 +237,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
         {
             if (elements[i].utype == UI_SLIDER)
             {
-                float holdPosition = elements[i].visual.x;
+                double holdPosition = elements[i].visual.x;
                 elements[i].visual.x = elements[i].sliderPos;
                 elements[i].visual.w *= 0.1f;
                 elements[i].visual.Draw(program, sprite_object);

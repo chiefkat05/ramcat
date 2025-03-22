@@ -5,28 +5,19 @@
 
 struct aabb
 {
-    float min_x, min_y, max_x, max_y;
+    double min_x, min_y, max_x, max_y;
     int collisionID = 0;
     int specialTileID = -1;
 
     aabb() : min_x(0.0f), min_y(0.0f), max_x(0.0f), max_y(0.0f) {}
-    aabb(float x, float y, float x2, float y2) : min_x(x), min_y(y), max_x(x2), max_y(y2) {}
+    aabb(double x, double y, double x2, double y2) : min_x(x), min_y(y), max_x(x2), max_y(y2) {}
 
     bool colliding(aabb &test);
 
-    void moveCenterToPoint(float xPos, float yPos);
-    void Put(float x, float y, float w, float h);
+    void moveCenterToPoint(double xPos, double yPos);
+    void Put(double x, double y, double w, double h);
 
-    float response(float xV, float yV, float xV2, float yV2, aabb &test, float &xNormal, float &yNormal);
-};
-
-const unsigned int quadtree_object_limit = 5;
-struct quadtree
-{
-    aabb bounds;
-    quadtree *bottomleft, *bottomright, *topleft, *topright;
-
-    aabb objects[quadtree_object_limit];
+    double response(double xV, double yV, double xV2, double yV2, aabb &test, double &xNormal, double &yNormal);
 };
 
 #endif

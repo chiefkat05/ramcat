@@ -10,16 +10,16 @@ bool aabb::colliding(aabb &test)
     return true;
 }
 
-void aabb::moveCenterToPoint(float xPos, float yPos)
+void aabb::moveCenterToPoint(double xPos, double yPos)
 {
-    float width = max_x - min_x;
-    float height = max_y - min_y;
+    double width = max_x - min_x;
+    double height = max_y - min_y;
     min_x = xPos - width * 0.5f;
     min_y = yPos - height * 0.5f;
     max_x = xPos + width * 0.5f;
     max_y = yPos + height * 0.5f;
 }
-void aabb::Put(float x, float y, float w, float h)
+void aabb::Put(double x, double y, double w, double h)
 {
     min_x = x;
     min_y = y;
@@ -29,14 +29,14 @@ void aabb::Put(float x, float y, float w, float h)
 
 // special thanks to the excellent book, "real time collision detection" by Christer Ericson,
 // as well as the online tutorial -> https://gamedev.net/tutorials/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/ by BrendanL.K
-float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float &xNormal, float &yNormal)
+double aabb::response(double xV, double yV, double xV2, double yV2, aabb &test, double &xNormal, double &yNormal)
 {
     aabb boundingbox1;
 
-    float velX = xV;
-    float velY = yV;
+    double velX = xV;
+    double velY = yV;
 
-    boundingbox1 = aabb(min_x + std::min(0.0f, velX * 2.0f), min_y + std::min(0.0f, velY * 2.0f), max_x + std::max(0.0f, velX * 2.0f), max_y + std::max(0.0f, velY * 2.0f));
+    boundingbox1 = aabb(min_x + std::min(0.0, velX * 2.0), min_y + std::min(0.0, velY * 2.0), max_x + std::max(0.0, velX * 2.0), max_y + std::max(0.0, velY * 2.0));
 
     velX = xV;
     velY = yV;
@@ -53,14 +53,15 @@ float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float
     {
         xNormal = 0.0f;
         yNormal = 0.0f;
+        // std::cout << min_x << ", " << max_x << " really?\n";
         return 1.0f;
     }
 
-    // float velX = xV2 - xV;
-    // float velY = yV2 - yV;
+    // double velX = xV2 - xV;
+    // double velY = yV2 - yV;
 
-    float xInvEntry = 0.0f, yInvEntry = 0.0f;
-    float xInvExit = 0.0f, yInvExit = 0.0f;
+    double xInvEntry = 0.0f, yInvEntry = 0.0f;
+    double xInvExit = 0.0f, yInvExit = 0.0f;
 
     if (velX > 0.0f)
     {
@@ -83,13 +84,13 @@ float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float
         yInvExit = test.min_y - max_y;
     }
 
-    float xEntry, yEntry;
-    float xExit, yExit;
+    double xEntry, yEntry;
+    double xExit, yExit;
 
     if (velX == 0.0f)
     {
-        xEntry = -std::numeric_limits<float>::infinity();
-        xExit = std::numeric_limits<float>::infinity();
+        xEntry = -std::numeric_limits<double>::infinity();
+        xExit = std::numeric_limits<double>::infinity();
     }
     else
     {
@@ -98,8 +99,8 @@ float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float
     }
     if (velY == 0.0f)
     {
-        yEntry = -std::numeric_limits<float>::infinity();
-        yExit = std::numeric_limits<float>::infinity();
+        yEntry = -std::numeric_limits<double>::infinity();
+        yExit = std::numeric_limits<double>::infinity();
     }
     else
     {
@@ -107,8 +108,8 @@ float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float
         yExit = yInvExit / velY;
     }
 
-    float entryTime = std::max(xEntry, yEntry);
-    float exitTime = std::min(xExit, yExit);
+    double entryTime = std::max(xEntry, yEntry);
+    double exitTime = std::min(xExit, yExit);
 
     if (entryTime > exitTime || xEntry < 0.0f && yEntry < 0.0f || xEntry > 1.0f || yEntry > 1.0f)
     {
@@ -119,25 +120,25 @@ float aabb::response(float xV, float yV, float xV2, float yV2, aabb &test, float
 
     if (xEntry > yEntry)
     {
-        if (xInvEntry < 0.0f)
+        if (xInvEntry < 0.0f || xInvEntry == 0.0f && velX < 0.0f)
         {
             xNormal = 1.0f;
             yNormal = 0.0f;
         }
-        else
+        if (xInvEntry > 0.0f || xInvEntry == 0.0f && velX > 0.0f)
         {
             xNormal = -1.0f;
             yNormal = 0.0f;
         }
     }
-    else if (xEntry < yEntry)
+    if (xEntry < yEntry)
     {
-        if (yInvEntry < 0.0f)
+        if (yInvEntry < 0.0f || yInvEntry == 0.0f && velY < 0.0f)
         {
             xNormal = 0.0f;
             yNormal = 1.0f;
         }
-        else
+        if (yInvEntry > 0.0f || yInvEntry == 0.0f && velY > 0.0f)
         {
             xNormal = 0.0f;
             yNormal = -1.0f;

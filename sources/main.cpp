@@ -11,21 +11,22 @@
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
 
-// Particle effects should be re-written from scratch that whole system is just a mess :)
-
-// Add the quadtree for collision detection and other stuff
-
-// Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
-// Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
-// Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
+// Make the actual game
 
 // Online multiplayer with asio
 
 // More efficient text rendering
+// I would like the text to actually match pixel-wise with the rest of the game but that's likely not possible without turning up the pixel-count
 
-// Make the actual game
+// pixel-perfect shader
 
 // clean this up and put all functions at the bottom so menuData and main can be easiest to access
+
+// Particle effects should be re-written from scratch that whole system is just a mess :)
+
+// Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
+// Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
+// Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
@@ -33,7 +34,7 @@
 
 // #define COLLISION_DEBUG
 
-float texCoords[] = {
+double texCoords[] = {
     0.0f, 0.0f,
     1.0f, 0.0f,
     1.0f, 1.0f,
@@ -44,18 +45,18 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-float delta_time = 0.0f;
+double delta_time = 0.0f;
 bool mouseClicked = false, mousePressed = false, mouseReleased = false;
-float mouseX = 0.0f, mouseY = 0.0f;
+double mouseX = 0.0f, mouseY = 0.0f;
 bool buttonHovered = false;
 int parryCooloff = 15, parryTimer = 0;
 int playerGamepadCount = -1, playerCount = 1;
-float playerSpawnDist = 0.0f;
-float lowestCamYLevel = 0.0f;
+double playerSpawnDist = 0.0f;
+double lowestCamYLevel = 0.0f;
 bool playerSpawned = false;
 bool playerFacingRight = true;
 
-const float windowAspectDivision = (static_cast<float>(window_width) / static_cast<float>(window_height));
+const double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
 
 extern gui gui_data;
 extern game_state state;
@@ -145,8 +146,8 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
 }
 
-float current_time = 0.0f;
-float previous_time = 0.0f;
+double current_time = 0.0f;
+double previous_time = 0.0f;
 
 void mouseUpdate(GLFWwindow *window)
 {
@@ -405,7 +406,7 @@ void updateView(shader &_program)
 
     _program.use();
     view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<float>(window_width) / static_cast<float>(window_height), 0.01f, 200.0f);
+    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
     _program.setUniformMat4("projection", proj);
     _program.setUniformMat4("view", view);
 }
@@ -489,7 +490,7 @@ int gamepadInputWatch()
         }
     }
 
-    float realSensitivity = gamepad_stick_sensitivity * 0.001f;
+    double realSensitivity = gamepad_stick_sensitivity * 0.001f;
     std::cout << realSensitivity << " hmm\n";
     if (gState.axes[0] < -realSensitivity)
     {
@@ -562,7 +563,7 @@ void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
 int playerIDForControlStrElementIndex = 0;
 int prevState = -1;
 #ifdef COLLISION_DEBUG
-sprite delots[20];
+sprite deCollision;
 sprite dePl;
 #endif
 // edit all guis here
@@ -575,19 +576,13 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
 
     std::string playerIDForControlStr = "Player " + std::to_string(playerIDForControl);
 
-    // sound channels system
-    // for (int i = 0; i < sound_limit; ++i) // sounds need to stop but also play lmao // maybe also need fade out or stuff // maybe fade out implementation will fix the other problem try it! // just use sound channels to overwrite on new state
-    // {
-    //     mainG.stopSound(i);
-    // }
-    // mainG.killParticles();
     switch (state)
     {
     case START_SCREEN:
         p1.visual.Put(0.0f, 0.0f, 0.0f);
         mainCam.setBoundary(0.0f, -0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
         mainCam.lockTo(nullptr, nullptr, nullptr);
-        mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
+        mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
         mainCam.offsetX = 0.0f;
         mainCam.offsetY = 0.0f;
         mainCam.offsetZ = 0.0f;
@@ -604,7 +599,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
     case MENU_SCREEN:
         mainCam.setBoundary(0.0f, -0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
         mainCam.lockTo(nullptr, nullptr, nullptr);
-        mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
+        mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
         mainCam.offsetX = 0.0f;
         mainCam.offsetY = 0.0f;
         mainCam.offsetZ = 0.0f;
@@ -712,37 +707,45 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             break;
         case 4:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            return;
+            break;
         case 5:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             break;
         case 6:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            return;
+            break;
         case 7:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            return;
+            break;
         case 8:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
             break;
         case 9:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            break;
+        case 10:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            break;
+        case 11:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            break;
+        case 16:
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 4);
+            break;
+        case 17:
+            state = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 2);
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
         mainCam.setBoundary(1.9f, -0.0f, -1.0f, floor.roomWidth * 0.16f, 50.0f, 1.0f);
 
 #ifdef COLLISION_DEBUG
-        for (int i = 0; i < 20; ++i)
-        {
-            if (floor.collision_boxes[i].collisionID < 0)
-                continue;
-            delots[i] = sprite(&gui_object, "./img/debug.png", 1, 1);
-        }
-        dePl = sprite(&gui_object, "./img/debug.png", 1, 1);
+        deCollision = sprite("./img/debug.png", 1, 1);
+        dePl = sprite("./img/debug.png", 1, 1);
 #endif
 
         playerSpawnDist = 0;
@@ -770,7 +773,6 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
     prevState = state;
 }
 
-game_system game;
 int main()
 {
     glfwInit();
@@ -805,15 +807,17 @@ int main()
     object spriteCube(OBJ_CUBE);
     object spriteText(OBJ_TEXT);
 
-    float current_time = 0;
+    double current_time = 0;
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    game_system game;
+
     dungeon mainDungeon("./img/tiles.png", 4, 2); // lmao
     mainDungeon.readRoomFile("./levels/01.lvl");
-    mainCam.cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
+    mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
     playerInit(players[0], game, playerControllers[0]);
     prevState = WIN_SCREEN;
 
@@ -826,13 +830,13 @@ int main()
     }
 
     loadFont("./stb/rainyhearts.ttf");
-    glm::mat4 textProjection = glm::ortho(0.0f, static_cast<float>(window_width), 0.0f, static_cast<float>(window_height));
+    glm::mat4 textProjection = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height));
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
 
-    while (!glfwWindowShouldClose(window)) // now what // screen resolution options, fullscreen toggle, volume sliders // or just volume buttons no pressure
+    while (!glfwWindowShouldClose(window))
     {
-        float past_time = current_time;
+        double past_time = current_time;
         current_time = glfwGetTime();
         delta_time = current_time - past_time;
 
@@ -867,14 +871,14 @@ int main()
         }
         if (state == MENU_SCREEN)
         {
-            static float currentMusicVolume = 0, currentSoundVolume = 0;
+            static double currentMusicVolume = 0, currentSoundVolume = 0;
             if (currentMusicVolume != game.music_volume)
             {
                 for (int i = 0; i < sound_is_music_cutoff; ++i)
                 {
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
-                        ma_sound_set_volume(&game.game_sounds[i], static_cast<float>(game.music_volume) / 100.0f);
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.music_volume) / 100.0f);
                     }
                 }
             }
@@ -884,7 +888,7 @@ int main()
                 {
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
-                        ma_sound_set_volume(&game.game_sounds[i], static_cast<float>(game.sound_volume) / 100.0f);
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.sound_volume) / 100.0f);
                     }
                 }
             }
@@ -944,34 +948,34 @@ int main()
                 lowestCamYLevel -= 2.0f * delta_time;
             }
 #ifdef COLLISION_DEBUG
-            for (int i = 0; i < 20; ++i)
+            for (int i = 0; i < collision_box_limit; ++i)
             {
-                if (delots[i].empty)
-                    continue;
-                delots[i].Draw(shaderProgram);
-
                 if (mainDungeon.collision_boxes[i].collisionID < 0)
                     continue;
 
-                float mdXScale = mainDungeon.collision_boxes[i].max_x - mainDungeon.collision_boxes[i].min_x;
-                float mdYScale = mainDungeon.collision_boxes[i].max_y - mainDungeon.collision_boxes[i].min_y;
-                delots[i].Scale(mdXScale,
-                                mdYScale, 1.0f);
-                delots[i].Put(mainDungeon.collision_boxes[i].min_x + 0.5f * mdXScale, mainDungeon.collision_boxes[i].min_y + 0.5f * mdYScale, 0.0f);
-                delots[i].SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+                double mdXScale = mainDungeon.collision_boxes[i].max_x - mainDungeon.collision_boxes[i].min_x;
+                double mdYScale = mainDungeon.collision_boxes[i].max_y - mainDungeon.collision_boxes[i].min_y;
+                deCollision.Scale(mdXScale,
+                                  mdYScale, 1.0f);
+
+                double newX = (mainDungeon.collision_boxes[i].min_x + mainDungeon.collision_boxes[i].max_x) * 0.5f;
+                double newY = (mainDungeon.collision_boxes[i].min_y + mainDungeon.collision_boxes[i].max_y) * 0.5f;
+                deCollision.Put(newX - 0.08f, newY - 0.16, 0.0f);
+                deCollision.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+                deCollision.Draw(shaderProgram, spriteRect);
             }
 #endif
 
             game.update(mainDungeon, delta_time);
 
-            float mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
-            float mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
+            double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
+            double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
 #ifdef COLLISION_DEBUG
             dePl.Scale(mpcXScale, mpcYScale, 1.0f);
-            dePl.Put(mainPlayer.collider.min_x + 0.5f * mpcXScale, mainPlayer.collider.min_y + 0.5f * mpcYScale, 0.0f);
+            dePl.Put(players[0].collider.min_x, players[0].collider.min_y, 0.0f);
             dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             if (!dePl.empty)
-                dePl.Draw(shaderProgram); // debug pls get rid of this later
+                dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
 #endif
 
             mainDungeon.draw(window, shaderProgram, spriteRect);
@@ -1034,11 +1038,11 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
         mainCam.firstMouse = false;
     }
 
-    float offsetX = xpos - mainCam.lastMouseX;
-    float offsetY = mainCam.lastMouseY - ypos;
+    double offsetX = xpos - mainCam.lastMouseX;
+    double offsetY = mainCam.lastMouseY - ypos;
 
-    const float sensitivity = 0.1f;
-    glm::vec3 direction = glm::vec3(0.0f);
+    const double sensitivity = 0.1f;
+    glm::dvec3 direction = glm::dvec3(0.0f);
 
     switch (mainCam.type)
     {
@@ -1080,7 +1084,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
         direction.y = std::sin(glm::radians(mainCam.pitch));
         direction.z = std::sin(glm::radians(mainCam.yaw)) * std::cos(glm::radians(mainCam.pitch));
         mainCam.cameraFront = glm::normalize(direction);
-        direction = glm::vec3(0.0f);
+        direction = glm::dvec3(0.0f);
         direction.x = std::cos(glm::radians(mainCam.yaw));
         direction.z = std::sin(glm::radians(mainCam.yaw));
         mainCam.cameraLockedFront = glm::normalize(direction);
@@ -1117,7 +1121,7 @@ void processInput(GLFWwindow *window)
         mainCam.cameraVelocity.z = 0.0f;
 
         if (mainCam.cameraPosition.y > 0.0f)
-            mainCam.cameraVelocity.y -= 2.0f * delta_time;
+            mainCam.cameraVelocity.y -= 2.0 * delta_time;
         if (mainCam.cameraPosition.y <= 0.0f)
         {
             mainCam.cameraPosition.y = 0.0f;
@@ -1127,19 +1131,20 @@ void processInput(GLFWwindow *window)
 
         if (glfwGetKey(window, GLFW_KEY_W))
         {
-            mainCam.cameraVelocity += mainCam.cameraLockedFront * 20.0f * delta_time;
+            mainCam.cameraVelocity += glm::dvec3(mainCam.cameraLockedFront.x * 20.0 * delta_time, mainCam.cameraLockedFront.y * 20.0 * delta_time, mainCam.cameraLockedFront.z * 20.0 * delta_time);
         }
         if (glfwGetKey(window, GLFW_KEY_S))
         {
-            mainCam.cameraVelocity -= mainCam.cameraLockedFront * 20.0f * delta_time;
+            mainCam.cameraVelocity -= glm::dvec3(mainCam.cameraLockedFront.x * 20.0 * delta_time, mainCam.cameraLockedFront.y * 20.0 * delta_time, mainCam.cameraLockedFront.z * 20.0 * delta_time);
         }
+        glm::dvec3 normVec = glm::normalize(glm::cross(mainCam.cameraFront, mainCam.cameraUp));
         if (glfwGetKey(window, GLFW_KEY_A))
         {
-            mainCam.cameraVelocity -= glm::normalize(glm::cross(mainCam.cameraFront, mainCam.cameraUp)) * 20.0f * delta_time;
+            mainCam.cameraVelocity -= glm::dvec3(normVec.x * 20.0 * delta_time, normVec.y * 20.0 * delta_time, normVec.z * 20.0 * delta_time);
         }
         if (glfwGetKey(window, GLFW_KEY_D))
         {
-            mainCam.cameraVelocity += glm::normalize(glm::cross(mainCam.cameraFront, mainCam.cameraUp)) * 20.0f * delta_time;
+            mainCam.cameraVelocity += glm::dvec3(normVec.x * 20.0 * delta_time, normVec.y * 20.0 * delta_time, normVec.z * 20.0 * delta_time);
         }
         if (!mainCam.jumped && glfwGetKey(window, GLFW_KEY_SPACE))
         {

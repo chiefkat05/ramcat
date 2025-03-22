@@ -17,6 +17,8 @@ const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 const unsigned int player_limit = 12;
 
+const int character_quadtree_capacity = 3;
+
 struct character;
 
 enum IDENTIFICATION
@@ -56,31 +58,6 @@ enum controlset
     control_limit
 };
 
-/**
-#define GLFW_GAMEPAD_BUTTON_A               0
-#define GLFW_GAMEPAD_BUTTON_B               1
-#define GLFW_GAMEPAD_BUTTON_X               2
-#define GLFW_GAMEPAD_BUTTON_Y               3
-#define GLFW_GAMEPAD_BUTTON_LEFT_BUMPER     4
-#define GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER    5
-#define GLFW_GAMEPAD_BUTTON_BACK            6
-#define GLFW_GAMEPAD_BUTTON_START           7
-#define GLFW_GAMEPAD_BUTTON_GUIDE           8
-#define GLFW_GAMEPAD_BUTTON_LEFT_THUMB      9
-#define GLFW_GAMEPAD_BUTTON_RIGHT_THUMB     10
-#define GLFW_GAMEPAD_BUTTON_DPAD_UP         11
-#define GLFW_GAMEPAD_BUTTON_DPAD_RIGHT      12
-#define GLFW_GAMEPAD_BUTTON_DPAD_DOWN       13
-#define GLFW_GAMEPAD_BUTTON_DPAD_LEFT       14
-#define GLFW_GAMEPAD_BUTTON_LAST            GLFW_GAMEPAD_BUTTON_DPAD_LEFT
-
-#define GLFW_GAMEPAD_AXIS_LEFT_X        0
-#define GLFW_GAMEPAD_AXIS_LEFT_Y        1
-#define GLFW_GAMEPAD_AXIS_RIGHT_X       2
-#define GLFW_GAMEPAD_AXIS_RIGHT_Y       3
-#define GLFW_GAMEPAD_AXIS_LEFT_TRIGGER  4
-#define GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER 5
-#define GLFW_GAMEPAD_AXIS_LAST          GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER*/
 enum GAMEPAD_MAP
 {
     PAD_BUTTON_A,
@@ -126,22 +103,22 @@ struct player
 
 struct character
 {
-    float velocityX = 0.0f, velocityY = 0.0f;
+    double velocityX = 0.0f, velocityY = 0.0f;
     bool onGround = false, jumped = false;
     player *plControl;
     int parryCooloff = 23, parryTimer = 0, parryWindow = 5;
     bool parrySuccess = false;
 
     animation animations[animation_limit];
-    // float posX = 0.0f, posY = 0.0f;
-    // float walkToX = 0.0f, walkToY = 0.0f;
+    // double posX = 0.0f, posY = 0.0f;
+    // double walkToX = 0.0f, walkToY = 0.0f;
     sprite visual;
     aabb collider;
 
     IDENTIFICATION id = CH_MONSTER;
-    float attackTimer = 0.0f;
+    double attackTimer = 0.0f;
     int hp = 10, maxhp = 10;
-    float runSpeed = 1.7f;
+    double runSpeed = 1.7f;
 
     bool animationFinished = true, animationLooping = false;
     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
@@ -150,16 +127,37 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
-    void MoveTo(float _x, float _y, dungeon *currentDungeon);
+    void MoveTo(double _x, double _y, dungeon *currentDungeon);
 
-    void Update(float delta_time);
-    void updatePosition(float delta_time);
+    void Update(double delta_time);
+    void updatePosition(double delta_time);
 
-    void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd);
-    void PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loops);
+    void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd);
+    void PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loops);
     void StopAnimation(ANIMATION_MAPPINGS id);
+};
+
+struct characterQuadTree
+{
+    double left, top, right, bottom;
+
+    character *characters[character_quadtree_capacity];
+
+    characterQuadTree *topLeftTree;
+    characterQuadTree *topRightTree;
+    characterQuadTree *botLeftTree;
+    characterQuadTree *botRightTree;
+
+    sprite *visual;
+
+    characterQuadTree();
+    characterQuadTree(double l, double t, double r, double b);
+    void insert(character *inputChar);
+    bool withinBounds(double x, double y);
+
+    void draw(shader &program, object &sprite_object);
 };
 
 struct game_system
@@ -193,7 +191,7 @@ struct game_system
     void stopSound(unsigned int id);
     // void uninitMusic();
 
-    void update(dungeon &floor, float delta_time);
+    void update(dungeon &floor, double delta_time);
 
     void killParticles();
 };

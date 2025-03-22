@@ -23,8 +23,8 @@ void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
 struct ui_element
 {
     sprite visual;
-    float trueX, trueY, trueWidth, trueHeight;
-    float posX, posY, width, height, sliderPos = 0.0f;
+    double trueX, trueY, trueWidth, trueHeight;
+    double posX, posY, width, height, sliderPos = 0.0f;
     int sliderLimit = 1;
     int *value;
     bool selected = false;
@@ -40,16 +40,16 @@ struct ui_element
     ui_element_type utype;
     animation anim;
 
-    // ui_element(ui_element_type t, sprite *v, float x, float y, void func(character *, game_system *, dungeon *, int), bool bg = false,
+    // ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, dungeon *, int), bool bg = false,
     //            character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
     //            int _func_i = 0, int *_linkValue = nullptr);
-    ui_element(ui_element_type t, const char *path, float x, float y, float w, float h, int frX, int frY,
+    ui_element(ui_element_type t, const char *path, double x, double y, double w, double h, int frX, int frY,
                void func(character *, game_system *, dungeon *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
-    void slider_values(float sP, int sL);
+    void slider_values(double sP, int sL);
 
-    void update(GLFWwindow *window, float mouseX, float mouseY, float delta_time);
+    void update(GLFWwindow *window, double mouseX, double mouseY, double delta_time);
 };
 
 enum game_state
@@ -69,7 +69,7 @@ struct gui
     std::vector<ui_element> elements;
     bool quit = false;
 
-    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, float mouseX, float mouseY, float delta_time, bool front);
+    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, double mouseX, double mouseY, double delta_time, bool front);
     ui_element *mostRecentCreatedElement();
 };
 

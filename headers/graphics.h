@@ -21,10 +21,10 @@ public:
     void use();
     shader(const char *vPath, const char *fPath);
 
-    void setUniformVec4(const char *name, float x, float y, float z, float w);
-    void setUniformVec3(const char *name, float x, float y, float z);
-    void setUniformVec2(const char *name, float x, float y);
-    void setUniformFloat(const char *name, float x);
+    void setUniformVec4(const char *name, double x, double y, double z, double w);
+    void setUniformVec3(const char *name, double x, double y, double z);
+    void setUniformVec2(const char *name, double x, double y);
+    void setUniformDouble(const char *name, double x);
     void setUniformInt(const char *name, int x);
     void setUniformBool(const char *name, bool x);
     void setUniformMat4(const char *name, glm::mat4 matrix);
@@ -39,29 +39,29 @@ enum simple_camera_types
 
 struct camera
 {
-    glm::vec3 cameraPosition;
-    glm::vec3 cameraTarget;
-    glm::vec3 cameraFront;
-    glm::vec3 cameraLockedFront;
-    glm::vec3 cameraDirection;
-    glm::vec3 worldUp;
-    glm::vec3 cameraRight;
-    glm::vec3 cameraLockedRight;
-    glm::vec3 cameraUp;
-    float pitch = 0.0f, yaw = 0.0f;
-    float lastMouseX = 0.0f;
-    float lastMouseY = 0.0f;
+    glm::dvec3 cameraPosition;
+    glm::dvec3 cameraTarget;
+    glm::dvec3 cameraFront;
+    glm::dvec3 cameraLockedFront;
+    glm::dvec3 cameraDirection;
+    glm::dvec3 worldUp;
+    glm::dvec3 cameraRight;
+    glm::dvec3 cameraLockedRight;
+    glm::dvec3 cameraUp;
+    double pitch = 0.0f, yaw = 0.0f;
+    double lastMouseX = 0.0f;
+    double lastMouseY = 0.0f;
     bool firstMouse = true;
     bool fullscreen = false, swappedFullscreen = false;
     bool mouseCapture = true, swappedMouseCapture = false;
-    glm::vec3 cameraVelocity = glm::vec3(0.0f);
+    glm::dvec3 cameraVelocity = glm::dvec3(0.0f);
     bool jumped = false;
-    float fov = 90.0f, zoomed_fov = 20.0f, current_fov = 90.0f;
+    double fov = 90.0f, zoomed_fov = 20.0f, current_fov = 90.0f;
     simple_camera_types type;
-    glm::vec3 boundaryCorner, boundarySizeCorner;
+    glm::dvec3 boundaryCorner, boundarySizeCorner;
     bool boundaryset = false;
-    float *cameraLockX, *cameraLockY, *cameraLockZ;
-    float offsetX = 0.0f, offsetY = 0.0f, offsetZ = 0.0f;
+    double *cameraLockX, *cameraLockY, *cameraLockZ;
+    double offsetX = 0.0f, offsetY = 0.0f, offsetZ = 0.0f;
 
     camera(simple_camera_types _type)
     {
@@ -70,68 +70,68 @@ struct camera
         switch (_type)
         {
         case CAMERA_STATIONARY:
-            cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraLockedFront = glm::vec3(0.0f, 0.0f, -1.0f);
+            cameraPosition = glm::dvec3(0.0f, 0.0f, 3.0f);
+            cameraTarget = glm::dvec3(0.0f, 0.0f, 0.0f);
+            cameraFront = glm::dvec3(0.0f, 0.0f, -1.0f);
+            cameraLockedFront = glm::dvec3(0.0f, 0.0f, -1.0f);
             cameraDirection = glm::normalize(cameraTarget - cameraPosition);
-            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            worldUp = glm::dvec3(0.0f, 1.0f, 0.0f);
             cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-            cameraLockedRight = glm::vec3(0.0f);
+            cameraLockedRight = glm::dvec3(0.0f);
             cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
             break;
         case CAMERA_2D_FOLLOW:
-            cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraLockedFront = glm::vec3(0.0f, 0.0f, -1.0f);
+            cameraPosition = glm::dvec3(0.0f, 0.0f, 3.0f);
+            cameraTarget = glm::dvec3(0.0f, 0.0f, 0.0f);
+            cameraFront = glm::dvec3(0.0f, 0.0f, -1.0f);
+            cameraLockedFront = glm::dvec3(0.0f, 0.0f, -1.0f);
             cameraDirection = glm::normalize(cameraTarget - cameraPosition);
-            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            worldUp = glm::dvec3(0.0f, 1.0f, 0.0f);
             cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-            cameraLockedRight = glm::vec3(0.0f);
+            cameraLockedRight = glm::dvec3(0.0f);
             cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
             break;
         case CAMERA_3D:
-            cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraLockedFront = glm::vec3(0.0f, 0.0f, -1.0f);
+            cameraPosition = glm::dvec3(0.0f, 0.0f, 3.0f);
+            cameraTarget = glm::dvec3(0.0f, 0.0f, 0.0f);
+            cameraFront = glm::dvec3(0.0f, 0.0f, -1.0f);
+            cameraLockedFront = glm::dvec3(0.0f, 0.0f, -1.0f);
             cameraDirection = glm::normalize(cameraTarget - cameraPosition);
-            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            worldUp = glm::dvec3(0.0f, 1.0f, 0.0f);
             cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-            cameraLockedRight = glm::vec3(0.0f);
+            cameraLockedRight = glm::dvec3(0.0f);
             cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
             break;
         default:
-            cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
-            cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-            cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-            cameraLockedFront = glm::vec3(0.0f, 0.0f, -1.0f);
+            cameraPosition = glm::dvec3(0.0f, 0.0f, 3.0f);
+            cameraTarget = glm::dvec3(0.0f, 0.0f, 0.0f);
+            cameraFront = glm::dvec3(0.0f, 0.0f, -1.0f);
+            cameraLockedFront = glm::dvec3(0.0f, 0.0f, -1.0f);
             cameraDirection = glm::normalize(cameraTarget - cameraPosition);
-            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+            worldUp = glm::dvec3(0.0f, 1.0f, 0.0f);
             cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-            cameraLockedRight = glm::vec3(0.0f);
+            cameraLockedRight = glm::dvec3(0.0f);
             cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
             break;
             break;
         }
     }
 
-    void setBoundary(float x, float y, float z, float x2, float y2, float z2)
+    void setBoundary(double x, double y, double z, double x2, double y2, double z2)
     {
-        boundaryCorner = glm::vec3(x, y, z);
-        boundarySizeCorner = glm::vec3(x2, y2, z2);
+        boundaryCorner = glm::dvec3(x, y, z);
+        boundarySizeCorner = glm::dvec3(x2, y2, z2);
 
         boundaryset = true;
     }
-    void lockTo(float *x, float *y = nullptr, float *z = nullptr)
+    void lockTo(double *x, double *y = nullptr, double *z = nullptr)
     {
         cameraLockX = x;
         cameraLockY = y;
         cameraLockZ = z;
     }
 
-    void update(float followSpeed)
+    void update(double followSpeed)
     {
         // if (cameraLockX != nullptr)
         //     cameraPosition.x = *cameraLockX;

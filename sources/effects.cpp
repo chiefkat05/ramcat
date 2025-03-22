@@ -28,8 +28,8 @@ particlesystem::particlesystem()
 
     particle_count = 0.0f;
 }
-particlesystem::particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
-                               float sX, float sY, float sW, float sH)
+particlesystem::particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, double _life_lower, double _life_upper,
+                               double sX, double sY, double sW, double sH)
 {
     variables[PV_SPAWN_TIMER] = 0.0f;
     variables[PV_LIFE_LOW] = _life_lower;
@@ -50,12 +50,12 @@ particlesystem::particlesystem(const char *path, unsigned int frame, unsigned in
     // visual.textureX = visual.spriteW * ((frame % visual.framesX) - 1);
 }
 
-void particlesystem::spawn(float delta_time)
+void particlesystem::spawn(double delta_time)
 {
     // if (variable_pointers[PV_SPAWN_TIMER] == nullptr)
     variables[PV_SPAWN_TIMER] -= 10.0f * delta_time;
 
-    float spawnTimer = variables[PV_SPAWN_TIMER];
+    double spawnTimer = variables[PV_SPAWN_TIMER];
     // if (variable_pointers[PV_SPAWN_TIMER] != nullptr)
     //     spawnTimer = *variable_pointers[PV_SPAWN_TIMER];
 
@@ -82,7 +82,7 @@ void particlesystem::spawn(float delta_time)
     variables[PV_SPAWN_TIMER] = variables[PV_SPAWN_SPEED];
 }
 
-void particlesystem::push(float xVel, float yVel, float xVelMax, float yVelMax)
+void particlesystem::push(double xVel, double yVel, double xVelMax, double yVelMax)
 {
     variables[PV_PUSHMIN_X] = xVel;
     variables[PV_PUSHMIN_Y] = yVel;
@@ -90,7 +90,7 @@ void particlesystem::push(float xVel, float yVel, float xVelMax, float yVelMax)
     variables[PV_PUSHMAX_Y] = yVelMax;
 }
 
-void particlesystem::update(float delta_time)
+void particlesystem::update(double delta_time)
 {
     for (int i = 0; i < particles_alive; ++i)
     {
@@ -107,7 +107,7 @@ void particlesystem::update(float delta_time)
         //     particles[i].visual.rect.setColor(sf::Color(255, 255, 255, static_cast<int>(particles[i].life * particles[i].lifestartalphamultiple)));
     }
 }
-void particlesystem::draw(GLFWwindow *win, shader &program, object &sprite_object, float delta_time)
+void particlesystem::draw(GLFWwindow *win, shader &program, object &sprite_object, double delta_time)
 {
     for (int i = 0; i < particle_count; ++i)
     {

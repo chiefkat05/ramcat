@@ -3,19 +3,6 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "../headers/miniaudio.h"
 
-// soundhandler soundplayer;
-
-/**
-    PAD_LSTICK_LEFT,
-    PAD_LSTICK_RIGHT,
-    PAD_LSTICK_UP,
-    PAD_LSTICK_DOWN,
-    PAD_RSTICK_LEFT,
-    PAD_RSTICK_RIGHT,
-    PAD_RSTICK_UP,
-    PAD_RSTICK_DOWN,
-    PAD_TRIGGER_L,
-    PAD_TRIGGER_R */
 int gamepad_stick_sensitivity = 500;
 bool player::getInput(GLFWwindow *window, controlset action)
 {
@@ -26,7 +13,7 @@ bool player::getInput(GLFWwindow *window, controlset action)
         GLFWgamepadstate state;
         glfwGetGamepadState(gamepad_id, &state);
 
-        float realSensitivity = static_cast<float>(gamepad_stick_sensitivity) * 0.001f;
+        double realSensitivity = static_cast<double>(gamepad_stick_sensitivity) * 0.001f;
 
         if (gamepad_inputs[action] < PAD_seperation_value && state.buttons[gamepad_inputs[action]])
         {
@@ -86,7 +73,7 @@ character::character() {}
 character::character(sprite &v, IDENTIFICATION _id) : visual(v)
 {
     // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
-    // visual.rect.setOrigin(sf::Vector2(static_cast<float>(visual.spriteW) * 0.5f, static_cast<float>(visual.spriteH)));
+    // visual.rect.setOrigin(sf::Vector2(static_cast<double>(visual.spriteW) * 0.5f, static_cast<double>(visual.spriteH)));
     // posX = visual.rect.getPosition().x;
     // posY = visual.rect.getPosition().y;
     // walkToX = posX;
@@ -99,11 +86,11 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24);
     // collider = aabb(visual.x, visual.y, visual.x + 0.01f, visual.y + 0.01f);
 }
-character::character(std::string filepath, float x, float y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
     // visual = sprite(filepath.c_str(), x, y, fx, fy);
     // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
-    // visual.rect.setOrigin(sf::Vector2(static_cast<float>(visual.spriteW) * 0.5f, static_cast<float>(visual.spriteH)));
+    // visual.rect.setOrigin(sf::Vector2(static_cast<double>(visual.spriteW) * 0.5f, static_cast<double>(visual.spriteH)));
     visual = sprite(filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0f);
     // posX = visual.rect.getPosition().x;
@@ -115,7 +102,7 @@ character::character(std::string filepath, float x, float y, unsigned int fx, un
     collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24f);
 }
 
-void character::MoveTo(float _x, float _y, dungeon *currentDungeon)
+void character::MoveTo(double _x, double _y, dungeon *currentDungeon)
 {
     if (currentDungeon != nullptr)
     {
@@ -127,7 +114,7 @@ void character::MoveTo(float _x, float _y, dungeon *currentDungeon)
     // walkToY = _y;
 }
 
-void character::Update(float delta_time)
+void character::Update(double delta_time)
 {
     // collider.moveCenterToPoint(visual.x, visual.y);
     // collider.min_x = visual.x - visual.spriteW * 0.5f;
@@ -171,20 +158,21 @@ void character::Update(float delta_time)
 
     onGround = false;
 }
-void character::updatePosition(float delta_time)
+void character::updatePosition(double delta_time)
 {
-    if (parrySuccess)
-    {
-        return;
-    }
+    // if (parrySuccess)
+    // {
+    //     return;
+    // }
+    std::cout << "in update position velX = " << velocityX << " hrrm\n";
     visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0f);
 }
 
-void character::SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, float spd)
+void character::SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd)
 {
     animations[id] = animation(&visual, s, e, spd);
 }
-void character::PlayAnimation(ANIMATION_MAPPINGS id, float delta_time, bool loops)
+void character::PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loops)
 {
     if (animations[id]._sprite == nullptr)
         return;
@@ -230,7 +218,8 @@ void quicksortSprites(sprite *sprites[entity_limit], int low, int high)
         quicksortSprites(sprites, low, pi - 1);
         quicksortSprites(sprites, pi + 1, high);
     }
-} // quadtree, finishing attack system and targetting, character creation and input to the main player.
+}
+
 void game_system::Add(character *e)
 {
     characters[characterCount] = e;
@@ -264,21 +253,10 @@ void game_system::Remove(character *e)
         characters[i] = characters[i + 1];
     }
     --characterCount;
+
+    // char_tree.remove(e);
 }
 
-// void game_system::handleMusic()
-// {
-//     if (game_music.getDuration() == sf::Time::Zero)
-//     {
-//         return;
-//     }
-//     if (!music_playing || game_music.getStatus() == sf::Music::Stopped)
-//     {
-//         game_music.play();
-//         music_playing = true;
-//     }
-// }
-// void handleMusic();
 void game_system::loopSound(unsigned int id)
 {
     // code that makes id sound loop if playing
@@ -310,11 +288,11 @@ void game_system::playSound(unsigned int id, int start_time, bool interrupt)
 
     if (id < sound_is_music_cutoff)
     {
-        ma_sound_set_volume(&game_sounds[id], static_cast<float>(music_volume) / 100.0f);
+        ma_sound_set_volume(&game_sounds[id], static_cast<double>(music_volume) / 100.0f);
     }
     else
     {
-        ma_sound_set_volume(&game_sounds[id], static_cast<float>(sound_volume) / 100.0f);
+        ma_sound_set_volume(&game_sounds[id], static_cast<double>(sound_volume) / 100.0f);
     }
     ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
     ma_sound_start(&game_sounds[id]);
@@ -324,7 +302,7 @@ void game_system::stopSound(unsigned int id)
     ma_sound_stop(&game_sounds[id]);
 }
 
-void game_system::update(dungeon &floor, float delta_time)
+void game_system::update(dungeon &floor, double delta_time)
 {
     // if (paused)
     // {
@@ -338,19 +316,6 @@ void game_system::update(dungeon &floor, float delta_time)
     // quicksortSprites(sortedSprites, 0, characterCount - 1);
     for (int i = 0; i < characterCount; ++i)
     {
-        for (int j = 0; j < characterCount; ++j)
-        {
-            if (i == j)
-                continue;
-
-            switch (characters[i]->id)
-            {
-            case CH_PLAYER:
-                break;
-            case CH_MONSTER:
-                break;
-            }
-        }
         characters[i]->Update(delta_time);
         if (!characters[i]->onGround)
         {
@@ -367,16 +332,18 @@ void game_system::update(dungeon &floor, float delta_time)
                 continue;
             }
 
-            float xNormal = 0.0f, yNormal = 0.0f;
+            double xNormal = 0.0f, yNormal = 0.0f;
 
-            float firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
-                                                                           characters[i]->velocityY * delta_time,
-                                                                           0.0f, 0.0f, floor.collision_boxes[j], xNormal, yNormal);
-
+            double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
+                                                                            characters[i]->velocityY * delta_time,
+                                                                            0.0f, 0.0f, floor.collision_boxes[j], xNormal, yNormal);
             // if (firstCollisionHitTest < 1.0f)
-            // {
-            //     std::cout << floor.collision_boxes[j].collisionID << ", " << floor.collision_boxes[j].specialTileID << " collision\n";
-            // }
+            //     firstCollisionHitTest *= 0.5f;
+
+            if (firstCollisionHitTest < 1.0f)
+            {
+                std::cout << i << " hit " << j << ", id = " << floor.collision_boxes[j].collisionID << ", multi = " << firstCollisionHitTest << ", x = " << xNormal << ", y = " << yNormal << " collision\n";
+            }
 
             switch (floor.collision_boxes[j].collisionID)
             {
@@ -387,6 +354,11 @@ void game_system::update(dungeon &floor, float delta_time)
                 {
                     if (!characters[i]->parrySuccess)
                         characters[i]->hp = 0;
+                }
+                if (firstCollisionHitTest < 1.0f && xNormal == 0.0f && yNormal == 0.0f)
+                {
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i]->velocityX *= firstCollisionHitTest;
                 }
                 break;
             case 2:
@@ -451,14 +423,26 @@ void game_system::update(dungeon &floor, float delta_time)
                 }
                 break;
             default:
+                std::cout << "velX = " << characters[i]->velocityX << " hmm ";
                 if (yNormal != 0.0f)
                     characters[i]->velocityY *= firstCollisionHitTest;
                 if (xNormal != 0.0f)
                     characters[i]->velocityX *= firstCollisionHitTest;
-                if (yNormal < 0.0f)
+                // if (yNormal != 0.0f)
+                //     characters[i]->velocityY *= 0.0f;
+                // if (xNormal != 0.0f)
+                //     characters[i]->velocityX *= 0.0f;
+                if (firstCollisionHitTest < 1.0f && xNormal == 0.0f && yNormal == 0.0f)
+                {
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i]->velocityX *= firstCollisionHitTest;
+                }
+                if (yNormal > 0.0f)
                 {
                     characters[i]->onGround = true;
                 }
+                std::cout << "velX after = " << characters[i]->velocityX << " hmm\n";
+
                 break;
             }
         }

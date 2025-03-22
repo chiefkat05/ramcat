@@ -38,12 +38,12 @@ struct object
 
 struct sprite
 {
-    float x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f, h = 1.0f, d = 1.0f, rx = 0.0f, ry = 0.0f, rz = 0.0f;
-    float colr = 1.0f, colg = 1.0f, colb = 1.0f, cola = 1.0f;
+    double x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f, h = 1.0f, d = 1.0f, rx = 0.0f, ry = 0.0f, rz = 0.0f;
+    double colr = 1.0f, colg = 1.0f, colb = 1.0f, cola = 1.0f;
     unsigned int spriteW = 0, spriteH = 0;
     unsigned int framesX = 1, framesY = 1;
     unsigned int textureX = 0, textureY = 0;
-    float textureWidth = 0, textureHeight = 0;
+    double textureWidth = 0, textureHeight = 0;
     // std::string path;
     // sf::Sprite rect;
     unsigned int sprite_texture;
@@ -54,14 +54,14 @@ struct sprite
     sprite();
     sprite(const char *path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
 
-    // sprite(const char *_path, float _x, float _y, unsigned int _fx, unsigned int _fy);
+    // sprite(const char *_path, double _x, double _y, unsigned int _fx, unsigned int _fy);
     void textureInit();
 
-    void Put(float _x, float _y, float _z);
-    void Move(float _xdist, float _ydist, float _zdist);
-    void Scale(float _w, float _h, float _d);
-    void Rotate(float _rx, float _ry, float _rz);
-    void SetColor(float _r, float _g, float _b, float _a);
+    void Put(double _x, double _y, double _z);
+    void Move(double _xdist, double _ydist, double _zdist);
+    void Scale(double _w, double _h, double _d);
+    void Rotate(double _rx, double _ry, double _rz);
+    void SetColor(double _r, double _g, double _b, double _a);
 
     void Draw(shader &program, object &sprite_object);
 };
@@ -70,11 +70,11 @@ struct animation
 {
     unsigned int start = 0, end = 0;
 
-    float speed = 1.0f;
-    float timer = 10.0f;
+    double speed = 1.0f;
+    double timer = 10.0f;
     unsigned int frame = 0;
-    bool finished = false;
-    float xScale = 1.0f, yScale = 1.0f;
+    bool finished = true;
+    double xScale = 1.0f, yScale = 1.0f;
 
     sprite *_sprite;
 
@@ -83,19 +83,19 @@ struct animation
         _sprite = nullptr;
     }
 
-    animation(sprite *sp, unsigned int s, unsigned int e = 1, float spd = 1.0f) : _sprite(sp)
+    animation(sprite *sp, unsigned int s, unsigned int e = 1, double spd = 1.0f) : _sprite(sp)
     {
         start = s;
         end = e;
         speed = spd;
     }
-    void setScale(float x, float y)
+    void setScale(double x, double y)
     {
         xScale = x;
         yScale = y;
     }
 
-    void run(float delta_time, bool loop)
+    void run(double delta_time, bool loop)
     {
         finished = false;
         if (timer <= 0.0f)
@@ -142,7 +142,7 @@ struct textCharacter
     unsigned int Advance;
 };
 int loadFont(const char *path);
-glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color);
+glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color);
 
 // void clearAllTextures();
 

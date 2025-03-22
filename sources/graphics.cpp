@@ -78,19 +78,19 @@ shader::shader(const char *vPath, const char *fPath)
     glDeleteShader(fragmentShader);
 }
 
-void shader::setUniformVec4(const char *name, float x, float y, float z, float w)
+void shader::setUniformVec4(const char *name, double x, double y, double z, double w)
 {
     glUniform4f(glGetUniformLocation(ID, name), x, y, z, w);
 }
-void shader::setUniformVec3(const char *name, float x, float y, float z)
+void shader::setUniformVec3(const char *name, double x, double y, double z)
 {
     glUniform3f(glGetUniformLocation(ID, name), x, y, z);
 }
-void shader::setUniformVec2(const char *name, float x, float y)
+void shader::setUniformVec2(const char *name, double x, double y)
 {
     glUniform2f(glGetUniformLocation(ID, name), x, y);
 }
-void shader::setUniformFloat(const char *name, float x)
+void shader::setUniformDouble(const char *name, double x)
 {
     glUniform1f(glGetUniformLocation(ID, name), x);
 }

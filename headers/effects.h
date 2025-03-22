@@ -19,15 +19,15 @@ const unsigned int particle_system_limit = 6;
 
 struct particle
 {
-    float x = 0.0f, y = 0.0f, velX = 0.0f, velY = 0.0f, life = 0.0f;
-    float lifestartalphamultiple = 1.0f;
+    double x = 0.0f, y = 0.0f, velX = 0.0f, velY = 0.0f, life = 0.0f;
+    double lifestartalphamultiple = 1.0f;
 
-    void Put(float _x, float _y)
+    void Put(double _x, double _y)
     {
         x = _x;
         y = _y;
     }
-    void Move(float _offx, float _offy)
+    void Move(double _offx, double _offy)
     {
         x += _offx;
         y += _offy;
@@ -57,22 +57,22 @@ struct particlesystem
     unsigned int particle_count, particles_alive = 0;
     bool fadewithlife = true;
 
-    float variables[pv_variable_limit] = {0.0f};
-    float *variable_pointers[pv_variable_limit];
+    double variables[pv_variable_limit] = {0.0f};
+    double *variable_pointers[pv_variable_limit];
 
     sprite visual;
 
     particlesystem();
-    particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, float _life_lower, float _life_upper,
-                   float sX, float sY, float sW, float sH);
+    particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, double _life_lower, double _life_upper,
+                   double sX, double sY, double sW, double sH);
 
-    void spawn(float delta_time);
-    void push(float xVel, float yVel, float xVelMax, float yVelMax);
+    void spawn(double delta_time);
+    void push(double xVel, double yVel, double xVelMax, double yVelMax);
 
-    void linkVariable(PARTICLE_VARIABLE pv, float *value);
+    void linkVariable(PARTICLE_VARIABLE pv, double *value);
 
-    void update(float delta_time);
-    void draw(GLFWwindow *win, shader &program, object &sprite_object, float delta_time);
+    void update(double delta_time);
+    void draw(GLFWwindow *win, shader &program, object &sprite_object, double delta_time);
 
     void kill();
 };

@@ -51,9 +51,9 @@ struct dungeon
 
     unsigned int roomWidth = 0, roomHeight = 0;
     unsigned int tileSpriteX, tileSpriteY;
-    float spawnLocationX = 0.0f, spawnLocationY = 0.0f;
+    double spawnLocationX = 0.0f, spawnLocationY = 0.0f;
 
-    float viewBoundsX, viewBoundsY, viewBoundsWidth, viewBoundsHeight;
+    double viewBoundsX, viewBoundsY, viewBoundsWidth, viewBoundsHeight;
 
     const char *tileSetPath;
 
@@ -63,7 +63,7 @@ struct dungeon
     dungeon();
     dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy);
 
-    // void changeScreenViewPosition(glview &view, float newX, float newY);
+    // void changeScreenViewPosition(glview &view, double newX, double newY);
 
     void draw(GLFWwindow *win, shader &program, object &sprite_object);
 

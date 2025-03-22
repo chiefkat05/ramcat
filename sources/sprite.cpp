@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../stb/stb_image.h"
 
-float quad_vertices[] = {
+double quad_vertices[] = {
     -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
     0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
     0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
@@ -11,7 +11,7 @@ float quad_vertices[] = {
 unsigned int quad_indices[] = {
     0, 1, 2,
     0, 3, 2};
-float cube_vertices[] = {
+double cube_vertices[] = {
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
     0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
     0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
@@ -109,37 +109,37 @@ void sprite::textureInit()
     spriteW = width / framesX;
     spriteH = height / framesY;
 
-    textureWidth = static_cast<float>(spriteW) / width;
-    textureHeight = static_cast<float>(spriteH) / height;
+    textureWidth = static_cast<double>(spriteW) / width;
+    textureHeight = static_cast<double>(spriteH) / height;
 
     empty = false;
 }
-void sprite::Put(float _x, float _y, float _z)
+void sprite::Put(double _x, double _y, double _z)
 {
     x = _x;
     y = _y;
     z = _z;
 }
-void sprite::Move(float _xdist, float _ydist, float _zdist)
+void sprite::Move(double _xdist, double _ydist, double _zdist)
 {
     x += _xdist;
     y += _ydist;
     z += _zdist;
 }
-void sprite::Scale(float _w, float _h, float _d)
+void sprite::Scale(double _w, double _h, double _d)
 {
     w = _w;
     h = _h;
     d = _d;
 }
-void sprite::Rotate(float _rx, float _ry, float _rz)
+void sprite::Rotate(double _rx, double _ry, double _rz)
 {
     rx = _rx;
     ry = _ry;
     rz = _rz;
 }
 
-void sprite::SetColor(float _r, float _g, float _b, float _a)
+void sprite::SetColor(double _r, double _g, double _b, double _a)
 {
     colr = _r;
     colg = _g;
@@ -153,10 +153,11 @@ void sprite::Draw(shader &program, object &sprite_object)
     if (sprite_object.obj_type != OBJ_TEXT)
     {
         glm::mat4 model = glm::mat4(1.0f);
+        // why is there a glm::dvec3 but no option to translate using it??? searching web shows up nothing relevant
         model = glm::translate(model, glm::vec3(x, y, z));
-        model = glm::rotate(model, glm::radians(rx), glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(ry), glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, glm::radians(rz), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(static_cast<float>(rx)), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::rotate(model, glm::radians(static_cast<float>(ry)), glm::vec3(0.0, 1.0, 0.0));
+        model = glm::rotate(model, glm::radians(static_cast<float>(rz)), glm::vec3(0.0, 0.0, 1.0));
         model = glm::scale(model, glm::vec3(w, h, d));
         program.setUniformInt("tex", 0);
         program.setUniformMat4("model", model);
@@ -208,9 +209,9 @@ object::object(object_type _obj)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)(3 * sizeof(double)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         break;
@@ -224,9 +225,9 @@ object::object(object_type _obj)
         glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)(3 * sizeof(double)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         break;
@@ -235,9 +236,9 @@ object::object(object_type _obj)
         glGenBuffers(1, &VBO);
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 24, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(double) * 24, NULL, GL_DYNAMIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+        glVertexAttribPointer(0, 4, GL_DOUBLE, GL_FALSE, 4 * sizeof(double), 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         break;
@@ -256,7 +257,7 @@ void object::objectKill()
 std::map<char, textCharacter> textCharacters;
 FT_Library font_ft;
 FT_Face font_face;
-glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, float x, float y, float scale, glm::vec4 color)
+glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color)
 {
     shaderProgram.use();
     shaderProgram.setUniformVec4("textColor", color.x, color.y, color.z, color.w);
@@ -271,12 +272,12 @@ glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string te
     {
         textCharacter ch = textCharacters[*c];
 
-        float xpos = x + ch.Bearing.x * scale;
-        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
-        float w = ch.Size.x * scale;
-        float h = ch.Size.y * scale;
+        double xpos = x + ch.Bearing.x * scale;
+        double ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        double w = ch.Size.x * scale;
+        double h = ch.Size.y * scale;
 
-        float vertices[6][4] = {
+        double vertices[6][4] = {
             {xpos, ypos + h, 0.0f, 0.0f},
             {xpos, ypos, 0.0f, 1.0f},
             {xpos + w, ypos, 1.0f, 1.0f},
