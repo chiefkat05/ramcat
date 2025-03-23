@@ -66,7 +66,7 @@ extern game_state state;
 camera mainCam(CAMERA_STATIONARY);
 // planning time
 
-void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
+void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor)
 {
     p.velocityX = 0.0;
 
@@ -413,9 +413,9 @@ void playerInit(character &pl, game_system &game, player &controller)
     game.Add(&pl);
 }
 
-void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    dg = dungeon(tilePath.c_str(), fx, fy);
+    dg = world(tilePath.c_str(), fx, fy);
     dg.readRoomFile(levelPath.c_str());
 }
 
@@ -452,7 +452,7 @@ void fullscreenChangeFunction(GLFWwindow *window)
 
     fullscreenLast = mainCam.fullscreen;
 }
-void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
+void addPlayer(character *ch, game_system *gs, world *wo, int x)
 {
     if (playerCount >= player_limit)
         return;
@@ -464,7 +464,7 @@ void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
                                          0.083333334 * static_cast<double>(playerCount + 1), 1.0);
     playerCount++;
 }
-void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
+void removePlayer(character *ch, game_system *gs, world *wo, int x)
 {
     if (playerCount <= 1)
         return;
@@ -486,7 +486,7 @@ controlset changingControl = control_limit;
 int uiElementForControlChangeIndex = 0;
 int playerIDForControl = 0;
 int watchGamepadID = -1;
-void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
+void changeControlFunc(character *ch, game_system *gs, world *wo, int x)
 {
     changingControl = static_cast<controlset>(x);
 
@@ -495,7 +495,7 @@ void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
 
     watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
 }
-void volumeChangeSoundPlayFunc(character *ch, game_system *gs, dungeon *dg, int x)
+void volumeChangeSoundPlayFunc(character *ch, game_system *gs, world *wo, int x)
 {
     gs->playSound(30, 0.0, true);
 }
@@ -567,7 +567,14 @@ int gamepadInputWatch()
 
     // }
 }
-void incrementPlayerIDForControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
+void increaseLevel(character *ch, game_system *gs, world *wo, int x)
+{
+    if (gs == nullptr)
+        return;
+
+    gs->levelincreasing = true;
+}
+void incrementPlayerIDForControlFunc(character *ch, game_system *gs, world *wo, int x)
 {
     playerIDForControl += x;
     if (playerIDForControl < 0)
@@ -582,12 +589,12 @@ void incrementPlayerIDForControlFunc(character *ch, game_system *gs, dungeon *dg
         playerIDForControl = cycleDifference;
     }
 }
-void fullScreenToggleFunc(character *ch, game_system *gs, dungeon *dg, int x)
+void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x)
 {
     mainCam.fullscreen = !mainCam.fullscreen;
 }
-void goMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
-void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv);
+void goMenuScreen(character *p, game_system *gs, world *w, int argv);
+void leaveMenuScreen(character *p, game_system *gs, world *w, int argv);
 
 int playerIDForControlStrElementIndex = 0;
 int prevState = -1;
@@ -596,7 +603,7 @@ sprite deCollision;
 sprite dePl;
 #endif
 // edit all guis here
-void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_engine)
+void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engine)
 {
     if (state == prevState)
         return;
@@ -646,6 +653,8 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
+
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Next Level", 0.0f, 0.0f, 40.0f, 0.0f, 1, 1, increaseLevel, false, nullptr, &mainG));
         for (int i = 0; i < control_limit; ++i)
         {
             gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 51.2f, 0.0, 1, 1));
@@ -699,9 +708,9 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0, 16.0, 1, 1, removePlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
         break;
-    case DUNGEON_SCREEN:
+    case WORLD_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
             players[i].visual.Scale(0.32f, 0.32f, 1.0);
@@ -719,19 +728,19 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         {
         case 0:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 6);
             break;
         case 1:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 6);
             break;
         case 2:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 6);
             break;
         case 3:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 4:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
@@ -759,14 +768,14 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             break;
         case 16:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 17:
             state = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
         mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * 0.16f - 1.84f, 50.0, 1.0);
@@ -843,8 +852,8 @@ int main()
 
     game_system game;
 
-    dungeon mainDungeon("./img/tiles.png", 4, 2); // lmao
-    mainDungeon.readRoomFile("./levels/01.lvl");
+    world mainWorld("./img/tiles.png", 4, 2); // lmao
+    mainWorld.readRoomFile("./levels/01.lvl");
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
     playerInit(players[0], game, playerControllers[0]);
     players[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
@@ -880,9 +889,9 @@ int main()
         if (state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
-            state = DUNGEON_SCREEN;
+            state = WORLD_SCREEN;
         }
-        menuData(game, players[0], mainDungeon, soundEngine);
+        menuData(game, players[0], mainWorld, soundEngine);
         gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
         for (int i = 0; i < game.particlesystemcount; ++i)
         {
@@ -958,7 +967,7 @@ int main()
 
             fullscreenChangeFunction(window);
         }
-        if (state == DUNGEON_SCREEN && mainDungeon.dungeonInitialized)
+        if (state == WORLD_SCREEN && mainWorld.worldInitialized)
         {
             if (playerFacingRight && mainCam.offsetX < 0.2f)
             {
@@ -979,23 +988,23 @@ int main()
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < collision_box_limit; ++i)
             {
-                if (mainDungeon.collision_boxes[i].collisionID < 0)
+                if (mainWorld.collision_boxes[i].collisionID < 0)
                     continue;
 
-                double mdXScale = mainDungeon.collision_boxes[i].max_x - mainDungeon.collision_boxes[i].min_x;
-                double mdYScale = mainDungeon.collision_boxes[i].max_y - mainDungeon.collision_boxes[i].min_y;
+                double mdXScale = mainWorld.collision_boxes[i].max_x - mainWorld.collision_boxes[i].min_x;
+                double mdYScale = mainWorld.collision_boxes[i].max_y - mainWorld.collision_boxes[i].min_y;
                 deCollision.Scale(mdXScale,
                                   mdYScale, 1.0);
 
-                double newX = (mainDungeon.collision_boxes[i].min_x + mainDungeon.collision_boxes[i].max_x) * 0.5f;
-                double newY = (mainDungeon.collision_boxes[i].min_y + mainDungeon.collision_boxes[i].max_y) * 0.5f;
+                double newX = (mainWorld.collision_boxes[i].min_x + mainWorld.collision_boxes[i].max_x) * 0.5f;
+                double newY = (mainWorld.collision_boxes[i].min_y + mainWorld.collision_boxes[i].max_y) * 0.5f;
                 deCollision.Put(newX - 0.08f, newY - 0.16, 0.0);
                 deCollision.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
                 deCollision.Draw(shaderProgram, spriteRect);
             }
 #endif
 
-            game.update(mainDungeon, delta_time);
+            game.update(mainWorld, delta_time);
 
             double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
             double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
@@ -1007,7 +1016,7 @@ int main()
                 dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
 #endif
 
-            mainDungeon.draw(window, shaderProgram, spriteRect);
+            mainWorld.draw(window, shaderProgram, spriteRect);
 
             for (int i = 0; i < game.characterCount; ++i)
             {
@@ -1019,13 +1028,13 @@ int main()
                 if (game.characters[i]->plControl == nullptr)
                     continue;
 
-                playerControl(game, *game.characters[i], window, &mainDungeon);
+                playerControl(game, *game.characters[i], window, &mainWorld);
 
                 if (game.characters[i]->hp <= 0 || game.characters[i]->visual.y < -20.0)
                 {
                     if (game.characters[i] == &players[0])
                     {
-                        game.characters[i]->visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0);
+                        game.characters[i]->visual.Put(mainWorld.spawnLocationX, -mainWorld.spawnLocationY, 0.0);
                     }
                     else
                     {
@@ -1133,12 +1142,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 static game_state returnState;
-void goMenuScreen(character *p, game_system *gs, dungeon *d, int argv)
+void goMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
     returnState = state;
     state = MENU_SCREEN;
 }
-void leaveMenuScreen(character *p, game_system *gs, dungeon *d, int argv)
+void leaveMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
     state = returnState;
 }

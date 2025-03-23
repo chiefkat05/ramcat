@@ -1,16 +1,16 @@
-#include "../headers/dungeon.h"
+#include "../headers/world.h"
 
 // #define DEBUG_COLLISIONS
 
-dungeon::dungeon()
+world::world()
 {
-    dungeonInitialized = false;
+    worldInitialized = false;
 }
-dungeon::dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
+world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
 {
     tileSetPath = _tileSetPath;
-    dungeonSprite = sprite(tileSetPath, _fx, _fy);
-    dungeonInitialized = true;
+    worldSprite = sprite(tileSetPath, _fx, _fy);
+    worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {
         for (unsigned int y = 0; y < height_limit; ++y)
@@ -20,7 +20,7 @@ dungeon::dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
     } // the pointer to the ui_element's visual object is incorrect inside the element's update function
 }
 
-void dungeon::draw(GLFWwindow *win, shader &program, object &sprite_object)
+void world::draw(GLFWwindow *win, shader &program, object &sprite_object)
 {
     for (unsigned int x = 0; x < roomWidth; ++x)
     {
@@ -29,18 +29,18 @@ void dungeon::draw(GLFWwindow *win, shader &program, object &sprite_object)
             if (tiles[x][y].id == -1)
                 continue;
 
-            // dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125, (roomHeight - y) * dungeonSprite.spriteH * 0.125, 9.0);
-            dungeonSprite.textureX = tiles[x][y].id % dungeonSprite.framesX;
-            dungeonSprite.textureY = tiles[x][y].id / dungeonSprite.framesX;
-            dungeonSprite.Put(x * 0.16, (roomHeight - y) * 0.16, 0.0);
-            dungeonSprite.Scale(0.16, 0.16, 1.0);
+            // worldSprite.Put(x * worldSprite.spriteW * 0.125, (roomHeight - y) * worldSprite.spriteH * 0.125, 9.0);
+            worldSprite.textureX = tiles[x][y].id % worldSprite.framesX;
+            worldSprite.textureY = tiles[x][y].id / worldSprite.framesX;
+            worldSprite.Put(x * 0.16, (roomHeight - y) * 0.16, 0.0);
+            worldSprite.Scale(0.16, 0.16, 1.0);
 
-            dungeonSprite.Draw(program, sprite_object);
+            worldSprite.Draw(program, sprite_object);
         }
     }
 }
 
-void dungeon::readRoomFile(const char *path)
+void world::readRoomFile(const char *path)
 {
     std::ifstream file(path);
 
@@ -87,12 +87,16 @@ void dungeon::readRoomFile(const char *path)
                 spawnLocationY = roomHeight;
                 tiles[i][roomHeight].collisionID = -1;
                 break;
+            case 'S':
+                tiles[i][roomHeight].id = 15;
+                tiles[i][roomHeight].collisionID = 9;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                break;
             case 'e':
                 tiles[i][roomHeight].id = 2;
                 tiles[i][roomHeight].collisionID = 2;
                 break;
             case 'f':
-                std::cout << "hellooooo?\n";
                 tiles[i][roomHeight].id = 18;
                 tiles[i][roomHeight].collisionID = 8;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;

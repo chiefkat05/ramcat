@@ -147,7 +147,7 @@ double aabb::response(double xV, double yV, double xV2, double yV2, aabb &test, 
     {
         xNormal = 0.0;
         yNormal = 0.0;
-        return 0.0;
+        return 1.0f;
     }
 
     return entryTime;

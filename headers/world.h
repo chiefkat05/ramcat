@@ -1,5 +1,5 @@
-#ifndef DUNGEON_H
-#define DUNGEON_H
+#ifndef WORLD_H
+#define WORLD_H
 
 #include <random>
 #include <fstream>
@@ -43,15 +43,14 @@ enum specialTiles
     TILE_WALL_BUTTON_4
 };
 
-struct dungeon
+struct world
 {
-    bool start = true, end = false, dungeonInitialized = false;
+    bool start = true, end = false, worldInitialized = false;
     tile tiles[width_limit][height_limit];
-    sprite dungeonSprite;
+    sprite worldSprite;
 
     unsigned int roomWidth = 0, roomHeight = 0;
     unsigned int tileSpriteX, tileSpriteY;
-    int fishCollected = 0, fishNeeded = 5;
     double spawnLocationX = 0.0, spawnLocationY = 0.0;
 
     double viewBoundsX, viewBoundsY, viewBoundsWidth, viewBoundsHeight;
@@ -61,8 +60,8 @@ struct dungeon
     aabb collision_boxes[collision_box_limit];
     unsigned int collision_box_count = 0;
 
-    dungeon();
-    dungeon(const char *_tileSetPath, unsigned int _fx, unsigned int _fy);
+    world();
+    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy);
 
     // void changeScreenViewPosition(glview &view, double newX, double newY);
 

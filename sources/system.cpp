@@ -102,12 +102,12 @@ character::character(std::string filepath, double x, double y, unsigned int fx, 
     collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24f);
 }
 
-void character::MoveTo(double _x, double _y, dungeon *currentDungeon)
+void character::MoveTo(double _x, double _y, world *currentWorld)
 {
-    if (currentDungeon != nullptr)
+    if (currentWorld != nullptr)
     {
-        _x -= currentDungeon->spawnLocationX;
-        _y -= currentDungeon->spawnLocationY;
+        _x -= currentWorld->spawnLocationX;
+        _y -= currentWorld->spawnLocationY;
     }
 
     // walkToX = _x;
@@ -180,6 +180,7 @@ void character::PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loo
     {
         animations[id].frame = animations[id].start;
         animations[id].timer = 10.0;
+        animations[playingAnim].finished = true;
     }
     playingAnim = id;
     animationLooping = loops;
@@ -301,7 +302,7 @@ void game_system::stopSound(unsigned int id)
     ma_sound_stop(&game_sounds[id]);
 }
 
-void game_system::update(dungeon &floor, double delta_time)
+void game_system::update(world &floor, double delta_time)
 {
     // if (paused)
     // {
@@ -428,7 +429,26 @@ void game_system::update(dungeon &floor, double delta_time)
                         }
                     }
 
-                    ++floor.fishCollected;
+                    ++fishCollected;
+                }
+                break;
+            case 9:
+                if (firstCollisionHitTest < 1.0f)
+                {
+                    for (int x = 0; x < floor.roomWidth; ++x)
+                    {
+                        for (int y = 0; y < floor.roomHeight; ++y)
+                        {
+                            if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
+                            {
+                                floor.tiles[x][y].id = 2;
+                                floor.tiles[x][y].collisionID = -1;
+
+                                floor.spawnLocationX = x * 0.16f;
+                                floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + y) * 0.16f;
+                            }
+                        }
+                    }
                 }
                 break;
             default:

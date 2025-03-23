@@ -4,11 +4,11 @@
 #include <iostream>
 #include <string>
 #include "collision.h"
-#include "dungeon.h"
+#include "world.h"
 #include "effects.h"
 #include "miniaudio.h"
 
-const unsigned int entity_limit = 64; // also change in dungeon.h since there's another one there, also delete one of these so that there's only one pls
+const unsigned int entity_limit = 64; // also change in world.h since there's another one there, also delete one of these so that there's only one pls
 const unsigned int character_limit = 6;
 const unsigned int animation_limit = 24;
 const unsigned int sound_limit = 32;
@@ -130,7 +130,7 @@ struct character
     character(sprite &v, IDENTIFICATION _id);
     character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
-    void MoveTo(double _x, double _y, dungeon *currentDungeon);
+    void MoveTo(double _x, double _y, world *currentWorld);
 
     void Update(double delta_time);
     void updatePosition(double delta_time);
@@ -178,6 +178,7 @@ struct game_system
     bool music_playing = false;
 
     int music_volume = 100, sound_volume = 100;
+    int fishCollected = 0, fishNeeded = 5;
 
     void Add(character *e);
     void Add(particlesystem *p);
@@ -192,7 +193,7 @@ struct game_system
     void stopSound(unsigned int id);
     // void uninitMusic();
 
-    void update(dungeon &floor, double delta_time);
+    void update(world &floor, double delta_time);
 
     void killParticles();
 };

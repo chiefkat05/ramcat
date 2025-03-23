@@ -16,8 +16,8 @@ extern bool mouseReleased;
 // connector host;
 // bool typingInput;
 
-// ui_element::ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, dungeon *, int), bool bg,
-//                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
+// ui_element::ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, world *, int), bool bg,
+//                        character *_func_p, game_system *_func_gs, world *_func_d,
 //                        int _func_i, int *_linkValue)
 //     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 // {
@@ -38,8 +38,8 @@ extern bool mouseReleased;
 //     value = _linkValue;
 // }
 ui_element::ui_element(ui_element_type t, const char *path, double x, double y, double w, double h, int frX, int frY,
-                       void func(character *, game_system *, dungeon *, int), bool bg,
-                       character *_func_p, game_system *_func_gs, dungeon *_func_d,
+                       void func(character *, game_system *, world *, int), bool bg,
+                       character *_func_p, game_system *_func_gs, world *_func_d,
                        int _func_i, int *_linkValue)
     : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 {
@@ -250,32 +250,32 @@ ui_element *gui::mostRecentCreatedElement()
     return &elements[elements.size() - 1];
 }
 
-void startGame(character *p, game_system *gs, dungeon *d, int argv)
+void startGame(character *p, game_system *gs, world *w, int argv)
 {
     if (state > CHARACTER_CREATION_SCREEN)
         return;
 
     state = static_cast<game_state>(argv);
 }
-void optionsTab(character *p, game_system *gs, dungeon *d, int argv)
+void optionsTab(character *p, game_system *gs, world *w, int argv)
 {
     state = MENU_SCREEN;
 }
-void nullFunc(character *p, game_system *gs, dungeon *d, int argv) {}
+void nullFunc(character *p, game_system *gs, world *w, int argv) {}
 
-void quitGame(character *p, game_system *gs, dungeon *d, int argv)
+void quitGame(character *p, game_system *gs, world *w, int argv)
 {
     gui_data.quit = true;
 }
 
-// void connectToIp(character *p, game_system *gs, dungeon *d, int argv)
+// void connectToIp(character *p, game_system *gs, world *w, int argv)
 // {
 //     host.host_ip = "127.0.0.1";
 //     host.port = 4444;
 //     host.bind(4444);
 // }
 
-// void switchTyping(character *p, game_system *gs, dungeon *d, int argv)
+// void switchTyping(character *p, game_system *gs, world *w, int argv)
 // {
 //     typingInput = !typingInput;
 // }
