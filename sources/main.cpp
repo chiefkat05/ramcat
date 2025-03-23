@@ -392,6 +392,7 @@ void playerInit(character &pl, game_system &game, player &controller)
 {
     pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
     pl.visual.Scale(0.32f, 0.32f, 1.0);
+
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
         ++playerGamepadCount;
@@ -457,7 +458,10 @@ void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
         return;
 
     playerInit(players[playerCount], *gs, playerControllers[playerCount]);
-    players[playerCount].visual.Scale(0.48f, 0.48f, 1.0);
+    players[playerCount].visual.Scale(0.48, 0.48, 1.0);
+    players[playerCount].visual.SetColor(0.083333334 * static_cast<double>(playerCount + 1),
+                                         0.083333334 * static_cast<double>(playerCount + 1),
+                                         0.083333334 * static_cast<double>(playerCount + 1), 1.0);
     playerCount++;
 }
 void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
@@ -843,6 +847,7 @@ int main()
     mainDungeon.readRoomFile("./levels/01.lvl");
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
     playerInit(players[0], game, playerControllers[0]);
+    players[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
     prevState = WIN_SCREEN;
 
     ma_engine soundEngine;
