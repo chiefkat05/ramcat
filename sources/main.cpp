@@ -11,6 +11,8 @@
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
 
+// camera boundary does not stop on right side of level
+
 // Make the actual game
 
 // Online multiplayer with asio
@@ -35,24 +37,23 @@
 // #define COLLISION_DEBUG
 
 double texCoords[] = {
-    0.0f, 0.0f,
-    1.0f, 0.0f,
-    1.0f, 1.0f,
-    0.0f, 1.0f};
+    0.0, 0.0,
+    1.0, 0.0,
+    1.0, 1.0,
+    0.0, 1.0};
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-double delta_time = 0.0f;
+double delta_time = 0.0;
 bool mouseClicked = false, mousePressed = false, mouseReleased = false;
-double mouseX = 0.0f, mouseY = 0.0f;
+double mouseX = 0.0, mouseY = 0.0;
 bool buttonHovered = false;
-int parryCooloff = 15, parryTimer = 0;
 int playerGamepadCount = -1, playerCount = 1;
-double playerSpawnDist = 0.0f;
-double lowestCamYLevel = 0.0f;
+double playerSpawnDist = 0.0;
+double lowestCamYLevel = 0.0;
 bool playerSpawned = false;
 bool playerFacingRight = true;
 
@@ -67,15 +68,15 @@ camera mainCam(CAMERA_STATIONARY);
 
 void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon *floor)
 {
-    p.velocityX = 0.0f;
+    p.velocityX = 0.0;
 
     bool walkingkeypressed = false;
     static bool stepsoundplayed = false;
     if (p.plControl->getInput(window, CONTROL_LEFT))
     {
         p.velocityX = -p.runSpeed;
-        p.visual.Rotate(0.0f, 180.0f, 0.0f);
-        if (p.onGround && p.animations[ANIM_ABILITY_0].finished)
+        p.visual.Rotate(0.0, 180.0, 0.0);
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
         walkingkeypressed = true;
         playerFacingRight = false;
@@ -83,8 +84,8 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     if (p.plControl->getInput(window, CONTROL_RIGHT))
     {
         p.velocityX = p.runSpeed;
-        p.visual.Rotate(0.0f, 0.0f, 0.0f);
-        if (p.onGround && p.animations[ANIM_ABILITY_0].finished)
+        p.visual.Rotate(0.0, 0.0, 0.0);
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
 
         walkingkeypressed = true;
@@ -92,7 +93,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if (p.plControl->getInput(window, CONTROL_DOWN) && !p.onGround)
     {
-        p.velocityY = 3.0f * -p.runSpeed;
+        p.velocityY = 3.0 * -p.runSpeed;
     }
     if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
     {
@@ -100,7 +101,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
     {
-        game.playSound(1, 0.15f, true);
+        game.playSound(1, 0.15, true);
         stepsoundplayed = true;
     }
     if (!walkingkeypressed)
@@ -113,26 +114,37 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
     }
     if ((p.onGround || p.parrySuccess) && !p.jumped && p.plControl->getInput(window, CONTROL_UP))
     {
-        p.velocityY = 1.8f * p.runSpeed;
+        p.velocityY = 1.8 * p.runSpeed;
         p.jumped = true;
         p.onGround = false;
         p.parrySuccess = false;
     }
 
-    static bool parryButtonPressed = false;
+    static bool parryButtonPressed = false, strikeButtonPressed = false;
     if (p.parryTimer > 0)
-        --p.parryTimer;
-    if (p.parryTimer <= 0)
+    {
+        p.parryTimer -= 60.0f * delta_time;
+    }
+    if (p.parryTimer <= 0 && p.parrySuccess)
     {
         p.parrySuccess = false;
+        p.velocityY = 1.0;
     }
     if (!p.plControl->getInput(window, CONTROL_SHIELD))
     {
         parryButtonPressed = false;
     }
+
+    if (p.hp == 0 && p.parryTimer > (p.parryCooloff - p.parryWindow))
+    {
+        p.hp = p.maxhp;
+        p.parrySuccess = true;
+        p.jumped = false;
+    }
+
     if (p.plControl->getInput(window, CONTROL_SHIELD) && !parryButtonPressed)
     {
-        if (parryTimer <= 0)
+        if (p.parryTimer <= 0)
         {
             p.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
             p.parryTimer = p.parryCooloff;
@@ -140,14 +152,28 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, dungeon 
         parryButtonPressed = true;
     }
 
-    if (p.plControl->getInput(window, CONTROL_SWORD))
+    if (p.strikeTimer >= 0.0)
+    {
+        if (p.strikeTimer > p.strikeCooloff - p.strikeWindow)
+        {
+            p.striking = true;
+        }
+        p.strikeTimer -= 60.0 * delta_time;
+    }
+    if (p.strikeTimer <= 0.0 && strikeButtonPressed)
+    {
+        strikeButtonPressed = false;
+    }
+    if (p.plControl->getInput(window, CONTROL_SWORD) && !strikeButtonPressed)
     {
         p.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
+        strikeButtonPressed = true;
+        p.strikeTimer = p.strikeCooloff;
     }
 }
 
-double current_time = 0.0f;
-double previous_time = 0.0f;
+double current_time = 0.0;
+double previous_time = 0.0;
 
 void mouseUpdate(GLFWwindow *window)
 {
@@ -364,8 +390,8 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller)
 {
-    pl = character("./img/char/knight.png", -120.0f, -40.0f, 4, 3, CH_PLAYER);
-    pl.visual.Scale(0.32f, 0.32f, 1.0f);
+    pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
+    pl.visual.Scale(0.32f, 0.32f, 1.0);
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
         ++playerGamepadCount;
@@ -373,15 +399,15 @@ void playerInit(character &pl, game_system &game, player &controller)
     }
     pl.plControl = &controller;
 
-    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0f);
-    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0f);
-    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0f);
-    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0f);
-    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0f);
-    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0f);
-    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0f);
+    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0);
+    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0);
+    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0);
+    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0);
+    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
+    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0);
 
     game.Add(&pl);
 }
@@ -395,10 +421,10 @@ void dungeonInit(game_system &game, dungeon &dg, std::string tilePath, std::stri
 // feh
 void updateView(shader &_program)
 {
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0);
     glm::mat4 proj;
 
     mainCam.cameraPosition += mainCam.cameraVelocity;
@@ -418,10 +444,10 @@ void fullscreenChangeFunction(GLFWwindow *window)
 
     if (mainCam.fullscreen)
     {
-        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
     }
     if (!mainCam.fullscreen)
-        glfwSetWindowMonitor(window, NULL, 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+        glfwSetWindowMonitor(window, NULL, 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
 
     fullscreenLast = mainCam.fullscreen;
 }
@@ -431,7 +457,7 @@ void addPlayer(character *ch, game_system *gs, dungeon *dg, int x)
         return;
 
     playerInit(players[playerCount], *gs, playerControllers[playerCount]);
-    players[playerCount].visual.Scale(0.48f, 0.48f, 1.0f);
+    players[playerCount].visual.Scale(0.48f, 0.48f, 1.0);
     playerCount++;
 }
 void removePlayer(character *ch, game_system *gs, dungeon *dg, int x)
@@ -467,7 +493,7 @@ void changeControlFunc(character *ch, game_system *gs, dungeon *dg, int x)
 }
 void volumeChangeSoundPlayFunc(character *ch, game_system *gs, dungeon *dg, int x)
 {
-    gs->playSound(30, 0.0f, true);
+    gs->playSound(30, 0.0, true);
 }
 
 extern int gamepad_stick_sensitivity;
@@ -491,7 +517,6 @@ int gamepadInputWatch()
     }
 
     double realSensitivity = gamepad_stick_sensitivity * 0.001f;
-    std::cout << realSensitivity << " hmm\n";
     if (gState.axes[0] < -realSensitivity)
     {
         return PAD_LSTICK_LEFT;
@@ -579,47 +604,47 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
     switch (state)
     {
     case START_SCREEN:
-        p1.visual.Put(0.0f, 0.0f, 0.0f);
-        mainCam.setBoundary(0.0f, -0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
+        p1.visual.Put(0.0, 0.0, 0.0);
+        mainCam.setBoundary(0.0, -0.0, -1.0, 0.0, 0.0, 1.0);
         mainCam.lockTo(nullptr, nullptr, nullptr);
-        mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
-        mainCam.offsetX = 0.0f;
-        mainCam.offsetY = 0.0f;
-        mainCam.offsetZ = 0.0f;
+        mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
+        mainCam.offsetX = 0.0;
+        mainCam.offsetY = 0.0;
+        mainCam.offsetZ = 0.0;
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
-        mainG.playSound(0, 0.0f);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0f, 10.0f, 1, 1, quitGame));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0f, 10.0f, 1, 1, goMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        mainG.playSound(0, 0.0);
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0, 10.0, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0, 10.0, 1, 1, goMenuScreen));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
-        mainCam.setBoundary(0.0f, -0.0f, -1.0f, 0.0f, 0.0f, 1.0f);
+        mainCam.setBoundary(0.0, -0.0, -1.0, 0.0, 0.0, 1.0);
         mainCam.lockTo(nullptr, nullptr, nullptr);
-        mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
-        mainCam.offsetX = 0.0f;
-        mainCam.offsetY = 0.0f;
-        mainCam.offsetZ = 0.0f;
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0f, 0.0f, 128.0f, 64.0f, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0f, 10.0f, 1, 1, leaveMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0f, 10.0f, 1, 1, quitGame));
+        mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
+        mainCam.offsetX = 0.0;
+        mainCam.offsetY = 0.0;
+        mainCam.offsetZ = 0.0;
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0, 10.0, 1, 1, leaveMenuScreen));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0, 10.0, 1, 1, quitGame));
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
-        mainG.playSound(0, 0.0f);
+        mainG.playSound(0, 0.0);
         mainG.initSound("./snd/fx/volume.wav", 30, &s_engine);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 64.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 51.2f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 38.4f, 0.0f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 64.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 51.2f, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 38.4f, 0.0, 1, 1));
         playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0f, 10.0f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
         for (int i = 0; i < control_limit; ++i)
         {
-            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 51.2f, 0.0f, 1, 1));
+            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 51.2f, 0.0, 1, 1));
         }
         if (playerIDForControl >= playerCount)
             playerIDForControl = playerCount - 1;
@@ -634,53 +659,53 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             }
             if (players[playerIDForControl].plControl->gamepad_id <= -1)
             {
-                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0f, 1.0f,
+                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
                                                        1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
-                gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0f);
+                gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0);
             }
             else
             {
-                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0f, 1.0f,
+                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
                                                        1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
             }
         }
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 24.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 30.0f, 3.0f, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 24.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 30.0, 3.0, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 1000.0f);
+        gui_data.mostRecentCreatedElement()->slider_values(0.0, 1000.0);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 24.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 30.0f, 3.0f, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 24.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 30.0, 3.0, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &mainG.music_volume));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 125.0f);
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 24.0f, 0.0f, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 30.0f, 3.0f, 1, 1, volumeChangeSoundPlayFunc,
+        gui_data.mostRecentCreatedElement()->slider_values(0.0, 125.0);
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 24.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 30.0, 3.0, 1, 1, volumeChangeSoundPlayFunc,
                                                false, nullptr, &mainG, nullptr, 0, &mainG.sound_volume));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0f, 125.0f);
+        gui_data.mostRecentCreatedElement()->slider_values(0.0, 125.0);
 
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.5f, 0.9f, 32.0f, 0.0f, 1, 1, fullScreenToggleFunc));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.5f, 0.9f, 32.0, 0.0, 1, 1, fullScreenToggleFunc));
 
         break;
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
-            players[i].visual.Scale(0.48f, 0.48f, 1.0f);
+            players[i].visual.Scale(0.48f, 0.48f, 1.0);
         }
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0f, 0.0f, 128.0f, 64.0f, 1, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0f, 16.0f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0f, 16.0f, 1, 1, removePlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0f, 10.0f, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0, 16.0, 1, 1, removePlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, DUNGEON_SCREEN));
         break;
     case DUNGEON_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
-            players[i].visual.Scale(0.32f, 0.32f, 1.0f);
+            players[i].visual.Scale(0.32f, 0.32f, 1.0);
         }
         mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
         mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine); // volume needs to change while in menu!
-        mainG.playSound(0, 0.0f);
+        mainG.playSound(0, 0.0);
         if (mainG.levelincreasing)
         {
             mainG.levelincreasing = false;
@@ -689,49 +714,48 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
         switch (mainG.level)
         {
         case 0:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 6);
             break;
         case 1:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 6);
             break;
         case 2:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 6);
             break;
-            // break;
         case 3:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 4:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 5:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 6:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 7:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 8:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 9:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 10:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 11:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
             break;
         case 16:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0f, 0.0f, 1280.0f, 520.0f, 3, 1, nullFunc, true));
-            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 4);
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            dungeonInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 17:
             state = START_SCREEN;
@@ -741,7 +765,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             dungeonInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
-        mainCam.setBoundary(1.9f, -0.0f, -1.0f, floor.roomWidth * 0.16f, 50.0f, 1.0f);
+        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * 0.16f - 1.84f, 50.0, 1.0);
 
 #ifdef COLLISION_DEBUG
         deCollision = sprite("./img/debug.png", 1, 1);
@@ -754,7 +778,7 @@ void menuData(game_system &mainG, character &p1, dungeon &floor, ma_engine &s_en
             if (players[i].plControl == nullptr)
                 continue;
 
-            players[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0f);
+            players[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
             playerSpawnDist += players[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
@@ -817,7 +841,7 @@ int main()
 
     dungeon mainDungeon("./img/tiles.png", 4, 2); // lmao
     mainDungeon.readRoomFile("./levels/01.lvl");
-    mainCam.cameraPosition = glm::dvec3(0.0f, 0.0f, 1.0f);
+    mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
     playerInit(players[0], game, playerControllers[0]);
     prevState = WIN_SCREEN;
 
@@ -843,7 +867,7 @@ int main()
         mouseUpdate(window);
         processInput(window);
 
-        glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.2f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         updateView(shaderProgram);
@@ -864,10 +888,10 @@ int main()
         {
             for (int i = 0; i < playerCount; ++i)
             {
-                players[i].visual.Put(-1.4f + i * 0.22f, 0.0f, 0.0f);
+                players[i].visual.Put(-1.4f + i * 0.22f, 0.0, 0.0);
                 players[i].visual.Draw(shaderProgram, spriteRect);
             }
-            renderText(spriteText, textShaderProgram, "Character Select", 25.0f, 625.0f, 2.0f, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            renderText(spriteText, textShaderProgram, "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
         if (state == MENU_SCREEN)
         {
@@ -878,7 +902,7 @@ int main()
                 {
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
-                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.music_volume) / 100.0f);
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.music_volume) / 100.0);
                     }
                 }
             }
@@ -888,7 +912,7 @@ int main()
                 {
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
-                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.sound_volume) / 100.0f);
+                        ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.sound_volume) / 100.0);
                     }
                 }
             }
@@ -933,19 +957,19 @@ int main()
         {
             if (playerFacingRight && mainCam.offsetX < 0.2f)
             {
-                mainCam.offsetX += 2.0f * delta_time;
+                mainCam.offsetX += 2.0 * delta_time;
             }
             if (!playerFacingRight && mainCam.offsetX > -0.2f)
             {
-                mainCam.offsetX -= 2.0f * delta_time;
+                mainCam.offsetX -= 2.0 * delta_time;
             }
             if (players[0].onGround && players[0].visual.y > -0.5f + lowestCamYLevel)
             {
-                lowestCamYLevel += 2.0f * delta_time;
+                lowestCamYLevel += 2.0 * delta_time;
             }
             if (players[0].onGround && players[0].visual.y < lowestCamYLevel)
             {
-                lowestCamYLevel -= 2.0f * delta_time;
+                lowestCamYLevel -= 2.0 * delta_time;
             }
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < collision_box_limit; ++i)
@@ -956,11 +980,11 @@ int main()
                 double mdXScale = mainDungeon.collision_boxes[i].max_x - mainDungeon.collision_boxes[i].min_x;
                 double mdYScale = mainDungeon.collision_boxes[i].max_y - mainDungeon.collision_boxes[i].min_y;
                 deCollision.Scale(mdXScale,
-                                  mdYScale, 1.0f);
+                                  mdYScale, 1.0);
 
                 double newX = (mainDungeon.collision_boxes[i].min_x + mainDungeon.collision_boxes[i].max_x) * 0.5f;
                 double newY = (mainDungeon.collision_boxes[i].min_y + mainDungeon.collision_boxes[i].max_y) * 0.5f;
-                deCollision.Put(newX - 0.08f, newY - 0.16, 0.0f);
+                deCollision.Put(newX - 0.08f, newY - 0.16, 0.0);
                 deCollision.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
                 deCollision.Draw(shaderProgram, spriteRect);
             }
@@ -971,8 +995,8 @@ int main()
             double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
             double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
 #ifdef COLLISION_DEBUG
-            dePl.Scale(mpcXScale, mpcYScale, 1.0f);
-            dePl.Put(players[0].collider.min_x, players[0].collider.min_y, 0.0f);
+            dePl.Scale(mpcXScale, mpcYScale, 1.0);
+            dePl.Put(players[0].collider.min_x, players[0].collider.min_y, 0.0);
             dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             if (!dePl.empty)
                 dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
@@ -992,15 +1016,15 @@ int main()
 
                 playerControl(game, *game.characters[i], window, &mainDungeon);
 
-                if (game.characters[i]->hp <= 0 || game.characters[i]->visual.y < -20.0f)
+                if (game.characters[i]->hp <= 0 || game.characters[i]->visual.y < -20.0)
                 {
                     if (game.characters[i] == &players[0])
                     {
-                        game.characters[i]->visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0f);
+                        game.characters[i]->visual.Put(mainDungeon.spawnLocationX, -mainDungeon.spawnLocationY, 0.0);
                     }
                     else
                     {
-                        game.characters[i]->visual.Put(players[0].visual.x, players[0].visual.y, 0.0f);
+                        game.characters[i]->visual.Put(players[0].visual.x, players[0].visual.y, 0.0);
                     }
                     // player animation here???
                     game.characters[i]->hp = game.characters[i]->maxhp;
@@ -1042,7 +1066,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     double offsetY = mainCam.lastMouseY - ypos;
 
     const double sensitivity = 0.1f;
-    glm::dvec3 direction = glm::dvec3(0.0f);
+    glm::dvec3 direction = glm::dvec3(0.0);
 
     switch (mainCam.type)
     {
@@ -1075,16 +1099,16 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
         mainCam.yaw += offsetX;
         mainCam.pitch += offsetY;
 
-        if (mainCam.pitch > 89.0f)
-            mainCam.pitch = 89.0f;
-        if (mainCam.pitch < -89.0f)
-            mainCam.pitch = -89.0f;
+        if (mainCam.pitch > 89.0)
+            mainCam.pitch = 89.0;
+        if (mainCam.pitch < -89.0)
+            mainCam.pitch = -89.0;
 
         direction.x = std::cos(glm::radians(mainCam.yaw)) * std::cos(glm::radians(mainCam.pitch));
         direction.y = std::sin(glm::radians(mainCam.pitch));
         direction.z = std::sin(glm::radians(mainCam.yaw)) * std::cos(glm::radians(mainCam.pitch));
         mainCam.cameraFront = glm::normalize(direction);
-        direction = glm::dvec3(0.0f);
+        direction = glm::dvec3(0.0);
         direction.x = std::cos(glm::radians(mainCam.yaw));
         direction.z = std::sin(glm::radians(mainCam.yaw));
         mainCam.cameraLockedFront = glm::normalize(direction);
@@ -1117,15 +1141,15 @@ void processInput(GLFWwindow *window)
 {
     if (mainCam.type == CAMERA_3D)
     {
-        mainCam.cameraVelocity.x = 0.0f;
-        mainCam.cameraVelocity.z = 0.0f;
+        mainCam.cameraVelocity.x = 0.0;
+        mainCam.cameraVelocity.z = 0.0;
 
-        if (mainCam.cameraPosition.y > 0.0f)
+        if (mainCam.cameraPosition.y > 0.0)
             mainCam.cameraVelocity.y -= 2.0 * delta_time;
-        if (mainCam.cameraPosition.y <= 0.0f)
+        if (mainCam.cameraPosition.y <= 0.0)
         {
-            mainCam.cameraPosition.y = 0.0f;
-            mainCam.cameraVelocity.y = 0.0f;
+            mainCam.cameraPosition.y = 0.0;
+            mainCam.cameraVelocity.y = 0.0;
             mainCam.jumped = false;
         }
 
@@ -1148,7 +1172,7 @@ void processInput(GLFWwindow *window)
         }
         if (!mainCam.jumped && glfwGetKey(window, GLFW_KEY_SPACE))
         {
-            mainCam.cameraVelocity.y = 2.0f;
+            mainCam.cameraVelocity.y = 2.0;
             mainCam.jumped = true;
         }
     }
@@ -1156,19 +1180,19 @@ void processInput(GLFWwindow *window)
     {
         if (glfwGetKey(window, GLFW_KEY_W))
         {
-            mainCam.cameraPosition.y += 10.0f * delta_time;
+            mainCam.cameraPosition.y += 10.0 * delta_time;
         }
         if (glfwGetKey(window, GLFW_KEY_S))
         {
-            mainCam.cameraPosition.y -= 10.0f * delta_time;
+            mainCam.cameraPosition.y -= 10.0 * delta_time;
         }
         if (glfwGetKey(window, GLFW_KEY_A))
         {
-            mainCam.cameraPosition.x -= 10.0f * delta_time;
+            mainCam.cameraPosition.x -= 10.0 * delta_time;
         }
         if (glfwGetKey(window, GLFW_KEY_D))
         {
-            mainCam.cameraPosition.x += 10.0f * delta_time;
+            mainCam.cameraPosition.x += 10.0 * delta_time;
         }
     }
 
@@ -1205,9 +1229,9 @@ void processInput(GLFWwindow *window)
     {
         mainCam.fullscreen = !mainCam.fullscreen;
         if (mainCam.fullscreen)
-            glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+            glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
         if (!mainCam.fullscreen)
-            glfwSetWindowMonitor(window, NULL, 0.0f, 0.0f, window_width, window_height, GLFW_DONT_CARE);
+            glfwSetWindowMonitor(window, NULL, 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
 
         mainCam.swappedFullscreen = true;
     }

@@ -9,7 +9,7 @@ struct aabb
     int collisionID = 0;
     int specialTileID = -1;
 
-    aabb() : min_x(0.0f), min_y(0.0f), max_x(0.0f), max_y(0.0f) {}
+    aabb() : min_x(0.0), min_y(0.0), max_x(0.0), max_y(0.0) {}
     aabb(double x, double y, double x2, double y2) : min_x(x), min_y(y), max_x(x2), max_y(y2) {}
 
     bool colliding(aabb &test);

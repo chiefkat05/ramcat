@@ -92,7 +92,7 @@ character::character(std::string filepath, double x, double y, unsigned int fx, 
     // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
     // visual.rect.setOrigin(sf::Vector2(static_cast<double>(visual.spriteW) * 0.5f, static_cast<double>(visual.spriteH)));
     visual = sprite(filepath.c_str(), fx, fy);
-    visual.Put(x, y, 0.0f);
+    visual.Put(x, y, 0.0);
     // posX = visual.rect.getPosition().x;
     // posY = visual.rect.getPosition().y;
     // walkToX = posX;
@@ -136,7 +136,7 @@ void character::Update(double delta_time)
     {
         // visual.rect.setColor(sf::Color(50, 50, 50, 255));
         // visual.rect.setRotation(90);
-        visual.Rotate(0.0f, 0.0f, 90.0f);
+        visual.Rotate(0.0, 0.0, 90.0);
         // visual.Put(posX + screenOffsetX, posY + screenOffsetY);
         // visual.Move(screenOffsetX, screenOffsetY);
         return;
@@ -160,12 +160,11 @@ void character::Update(double delta_time)
 }
 void character::updatePosition(double delta_time)
 {
-    // if (parrySuccess)
-    // {
-    //     return;
-    // }
-    std::cout << "in update position velX = " << velocityX << " hrrm\n";
-    visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0f);
+    if (parrySuccess)
+    {
+        return;
+    }
+    visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0);
 }
 
 void character::SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd)
@@ -180,7 +179,7 @@ void character::PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loo
     if (playingAnim != id)
     {
         animations[id].frame = animations[id].start;
-        animations[id].timer = 10.0f;
+        animations[id].timer = 10.0;
     }
     playingAnim = id;
     animationLooping = loops;
@@ -188,7 +187,7 @@ void character::PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loo
 void character::StopAnimation(ANIMATION_MAPPINGS id)
 {
     animations[id].finished = true;
-    animations[id].timer = 0.0f;
+    animations[id].timer = 0.0;
     animations[id].frame = animations[id].end;
 }
 
@@ -288,11 +287,11 @@ void game_system::playSound(unsigned int id, int start_time, bool interrupt)
 
     if (id < sound_is_music_cutoff)
     {
-        ma_sound_set_volume(&game_sounds[id], static_cast<double>(music_volume) / 100.0f);
+        ma_sound_set_volume(&game_sounds[id], static_cast<double>(music_volume) / 100.0);
     }
     else
     {
-        ma_sound_set_volume(&game_sounds[id], static_cast<double>(sound_volume) / 100.0f);
+        ma_sound_set_volume(&game_sounds[id], static_cast<double>(sound_volume) / 100.0);
     }
     ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
     ma_sound_start(&game_sounds[id]);
@@ -308,7 +307,7 @@ void game_system::update(dungeon &floor, double delta_time)
     // {
     //     for (int i = 0; i < characterCount; ++i)
     //     {
-    //         characters[i]->visual.Put(characters[i]->visual.x, characters[i]->visual.y, 0.0f);
+    //         characters[i]->visual.Put(characters[i]->visual.x, characters[i]->visual.y, 0.0);
     //     }
     //     return;
     // }
@@ -319,56 +318,49 @@ void game_system::update(dungeon &floor, double delta_time)
         characters[i]->Update(delta_time);
         if (!characters[i]->onGround)
         {
-            characters[i]->velocityY -= 10.0f * delta_time;
+            characters[i]->velocityY -= 10.0 * delta_time;
         }
 
         for (int j = 0; j < floor.collision_box_count; ++j)
         {
-            if (floor.collision_boxes[j].min_x == 0.0f &&
-                floor.collision_boxes[j].min_y == 0.0f &&
-                floor.collision_boxes[j].max_x == 0.0f &&
-                floor.collision_boxes[j].max_y == 0.0f)
+            if (floor.collision_boxes[j].min_x == 0.0 &&
+                floor.collision_boxes[j].min_y == 0.0 &&
+                floor.collision_boxes[j].max_x == 0.0 &&
+                floor.collision_boxes[j].max_y == 0.0)
             {
                 continue;
             }
 
-            double xNormal = 0.0f, yNormal = 0.0f;
+            double xNormal = 0.0, yNormal = 0.0;
 
             double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                             characters[i]->velocityY * delta_time,
-                                                                            0.0f, 0.0f, floor.collision_boxes[j], xNormal, yNormal);
-            // if (firstCollisionHitTest < 1.0f)
-            //     firstCollisionHitTest *= 0.5f;
-
-            if (firstCollisionHitTest < 1.0f)
-            {
-                std::cout << i << " hit " << j << ", id = " << floor.collision_boxes[j].collisionID << ", multi = " << firstCollisionHitTest << ", x = " << xNormal << ", y = " << yNormal << " collision\n";
-            }
+                                                                            0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal);
 
             switch (floor.collision_boxes[j].collisionID)
             {
             case 1:
-                if (xNormal != 0.0f)
+                if (xNormal != 0.0)
                     characters[i]->velocityX *= firstCollisionHitTest;
-                if (yNormal != 0.0f)
+                if (yNormal != 0.0)
                 {
                     if (!characters[i]->parrySuccess)
                         characters[i]->hp = 0;
                 }
-                if (firstCollisionHitTest < 1.0f && xNormal == 0.0f && yNormal == 0.0f)
+                if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
                     characters[i]->velocityX *= firstCollisionHitTest;
                 }
                 break;
             case 2:
-                if (firstCollisionHitTest < 1.0f && characters[i]->plControl != nullptr)
+                if (firstCollisionHitTest < 1.0 && characters[i]->plControl != nullptr)
                 {
                     levelincreasing = true;
                 }
                 break;
             case 3:
-                if (yNormal != 0.0f && characters[i]->velocityY <= 0.0f)
+                if (yNormal != 0.0 && characters[i]->velocityY <= 0.0)
                 {
                     // if (characters[i]->plControl == nullptr || characters[i]->plControl != nullptr && characters[i]->animations[ANIM_ABILITY_0].finished)
                     // {
@@ -378,21 +370,15 @@ void game_system::update(dungeon &floor, double delta_time)
                 }
                 break;
             case 4:
-                if (xNormal != 0.0f || yNormal != 0.0f)
+                if (xNormal != 0.0 || yNormal != 0.0)
                 {
-                    characters[i]->velocityX *= 6.0f;
+                    characters[i]->velocityX *= 6.0;
                     characters[i]->velocityY = 0.2f;
-                    characters[i]->visual.Put(floor.collision_boxes[j].min_x, floor.collision_boxes[j].min_y, 0.0f);
-                }
-                break;
-            case 7:
-                if (yNormal != 0.0f && characters[i]->velocityY < 0.0f)
-                {
-                    characters[i]->velocityY = 4.0f;
+                    characters[i]->visual.Put(floor.collision_boxes[j].min_x, floor.collision_boxes[j].min_y, 0.0);
                 }
                 break;
             case 5:
-                if (firstCollisionHitTest < 1.0f)
+                if (firstCollisionHitTest < 1.0) // this should maybe be all special ids are same as button and button deletes everything with special id except self?
                 {
                     for (int x = 0; x < floor.roomWidth; ++x)
                     {
@@ -400,7 +386,6 @@ void game_system::update(dungeon &floor, double delta_time)
                         {
                             if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
                             {
-                                // std::cout << floor.tiles[x][y].specialTileID << " correct\n";
                                 floor.tiles[x][y].id = 5;
                                 floor.tiles[x][y].collisionID = -1;
                             }
@@ -417,31 +402,53 @@ void game_system::update(dungeon &floor, double delta_time)
                         if (floor.collision_boxes[x].collisionID == 6)
                         {
                             floor.collision_boxes[x].collisionID = -1;
-                            floor.collision_boxes[x] = aabb(-100.0f, -100.0f, -100.0f, -100.0f);
+                            floor.collision_boxes[x] = aabb(-100.0, -100.0, -100.0, -100.0);
                         }
                     }
                 }
                 break;
+            case 7:
+                if (yNormal != 0.0 && characters[i]->velocityY < 0.0)
+                {
+                    characters[i]->velocityY = 4.0;
+                }
+                break;
+            case 8:
+                if (firstCollisionHitTest < 1.0f)
+                {
+                    for (int x = 0; x < floor.roomWidth; ++x)
+                    {
+                        for (int y = 0; y < floor.roomHeight; ++y)
+                        {
+                            if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
+                            {
+                                floor.tiles[x][y].id = -1;
+                                floor.tiles[x][y].collisionID = -1;
+                            }
+                        }
+                    }
+
+                    ++floor.fishCollected;
+                }
+                break;
             default:
-                std::cout << "velX = " << characters[i]->velocityX << " hmm ";
-                if (yNormal != 0.0f)
+                if (yNormal != 0.0)
                     characters[i]->velocityY *= firstCollisionHitTest;
-                if (xNormal != 0.0f)
+                if (xNormal != 0.0)
                     characters[i]->velocityX *= firstCollisionHitTest;
-                // if (yNormal != 0.0f)
-                //     characters[i]->velocityY *= 0.0f;
-                // if (xNormal != 0.0f)
-                //     characters[i]->velocityX *= 0.0f;
-                if (firstCollisionHitTest < 1.0f && xNormal == 0.0f && yNormal == 0.0f)
+                // if (yNormal != 0.0)
+                //     characters[i]->velocityY *= 0.0;
+                // if (xNormal != 0.0)
+                //     characters[i]->velocityX *= 0.0;
+                if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
                     characters[i]->velocityX *= firstCollisionHitTest;
                 }
-                if (yNormal > 0.0f)
+                if (yNormal > 0.0)
                 {
                     characters[i]->onGround = true;
                 }
-                std::cout << "velX after = " << characters[i]->velocityX << " hmm\n";
 
                 break;
             }

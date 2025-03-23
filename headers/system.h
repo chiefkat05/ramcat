@@ -103,20 +103,21 @@ struct player
 
 struct character
 {
-    double velocityX = 0.0f, velocityY = 0.0f;
+    double velocityX = 0.0, velocityY = 0.0;
     bool onGround = false, jumped = false;
     player *plControl;
-    int parryCooloff = 23, parryTimer = 0, parryWindow = 5;
-    bool parrySuccess = false;
+    float parryCooloff = 20, parryTimer = 0, parryWindow = 5;
+    float strikeCooloff = 40, strikeTimer = 0, strikeWindow = 5;
+    bool parrySuccess = false, striking;
 
     animation animations[animation_limit];
-    // double posX = 0.0f, posY = 0.0f;
-    // double walkToX = 0.0f, walkToY = 0.0f;
+    // double posX = 0.0, posY = 0.0;
+    // double walkToX = 0.0, walkToY = 0.0;
     sprite visual;
     aabb collider;
 
     IDENTIFICATION id = CH_MONSTER;
-    double attackTimer = 0.0f;
+    double attackTimer = 0.0;
     int hp = 10, maxhp = 10;
     double runSpeed = 1.7f;
 

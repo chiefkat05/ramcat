@@ -19,8 +19,8 @@ const unsigned int particle_system_limit = 6;
 
 struct particle
 {
-    double x = 0.0f, y = 0.0f, velX = 0.0f, velY = 0.0f, life = 0.0f;
-    double lifestartalphamultiple = 1.0f;
+    double x = 0.0, y = 0.0, velX = 0.0, velY = 0.0, life = 0.0;
+    double lifestartalphamultiple = 1.0;
 
     void Put(double _x, double _y)
     {
@@ -57,7 +57,7 @@ struct particlesystem
     unsigned int particle_count, particles_alive = 0;
     bool fadewithlife = true;
 
-    double variables[pv_variable_limit] = {0.0f};
+    double variables[pv_variable_limit] = {0.0};
     double *variable_pointers[pv_variable_limit];
 
     sprite visual;

@@ -10,7 +10,7 @@ const unsigned int width_limit = 128;
 const unsigned int height_limit = 128;
 const unsigned int collision_box_limit = 128;
 // const unsigned int collision_box_limit = 2;
-const unsigned int collision_id_limit = 8;
+const unsigned int collision_id_limit = 24;
 
 struct tile
 {
@@ -51,7 +51,8 @@ struct dungeon
 
     unsigned int roomWidth = 0, roomHeight = 0;
     unsigned int tileSpriteX, tileSpriteY;
-    double spawnLocationX = 0.0f, spawnLocationY = 0.0f;
+    int fishCollected = 0, fishNeeded = 5;
+    double spawnLocationX = 0.0, spawnLocationY = 0.0;
 
     double viewBoundsX, viewBoundsY, viewBoundsWidth, viewBoundsHeight;
 

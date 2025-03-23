@@ -13,9 +13,9 @@ enum ui_element_type
     UI_IMAGE,
     UI_TEXT,
     UI_CLICKABLE_TEXT,
-    UI_SLIDER,    // can use value for slider position?
-    UI_DROPDOWN,  // can use value for index number?
-    UI_TEXT_INPUT // can use visual.texture_path for text
+    UI_SLIDER,
+    UI_DROPDOWN,
+    UI_TEXT_INPUT
 };
 
 void nullFunc(character *p, game_system *gs, dungeon *d, int argv);
@@ -24,7 +24,7 @@ struct ui_element
 {
     sprite visual;
     double trueX, trueY, trueWidth, trueHeight;
-    double posX, posY, width, height, sliderPos = 0.0f;
+    double posX, posY, width, height, sliderPos = 0;
     int sliderLimit = 1;
     int *value;
     bool selected = false;
@@ -40,9 +40,6 @@ struct ui_element
     ui_element_type utype;
     animation anim;
 
-    // ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, dungeon *, int), bool bg = false,
-    //            character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,
-    //            int _func_i = 0, int *_linkValue = nullptr);
     ui_element(ui_element_type t, const char *path, double x, double y, double w, double h, int frX, int frY,
                void func(character *, game_system *, dungeon *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, dungeon *_func_d = nullptr,

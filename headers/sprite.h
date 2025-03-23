@@ -8,16 +8,6 @@
 #include FT_FREETYPE_H
 #include <freetype/freetype.h>
 
-const unsigned int texture_limit = 32;
-
-// struct texturePile
-// {
-//     sf::Texture list[texture_limit];
-//     const char *paths[texture_limit];
-
-//     unsigned int count = 0;
-// };
-
 enum object_type
 {
     OBJ_QUAD,
@@ -38,8 +28,8 @@ struct object
 
 struct sprite
 {
-    double x = 0.0f, y = 0.0f, z = 0.0f, w = 1.0f, h = 1.0f, d = 1.0f, rx = 0.0f, ry = 0.0f, rz = 0.0f;
-    double colr = 1.0f, colg = 1.0f, colb = 1.0f, cola = 1.0f;
+    double x = 0.0, y = 0.0, z = 0.0, w = 1.0, h = 1.0, d = 1.0, rx = 0.0, ry = 0.0, rz = 0.0;
+    double colr = 1.0, colg = 1.0, colb = 1.0, cola = 1.0;
     unsigned int spriteW = 0, spriteH = 0;
     unsigned int framesX = 1, framesY = 1;
     unsigned int textureX = 0, textureY = 0;
@@ -70,11 +60,11 @@ struct animation
 {
     unsigned int start = 0, end = 0;
 
-    double speed = 1.0f;
-    double timer = 10.0f;
+    double speed = 1.0;
+    double timer = 10.0;
     unsigned int frame = 0;
     bool finished = true;
-    double xScale = 1.0f, yScale = 1.0f;
+    double xScale = 1.0, yScale = 1.0;
 
     sprite *_sprite;
 
@@ -83,7 +73,7 @@ struct animation
         _sprite = nullptr;
     }
 
-    animation(sprite *sp, unsigned int s, unsigned int e = 1, double spd = 1.0f) : _sprite(sp)
+    animation(sprite *sp, unsigned int s, unsigned int e = 1, double spd = 1.0) : _sprite(sp)
     {
         start = s;
         end = e;
@@ -98,12 +88,12 @@ struct animation
     void run(double delta_time, bool loop)
     {
         finished = false;
-        if (timer <= 0.0f)
+        if (timer <= 0.0)
         {
             if (frame >= end)
                 finished = true;
 
-            timer = 10.0f;
+            timer = 10.0;
 
             if (loop)
             {

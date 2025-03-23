@@ -4,63 +4,63 @@
 #include "../stb/stb_image.h"
 
 double quad_vertices[] = {
-    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-    0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-    -0.5f, 0.5f, 0.0f, 0.0f, 0.0f};
+    -0.5f, -0.5f, 0.0, 0.0, 1.0,
+    0.5f, -0.5f, 0.0, 1.0, 1.0,
+    0.5f, 0.5f, 0.0, 1.0, 0.0,
+    -0.5f, 0.5f, 0.0, 0.0, 0.0};
 unsigned int quad_indices[] = {
     0, 1, 2,
     0, 3, 2};
 double cube_vertices[] = {
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-    0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0,
+    0.5f, -0.5f, -0.5f, 1.0, 0.0,
+    0.5f, 0.5f, -0.5f, 1.0, 1.0,
+    0.5f, 0.5f, -0.5f, 1.0, 1.0,
+    -0.5f, 0.5f, -0.5f, 0.0, 1.0,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0,
 
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0,
+    0.5f, -0.5f, 0.5f, 1.0, 0.0,
+    0.5f, 0.5f, 0.5f, 1.0, 1.0,
+    0.5f, 0.5f, 0.5f, 1.0, 1.0,
+    -0.5f, 0.5f, 0.5f, 0.0, 1.0,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0,
 
-    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-    -0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 1.0, 0.0,
+    -0.5f, 0.5f, -0.5f, 1.0, 1.0,
+    -0.5f, -0.5f, -0.5f, 0.0, 1.0,
+    -0.5f, -0.5f, -0.5f, 0.0, 1.0,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0,
+    -0.5f, 0.5f, 0.5f, 1.0, 0.0,
 
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 1.0, 0.0,
+    0.5f, 0.5f, -0.5f, 1.0, 1.0,
+    0.5f, -0.5f, -0.5f, 0.0, 1.0,
+    0.5f, -0.5f, -0.5f, 0.0, 1.0,
+    0.5f, -0.5f, 0.5f, 0.0, 0.0,
+    0.5f, 0.5f, 0.5f, 1.0, 0.0,
 
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 1.0,
+    0.5f, -0.5f, -0.5f, 1.0, 1.0,
+    0.5f, -0.5f, 0.5f, 1.0, 0.0,
+    0.5f, -0.5f, 0.5f, 1.0, 0.0,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0,
+    -0.5f, -0.5f, -0.5f, 0.0, 1.0,
 
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f,
-    -0.5f, 0.5f, 0.5f, 0.0f, 0.0f,
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f};
+    -0.5f, 0.5f, -0.5f, 0.0, 1.0,
+    0.5f, 0.5f, -0.5f, 1.0, 1.0,
+    0.5f, 0.5f, 0.5f, 1.0, 0.0,
+    0.5f, 0.5f, 0.5f, 1.0, 0.0,
+    -0.5f, 0.5f, 0.5f, 0.0, 0.0,
+    -0.5f, 0.5f, -0.5f, 0.0, 1.0};
 
 sprite::sprite()
 {
 }
 sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy, bool text)
 {
-    textureWidth = 1.0f;
-    textureHeight = 1.0f;
+    textureWidth = 1.0;
+    textureHeight = 1.0;
 
     texture_path = path;
 
@@ -84,7 +84,7 @@ void sprite::textureInit()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    float borderColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+    float borderColor[] = {0.0, 0.0, 0.0, 1.0};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -101,7 +101,7 @@ void sprite::textureInit()
     }
     else
     {
-        std::cout << "\n\terror " << texture_path << " failed to load\n";
+        std::cout << "\n\tError: " << texture_path << " failed to load\n";
     }
 
     stbi_image_free(data);
@@ -152,7 +152,7 @@ void sprite::Draw(shader &program, object &sprite_object)
     program.use();
     if (sprite_object.obj_type != OBJ_TEXT)
     {
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model = glm::mat4(1.0);
         // why is there a glm::dvec3 but no option to translate using it??? searching web shows up nothing relevant
         model = glm::translate(model, glm::vec3(x, y, z));
         model = glm::rotate(model, glm::radians(static_cast<float>(rx)), glm::vec3(1.0, 0.0, 0.0));
@@ -278,12 +278,12 @@ glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string te
         double h = ch.Size.y * scale;
 
         double vertices[6][4] = {
-            {xpos, ypos + h, 0.0f, 0.0f},
-            {xpos, ypos, 0.0f, 1.0f},
-            {xpos + w, ypos, 1.0f, 1.0f},
-            {xpos, ypos + h, 0.0f, 0.0f},
-            {xpos + w, ypos, 1.0f, 1.0f},
-            {xpos + w, ypos + h, 1.0f, 0.0f},
+            {xpos, ypos + h, 0.0, 0.0},
+            {xpos, ypos, 0.0, 1.0},
+            {xpos + w, ypos, 1.0, 1.0},
+            {xpos, ypos + h, 0.0, 0.0},
+            {xpos + w, ypos, 1.0, 1.0},
+            {xpos + w, ypos + h, 1.0, 0.0},
         };
 
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
@@ -313,7 +313,7 @@ int loadFont(const char *path)
 {
     if (FT_Init_FreeType(&font_ft))
     {
-        std::cout << "\n\tError: Freetype not initiated properly.\n";
+        std::cout << "\n\tError: Freetype not initiated properly\n";
         return -1;
     }
     if (FT_New_Face(font_ft, path, 0, &font_face))

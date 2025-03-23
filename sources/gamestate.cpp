@@ -3,7 +3,7 @@
 gui gui_data;
 game_state state;
 
-const double pixel_divider = 36.0f;
+const double pixel_divider = 36.0;
 const double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
 int current_win_width = window_width, current_win_height = window_height;
 double win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
@@ -19,7 +19,7 @@ extern bool mouseReleased;
 // ui_element::ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, dungeon *, int), bool bg,
 //                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
 //                        int _func_i, int *_linkValue)
-//     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
+//     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 // {
 //     background = bg;
 //     utype = t;
@@ -27,7 +27,7 @@ extern bool mouseReleased;
 //     posY = y;
 //     trueX = x;
 //     trueY = y;
-//     visual.Put(x, y, 0.0f);
+//     visual.Put(x, y, 0.0);
 //     width = visual.spriteW;
 //     height = visual.spriteH;
 //     function = func;
@@ -41,7 +41,7 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
                        void func(character *, game_system *, dungeon *, int), bool bg,
                        character *_func_p, game_system *_func_gs, dungeon *_func_d,
                        int _func_i, int *_linkValue)
-    : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0f)
+    : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 {
     background = bg;
     utype = t;
@@ -53,15 +53,15 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
     posY = window_height / 2 - (y * (window_height / 2));
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
     {
-        visual.Put(x * windowAspectDivision, y, 0.0f);
+        visual.Put(x * windowAspectDivision, y, 0.0);
     }
     else
     {
-        visual.Put(((trueX + 1.0f) * 0.5f) * window_width, ((trueY + 1.0f) * 0.5f) * window_height, 0.0f);
+        visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, 0.0);
     }
     width = w / pixel_divider * (window_height / 2);
     height = h / pixel_divider * (window_height / 2);
-    visual.Scale(w / pixel_divider, h / pixel_divider, 1.0f); // probably should be both the same division
+    visual.Scale(w / pixel_divider, h / pixel_divider, 1.0); // probably should be both the same division
     function = func;
     func_p = _func_p;
     func_gs = _func_gs;
@@ -75,8 +75,8 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
 
-    // double trueMouseX = ((mouseX / current_win_width) * 2.0f - 1.0f) * windowAspectDivision;
-    // double trueMouseY = (mouseY / window_height) * 2.0f - 1.0f;
+    // double trueMouseX = ((mouseX / current_win_width) * 2.0 - 1.0) * windowAspectDivision;
+    // double trueMouseY = (mouseY / window_height) * 2.0 - 1.0;
 
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
     {
@@ -85,11 +85,11 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         width = trueWidth / pixel_divider * (current_win_height / 2);
         height = trueHeight / pixel_divider * (current_win_height / 2);
 
-        visual.Put(trueX * windowAspectDivision, trueY, 0.0f);
+        visual.Put(trueX * windowAspectDivision, trueY, 0.0);
     }
     else
     {
-        visual.Put(((trueX + 1.0f) * 0.5f) * window_width, ((trueY + 1.0f) * 0.5f) * window_height, 0.0f);
+        visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, 0.0);
     }
     switch (utype)
     {
@@ -97,9 +97,9 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         if (mouseX < posX - width * 0.5f || mouseX > posX + width * 0.5f ||
             mouseY < posY - height * 0.5f || mouseY > posY + height * 0.5f)
         {
-            if (visual.colr < 1.0f)
+            if (visual.colr < 1.0)
             {
-                visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+                visual.SetColor(1.0, 1.0, 1.0, 1.0);
             }
             return;
         }
@@ -113,7 +113,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         if (!mouseReleased)
             return;
 
-        visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+        visual.SetColor(1.0, 1.0, 1.0, 1.0);
 
         function(func_p, func_gs, func_d, func_i);
         break;
@@ -122,11 +122,8 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
             break;
         anim._sprite = &visual; // this should only happen once or so    // sounds important pls look into
         anim.frame = *value;
-        anim.timer = 1.0f;
+        anim.timer = 1.0;
         anim.run(delta_time, false);
-        // std::cout << *value << " is value\n";
-        // visual.textureX = *value % visual.framesX;
-        // visual.textureY = *value / visual.framesX;
         break;
     case UI_TEXT:
         break;
@@ -134,9 +131,9 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         if (mouseX < posX || mouseX > width ||
             mouseY > posY || mouseY < height)
         {
-            if (visual.colr < 1.0f)
+            if (visual.colr < 1.0)
             {
-                visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+                visual.SetColor(1.0, 1.0, 1.0, 1.0);
             }
             return;
         }
@@ -150,7 +147,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         if (!mouseReleased)
             return;
 
-        visual.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+        visual.SetColor(1.0, 1.0, 1.0, 1.0);
 
         function(func_p, func_gs, func_d, func_i);
         break;
@@ -173,7 +170,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
 
         if (selected)
         {
-            double position = ((mouseX / current_win_width) * 2.0f - 1.0f);
+            double position = ((mouseX / current_win_width) * 2.0 - 1.0);
             if (position > trueX + (visual.w / windowAspectDivision) * 0.5f)
                 position = trueX + (visual.w / windowAspectDivision) * 0.5f;
             if (position < trueX - (visual.w / windowAspectDivision) * 0.5f)
@@ -242,7 +239,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
                 elements[i].visual.w *= 0.1f;
                 elements[i].visual.Draw(program, sprite_object);
                 elements[i].visual.x = holdPosition;
-                elements[i].visual.w *= 10.0f;
+                elements[i].visual.w *= 10.0;
             }
             elements[i].visual.Draw(program, sprite_object);
         }

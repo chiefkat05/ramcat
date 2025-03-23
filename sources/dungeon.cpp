@@ -29,11 +29,11 @@ void dungeon::draw(GLFWwindow *win, shader &program, object &sprite_object)
             if (tiles[x][y].id == -1)
                 continue;
 
-            // dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125f, (roomHeight - y) * dungeonSprite.spriteH * 0.125f, 9.0f);
+            // dungeonSprite.Put(x * dungeonSprite.spriteW * 0.125, (roomHeight - y) * dungeonSprite.spriteH * 0.125, 9.0);
             dungeonSprite.textureX = tiles[x][y].id % dungeonSprite.framesX;
             dungeonSprite.textureY = tiles[x][y].id / dungeonSprite.framesX;
-            dungeonSprite.Put(x * 0.16f, (roomHeight - y) * 0.16f, 0.0f);
-            dungeonSprite.Scale(0.16f, 0.16f, 1.0f);
+            dungeonSprite.Put(x * 0.16, (roomHeight - y) * 0.16, 0.0);
+            dungeonSprite.Scale(0.16, 0.16, 1.0);
 
             dungeonSprite.Draw(program, sprite_object);
         }
@@ -90,6 +90,12 @@ void dungeon::readRoomFile(const char *path)
             case 'e':
                 tiles[i][roomHeight].id = 2;
                 tiles[i][roomHeight].collisionID = 2;
+                break;
+            case 'f':
+                std::cout << "hellooooo?\n";
+                tiles[i][roomHeight].id = 18;
+                tiles[i][roomHeight].collisionID = 8;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case '2':
                 tiles[i][roomHeight].id = 1;
