@@ -9,9 +9,8 @@
 #include "miniaudio.h"
 
 const unsigned int entity_limit = 64; // also change in world.h since there's another one there, also delete one of these so that there's only one pls
-const unsigned int character_limit = 6;
 const unsigned int animation_limit = 24;
-const unsigned int sound_limit = 32;
+const unsigned int sound_limit = 26;
 const unsigned int sound_is_music_cutoff = 2;
 const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
@@ -90,6 +89,8 @@ enum GAMEPAD_MAP
     PAD_TRIGGER_R
 };
 
+// enum for game-specific sound targets
+
 struct player
 {
     int inputs[control_limit] = {265, 263, 262, 264, 44, 46, GLFW_KEY_BACKSLASH, GLFW_KEY_1};
@@ -106,9 +107,15 @@ struct character
     double velocityX = 0.0, velocityY = 0.0;
     bool onGround = false, jumped = false;
     player *plControl;
+
+    // everything below should be in the player struct
     float parryCooloff = 20, parryTimer = 0, parryWindow = 5;
     float strikeCooloff = 40, strikeTimer = 0, strikeWindow = 5;
     bool parrySuccess = false, striking;
+    bool parryButtonPressed = false, strikeButtonPressed = false;
+    bool walkingkeypressed = false;
+    bool stepsoundplayed = false;
+    // everything above should be in the player struct
 
     animation animations[animation_limit];
     // double posX = 0.0, posY = 0.0;
@@ -165,7 +172,7 @@ struct game_system
 {
     character *characters[entity_limit];
     sprite *sortedSprites[entity_limit];
-    particlesystem *particles[particle_system_limit];
+    particlesystem particles[particle_system_limit];
     int particlesystemcount;
     int level = 0;
     bool levelincreasing = false;
@@ -174,26 +181,40 @@ struct game_system
     bool paused = false;
     ma_result game_sound_result;
     ma_sound game_sounds[sound_limit];
-    const char *sound_paths[sound_limit];
+    std::string sound_paths[sound_limit];
     bool music_playing = false;
 
     int music_volume = 100, sound_volume = 100;
     int fishCollected = 0, fishNeeded = 5;
 
     void Add(character *e);
-    void Add(particlesystem *p);
+    // void Add(particlesystem *p);
     void Remove(character *e);
-    void Remove(particlesystem *p);
+    // void Remove(particlesystem *p);
+
+    void particleSet(particlesystem sys)
+    {
+        particles[particlesystemcount] = sys;
+        ++particlesystemcount;
+    }
+    void removeParticles(unsigned int index)
+    {
+        for (int i = index; i < particlesystemcount; ++i)
+        {
+            particles[i] = particles[i + 1];
+        }
+        --particlesystemcount;
+    }
 
     // void initSoundEngine();
     // void handleMusic();
     void loopSound(unsigned int id);
-    void initSound(const char *path, unsigned int id, ma_engine *engine);
+    void initSound(std::string path, unsigned int id, ma_engine *engine);
     void playSound(unsigned int id, int start_time, bool interrupt = false);
     void stopSound(unsigned int id);
     // void uninitMusic();
 
-    void update(world &floor, double delta_time);
+    void update(world &floor, shader &particle_program, object &particle_sprite, double delta_time);
 
     void killParticles();
 };

@@ -75,6 +75,7 @@
         "complex": "cpp",
         "forward_list": "cpp",
         "unordered_set": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "ranges": "cpp"
     }
 }

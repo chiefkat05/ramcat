@@ -68,12 +68,9 @@ void particlesystem::spawn(double delta_time)
     variables[PV_SPAWN_TIMER] = variables[PV_SPAWN_SPEED];
 }
 
-void particlesystem::push(double xVel, double yVel, double xVelMax, double yVelMax)
+void particlesystem::linkVariable(PARTICLE_VARIABLE pv, double *value)
 {
-    variables[PV_PUSHMIN_X] = xVel;
-    variables[PV_PUSHMIN_Y] = yVel;
-    variables[PV_PUSHMAX_X] = xVelMax;
-    variables[PV_PUSHMAX_Y] = yVelMax;
+    variable_pointers[pv] = value;
 }
 
 void particlesystem::update(double delta_time)
@@ -93,7 +90,7 @@ void particlesystem::update(double delta_time)
         //     particles[i].visual.rect.setColor(sf::Color(255, 255, 255, static_cast<int>(particles[i].life * particles[i].lifestartalphamultiple)));
     }
 }
-void particlesystem::draw(GLFWwindow *win, shader &program, object &sprite_object, double delta_time)
+void particlesystem::draw(shader &program, object &sprite_object, double delta_time)
 {
     for (int i = 0; i < particle_count; ++i)
     {

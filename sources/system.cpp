@@ -226,11 +226,6 @@ void game_system::Add(character *e)
     sortedSprites[characterCount] = &characters[characterCount]->visual;
     ++characterCount;
 }
-void game_system::Add(particlesystem *p)
-{
-    particles[particlesystemcount] = p;
-    ++particlesystemcount;
-}
 void game_system::Remove(character *e)
 {
     int removeIndex = -1;
@@ -261,11 +256,11 @@ void game_system::loopSound(unsigned int id)
 {
     // code that makes id sound loop if playing
 }
-void game_system::initSound(const char *path, unsigned int id, ma_engine *engine)
+void game_system::initSound(std::string path, unsigned int id, ma_engine *engine)
 {
     if (game_sounds[id].pDataSource != nullptr)
     {
-        if (sound_paths[id] != path)
+        if (sound_paths[id] != path && !sound_paths[id].empty())
         {
             ma_sound_uninit(&game_sounds[id]);
         }
@@ -274,8 +269,9 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
             return;
         }
     }
+
     sound_paths[id] = path;
-    game_sound_result = ma_sound_init_from_file(engine, sound_paths[id], 0, NULL, NULL, &game_sounds[id]);
+    game_sound_result = ma_sound_init_from_file(engine, sound_paths[id].c_str(), 0, NULL, NULL, &game_sounds[id]);
     if (game_sound_result != MA_SUCCESS)
     {
         std::cout << game_sound_result << " sound error\n";
@@ -283,6 +279,13 @@ void game_system::initSound(const char *path, unsigned int id, ma_engine *engine
 }
 void game_system::playSound(unsigned int id, int start_time, bool interrupt)
 {
+    if (&game_sounds[id].pDataSource == nullptr)
+    {
+        std::cout << "/n/tWarning: sound " << id << " at path \n";
+        std::cout << sound_paths[id] << " has no data!\n";
+        return;
+    }
+
     if (!interrupt && ma_sound_is_playing(&game_sounds[id]))
         return;
 
@@ -295,14 +298,16 @@ void game_system::playSound(unsigned int id, int start_time, bool interrupt)
         ma_sound_set_volume(&game_sounds[id], static_cast<double>(sound_volume) / 100.0);
     }
     ma_sound_seek_to_pcm_frame(&game_sounds[id], start_time);
-    ma_sound_start(&game_sounds[id]);
+
+    if (!ma_sound_is_playing(&game_sounds[id]))
+        ma_sound_start(&game_sounds[id]);
 }
 void game_system::stopSound(unsigned int id)
 {
     ma_sound_stop(&game_sounds[id]);
 }
 
-void game_system::update(world &floor, double delta_time)
+void game_system::update(world &floor, shader &particle_program, object &particle_sprite, double delta_time)
 {
     // if (paused)
     // {
@@ -361,51 +366,31 @@ void game_system::update(world &floor, double delta_time)
                 }
                 break;
             case 3:
-                if (yNormal != 0.0 && characters[i]->velocityY <= 0.0)
+                if (yNormal > 0.0)
                 {
-                    // if (characters[i]->plControl == nullptr || characters[i]->plControl != nullptr && characters[i]->animations[ANIM_ABILITY_0].finished)
-                    // {
                     characters[i]->velocityY *= firstCollisionHitTest;
                     characters[i]->onGround = true;
-                    // }
                 }
                 break;
             case 4:
-                if (xNormal != 0.0 || yNormal != 0.0)
+                if (xNormal < 0.0)
                 {
-                    characters[i]->velocityX *= 6.0;
-                    characters[i]->velocityY = 0.2f;
-                    characters[i]->visual.Put(floor.collision_boxes[j].min_x, floor.collision_boxes[j].min_y, 0.0);
+                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i]->onGround = true;
                 }
                 break;
             case 5:
-                if (firstCollisionHitTest < 1.0) // this should maybe be all special ids are same as button and button deletes everything with special id except self?
+                if (yNormal < 0.0)
                 {
-                    for (int x = 0; x < floor.roomWidth; ++x)
-                    {
-                        for (int y = 0; y < floor.roomHeight; ++y)
-                        {
-                            if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
-                            {
-                                floor.tiles[x][y].id = 5;
-                                floor.tiles[x][y].collisionID = -1;
-                            }
-
-                            if (floor.tiles[x][y].collisionID != 6)
-                                continue;
-
-                            floor.tiles[x][y].id = -1;
-                            floor.tiles[x][y].collisionID = -1;
-                        }
-                    }
-                    for (int x = 0; x < floor.collision_box_count; ++x)
-                    {
-                        if (floor.collision_boxes[x].collisionID == 6)
-                        {
-                            floor.collision_boxes[x].collisionID = -1;
-                            floor.collision_boxes[x] = aabb(-100.0, -100.0, -100.0, -100.0);
-                        }
-                    }
+                    characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i]->onGround = true;
+                }
+                break;
+            case 6:
+                if (xNormal > 0.0)
+                {
+                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i]->onGround = true;
                 }
                 break;
             case 7:
@@ -451,6 +436,23 @@ void game_system::update(world &floor, double delta_time)
                     }
                 }
                 break;
+            case 10:
+                if (firstCollisionHitTest < 1.0f)
+                {
+                    for (int x = 0; x < floor.roomWidth; ++x)
+                    {
+                        for (int y = 0; y < floor.roomHeight; ++y)
+                        {
+                            if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
+                            {
+                                floor.tiles[x][y].id = -1;
+                                floor.tiles[x][y].collisionID = -1;
+                            }
+                        }
+                    }
+                    characters[i]->runSpeed *= 1.001;
+                }
+                break;
             default:
                 if (yNormal != 0.0)
                     characters[i]->velocityY *= firstCollisionHitTest;
@@ -476,17 +478,27 @@ void game_system::update(world &floor, double delta_time)
         characters[i]->updatePosition(delta_time);
     }
 
-    for (int i = 0; i < particlesystemcount; ++i)
-    {
-        particles[i]->spawn(delta_time);
-        particles[i]->update(delta_time);
-    }
+    // for (int i = 0; i < particlesystemcount; ++i)
+    // {
+    //     particles[i].spawn(delta_time);
+    //     particles[i].update(delta_time);
+    //     if (particles[i].particles_alive > 0)
+    //     {
+    //         particles[i].draw(particle_program, particle_sprite, delta_time);
+    //     }
+
+    //     if (particles[i].particles_alive <= 0)
+    //     {
+    //         particles[i].kill();
+    //         removeParticles(i);
+    //     }
+    // }
 }
 
 void game_system::killParticles()
 {
     for (int i = 0; i < particlesystemcount; ++i)
     {
-        particles[i]->kill();
+        particles[i].kill();
     }
 }

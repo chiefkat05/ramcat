@@ -11,7 +11,14 @@
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
 
-// camera boundary does not stop on right side of level
+// tiiiiiiile animaaaaaations
+
+// enemies and npcs
+
+// use linkvalue in the ui_element initialization to take out some of the need for the variable updates happening in if (state == MENU_SCREEN) in main
+// ^ isn't that what I made it for anyway??
+
+// save function
 
 // Make the actual game
 
@@ -29,6 +36,8 @@
 // Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
 // Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
 // Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
+
+// player falling makes camera follow
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
@@ -70,15 +79,13 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
 {
     p.velocityX = 0.0;
 
-    bool walkingkeypressed = false;
-    static bool stepsoundplayed = false;
     if (p.plControl->getInput(window, CONTROL_LEFT))
     {
         p.velocityX = -p.runSpeed;
         p.visual.Rotate(0.0, 180.0, 0.0);
         if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
-        walkingkeypressed = true;
+        p.walkingkeypressed = true;
         playerFacingRight = false;
     }
     if (p.plControl->getInput(window, CONTROL_RIGHT))
@@ -88,7 +95,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
         if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
             p.PlayAnimation(ANIM_WALK, delta_time, true);
 
-        walkingkeypressed = true;
+        p.walkingkeypressed = true;
         playerFacingRight = true;
     }
     if (p.plControl->getInput(window, CONTROL_DOWN) && !p.onGround)
@@ -97,14 +104,14 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
     }
     if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
     {
-        stepsoundplayed = false;
+        p.stepsoundplayed = false;
     }
-    if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !stepsoundplayed)
+    if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !p.stepsoundplayed)
     {
-        game.playSound(1, 0.15, true);
-        stepsoundplayed = true;
+        game.playSound(3, 0.15, true);
+        p.stepsoundplayed = true;
     }
-    if (!walkingkeypressed)
+    if (!p.walkingkeypressed)
     {
         p.StopAnimation(ANIM_WALK);
     }
@@ -120,7 +127,6 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
         p.parrySuccess = false;
     }
 
-    static bool parryButtonPressed = false, strikeButtonPressed = false;
     if (p.parryTimer > 0)
     {
         p.parryTimer -= 60.0f * delta_time;
@@ -132,7 +138,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
     }
     if (!p.plControl->getInput(window, CONTROL_SHIELD))
     {
-        parryButtonPressed = false;
+        p.parryButtonPressed = false;
     }
 
     if (p.hp == 0 && p.parryTimer > (p.parryCooloff - p.parryWindow))
@@ -142,14 +148,14 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
         p.jumped = false;
     }
 
-    if (p.plControl->getInput(window, CONTROL_SHIELD) && !parryButtonPressed)
+    if (p.plControl->getInput(window, CONTROL_SHIELD) && !p.parryButtonPressed)
     {
         if (p.parryTimer <= 0)
         {
             p.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
             p.parryTimer = p.parryCooloff;
         }
-        parryButtonPressed = true;
+        p.parryButtonPressed = true;
     }
 
     if (p.strikeTimer >= 0.0)
@@ -160,14 +166,14 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
         }
         p.strikeTimer -= 60.0 * delta_time;
     }
-    if (p.strikeTimer <= 0.0 && strikeButtonPressed)
+    if (p.strikeTimer <= 0.0 && p.strikeButtonPressed)
     {
-        strikeButtonPressed = false;
+        p.strikeButtonPressed = false;
     }
-    if (p.plControl->getInput(window, CONTROL_SWORD) && !strikeButtonPressed)
+    if (p.plControl->getInput(window, CONTROL_SWORD) && !p.strikeButtonPressed)
     {
         p.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
-        strikeButtonPressed = true;
+        p.strikeButtonPressed = true;
         p.strikeTimer = p.strikeCooloff;
     }
 }
@@ -497,7 +503,7 @@ void changeControlFunc(character *ch, game_system *gs, world *wo, int x)
 }
 void volumeChangeSoundPlayFunc(character *ch, game_system *gs, world *wo, int x)
 {
-    gs->playSound(30, 0.0, true);
+    gs->playSound(6, 0.0, true);
 }
 
 extern int gamepad_stick_sensitivity;
@@ -596,8 +602,9 @@ void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x)
 void goMenuScreen(character *p, game_system *gs, world *w, int argv);
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv);
 
-int playerIDForControlStrElementIndex = 0;
+int playerIDForControlStrElementIndex = -1;
 int prevState = -1;
+double camCenterX = 0.0, camCenterY = 0.0;
 #ifdef COLLISION_DEBUG
 sprite deCollision;
 sprite dePl;
@@ -609,6 +616,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         return;
 
     gui_data.elements.clear();
+    mainCam.fov = mainCam.default_fov * 0.01;
 
     std::string playerIDForControlStr = "Player " + std::to_string(playerIDForControl);
 
@@ -643,9 +651,10 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0, 10.0, 1, 1, leaveMenuScreen));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0, 10.0, 1, 1, quitGame));
+
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 0.0);
-        mainG.initSound("./snd/fx/volume.wav", 30, &s_engine);
+        mainG.initSound("./snd/fx/volume.wav", 6, &s_engine);
 
         gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 64.0, 0.0, 1, 1));
         gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 51.2f, 0.0, 1, 1));
@@ -686,16 +695,21 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 24.0, 0.0, 1, 1));
         gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 30.0, 3.0, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0, 1000.0);
+        gui_data.mostRecentCreatedElement()->slider_values(0, 1000);
 
         gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 24.0, 0.0, 1, 1));
         gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 30.0, 3.0, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &mainG.music_volume));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0, 125.0);
+        gui_data.mostRecentCreatedElement()->slider_values(0, 125);
         gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 24.0, 0.0, 1, 1));
         gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 30.0, 3.0, 1, 1, volumeChangeSoundPlayFunc,
                                                false, nullptr, &mainG, nullptr, 0, &mainG.sound_volume));
-        gui_data.mostRecentCreatedElement()->slider_values(0.0, 125.0);
+        gui_data.mostRecentCreatedElement()->slider_values(0, 125);
+
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Camera FOV", 0.2f, 0.3f, 24.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.25f, 30.0, 3.0, 1, 1, nullFunc,
+                                               false, nullptr, &mainG, nullptr, 0, &mainCam.default_fov));
+        gui_data.mostRecentCreatedElement()->slider_values(7000, 12000);
 
         gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.5f, 0.9f, 32.0, 0.0, 1, 1, fullScreenToggleFunc));
 
@@ -703,7 +717,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
-            players[i].visual.Scale(0.48f, 0.48f, 1.0);
+            players[i].visual.Scale(0.48f, 0.48f, 1.0); // fun
         }
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
@@ -715,9 +729,9 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         {
             players[i].visual.Scale(0.32f, 0.32f, 1.0);
         }
-        mainCam.lockTo(&p1.visual.x, &lowestCamYLevel);
+        mainCam.lockTo(&camCenterX, &lowestCamYLevel);
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
-        mainG.initSound("./snd/fx/kstep.wav", 1, &s_engine); // volume needs to change while in menu!
+        mainG.initSound("./snd/fx/kstep.wav", 3, &s_engine);
         mainG.playSound(0, 0.0);
         if (mainG.levelincreasing)
         {
@@ -727,47 +741,47 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         switch (mainG.level)
         {
         case 0:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 6);
             break;
         case 1:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 6);
             break;
         case 2:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 6);
             break;
         case 3:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 4:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 5:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 6:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 7:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 8:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 9:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 10:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 11:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             break;
         case 16:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1280.0, 520.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
             worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
             break;
         case 17:
@@ -778,7 +792,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
-        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * 0.16f - 1.84f, 50.0, 1.0);
+        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * 0.16 - 1.84, 50.0, 1.0);
 
 #ifdef COLLISION_DEBUG
         deCollision = sprite("./img/debug.png", 1, 1);
@@ -838,6 +852,7 @@ int main()
     }
 
     shader shaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
+    shader uiShaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
     shader textShaderProgram("./shaders/text.vertex", "./shaders/text.fragment");
 
     object spriteRect(OBJ_QUAD);
@@ -886,17 +901,25 @@ int main()
 
         updateView(shaderProgram);
 
+        uiShaderProgram.use();
+        glm::mat4 view = glm::mat4(1.0);
+        glm::mat4 proj = glm::mat4(1.0);
+        view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+        proj = glm::perspective(glm::radians(mainCam.ui_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
+        uiShaderProgram.setUniformMat4("projection", proj);
+        uiShaderProgram.setUniformMat4("view", view);
+
         if (state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
             state = WORLD_SCREEN;
         }
         menuData(game, players[0], mainWorld, soundEngine);
-        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
-        for (int i = 0; i < game.particlesystemcount; ++i)
-        {
-            game.particles[i]->draw(window, shaderProgram, spriteRect, delta_time);
-        }
+        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
+        // for (int i = 0; i < game.particlesystemcount; ++i)
+        // {
+        //     game.particles[i].draw(window, shaderProgram, spriteRect, delta_time);
+        // }
 
         if (state == CHARACTER_CREATION_SCREEN)
         {
@@ -910,10 +933,14 @@ int main()
         if (state == MENU_SCREEN)
         {
             static double currentMusicVolume = 0, currentSoundVolume = 0;
+
             if (currentMusicVolume != game.music_volume)
             {
                 for (int i = 0; i < sound_is_music_cutoff; ++i)
                 {
+                    if (game.game_sounds[i].pDataSource == nullptr || game.sound_paths[i].empty())
+                        continue;
+
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
                         ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.music_volume) / 100.0);
@@ -924,6 +951,9 @@ int main()
             {
                 for (int i = sound_is_music_cutoff; i < sound_limit; ++i)
                 {
+                    if (game.game_sounds[i].pDataSource == nullptr || game.sound_paths[i].empty())
+                        continue;
+
                     if (ma_sound_is_playing(&game.game_sounds[i]))
                     {
                         ma_sound_set_volume(&game.game_sounds[i], static_cast<double>(game.sound_volume) / 100.0);
@@ -941,7 +971,8 @@ int main()
             }
 
             std::string playerIDTextStr = std::string("Player ") + std::to_string(playerIDForControl);
-            gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr.c_str();
+            if (playerIDForControlStrElementIndex != -1)
+                gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr.c_str();
 
             for (int i = 0; i < control_limit; ++i)
             {
@@ -969,15 +1000,43 @@ int main()
         }
         if (state == WORLD_SCREEN && mainWorld.worldInitialized)
         {
-            if (playerFacingRight && mainCam.offsetX < 0.2f)
+            if (playerFacingRight && mainCam.offsetX < 0.2)
             {
                 mainCam.offsetX += 2.0 * delta_time;
             }
-            if (!playerFacingRight && mainCam.offsetX > -0.2f)
+            if (!playerFacingRight && mainCam.offsetX > -0.2)
             {
                 mainCam.offsetX -= 2.0 * delta_time;
             }
-            if (players[0].onGround && players[0].visual.y > -0.5f + lowestCamYLevel)
+            double xleft = mainCam.cameraPosition.x, xright = mainCam.cameraPosition.x;
+
+            // set to player 0
+            // check topmost and lowermost players that are on ground and put them in yup and ydown
+            // if yup and ydown past holdyup and holdydown levels, update holdy vars
+            // if yup and ydown less than players actual distance (inculding not onGround players) then don't lower holdy vars
+
+            for (int i = 0; i < playerCount; ++i)
+            {
+                if (players[i].visual.x < xleft)
+                {
+                    xleft = players[i].visual.x;
+                }
+                if (players[i].visual.x > xright)
+                {
+                    xright = players[i].visual.x;
+                }
+                if (!players[i].onGround)
+                    continue;
+            }
+
+            double distanceCamX = ((xright - xleft) + 8.0) * 9.0;
+            if (distanceCamX > mainCam.default_fov * 0.01)
+            {
+                mainCam.fov = std::min(distanceCamX, 120.0);
+            }
+            camCenterX = (xleft + xright) * 0.5;
+
+            if (players[0].onGround && players[0].visual.y > -0.2 + lowestCamYLevel)
             {
                 lowestCamYLevel += 2.0 * delta_time;
             }
@@ -1004,7 +1063,7 @@ int main()
             }
 #endif
 
-            game.update(mainWorld, delta_time);
+            game.update(mainWorld, shaderProgram, spriteRect, delta_time);
 
             double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
             double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
@@ -1039,6 +1098,8 @@ int main()
                     else
                     {
                         game.characters[i]->visual.Put(players[0].visual.x, players[0].visual.y, 0.0);
+                        game.characters[i]->velocityY = 1.0f;
+                        game.characters[i]->velocityX = -1.0f;
                     }
                     // player animation here???
                     game.characters[i]->hp = game.characters[i]->maxhp;
@@ -1050,7 +1111,7 @@ int main()
                 state = WON_LEVEL_STATE;
             }
         }
-        gui_data.screenDraw(window, shaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, false);
+        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, false);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

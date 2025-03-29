@@ -92,8 +92,13 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = 9;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
+            case 'c':
+                tiles[i][roomHeight].id = 16;
+                tiles[i][roomHeight].collisionID = 10;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                break;
             case 'e':
-                tiles[i][roomHeight].id = 2;
+                tiles[i][roomHeight].id = 3;
                 tiles[i][roomHeight].collisionID = 2;
                 break;
             case 'f':
@@ -110,19 +115,18 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = 3;
                 break;
             case '4':
-                tiles[i][roomHeight].id = 3;
+                tiles[i][roomHeight].id = 9;
                 tiles[i][roomHeight].collisionID = 4;
                 break;
             case '5':
-                tiles[i][roomHeight].id = 4;
+                tiles[i][roomHeight].id = 10;
                 tiles[i][roomHeight].collisionID = 5;
-                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case '6':
-                tiles[i][roomHeight].id = 0;
+                tiles[i][roomHeight].id = 11;
                 tiles[i][roomHeight].collisionID = 6;
                 break;
-            case '7':
+            case 'r':
                 tiles[i][roomHeight].id = 6;
                 tiles[i][roomHeight].collisionID = 7;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;

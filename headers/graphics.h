@@ -56,7 +56,8 @@ struct camera
     bool mouseCapture = true, swappedMouseCapture = false;
     glm::dvec3 cameraVelocity = glm::dvec3(0.0);
     bool jumped = false;
-    double fov = 90.0, zoomed_fov = 20.0, current_fov = 90.0;
+    double fov = 90.0, zoomed_fov = 20.0, current_fov = 90.0, ui_fov = 90.0;
+    int default_fov = 9000; // divide by 100 before use pls :)
     simple_camera_types type;
     glm::dvec3 boundaryCorner, boundarySizeCorner;
     bool boundaryset = false;

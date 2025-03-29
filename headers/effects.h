@@ -67,14 +67,40 @@ struct particlesystem
                    double sX, double sY, double sW, double sH);
 
     void spawn(double delta_time);
-    void push(double xVel, double yVel, double xVelMax, double yVelMax);
 
     void linkVariable(PARTICLE_VARIABLE pv, double *value);
 
     void update(double delta_time);
-    void draw(GLFWwindow *win, shader &program, object &sprite_object, double delta_time);
+    void draw(shader &program, object &sprite_object, double delta_time);
 
     void kill();
+};
+
+enum TRANSITION_TYPES
+{
+    TR_BLACKOUT,
+    TR_ZOOMOUT,
+    TR_LEFTSLIDE,
+    TR_RIGHTSLIDE
+};
+
+const double timerStart = 100.0;
+struct transition
+{
+    double timer = 0.0, speed = 0.0;
+
+    void *function = nullptr;
+
+    transition(double spd, void *f)
+    {
+        speed = spd;
+        function = f;
+    }
+
+    void run()
+    {
+        timer = timerStart;
+    }
 };
 
 #endif

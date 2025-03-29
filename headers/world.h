@@ -11,6 +11,7 @@ const unsigned int height_limit = 128;
 const unsigned int collision_box_limit = 128;
 // const unsigned int collision_box_limit = 2;
 const unsigned int collision_id_limit = 24;
+const unsigned int tile_animation_limit = 24;
 
 struct tile
 {
@@ -47,6 +48,10 @@ struct world
 {
     bool start = true, end = false, worldInitialized = false;
     tile tiles[width_limit][height_limit];
+
+    animation tileAnimations[tile_animation_limit]; // unimplemented, do later pls
+    int animationToIDMap[tile_animation_limit];
+
     sprite worldSprite;
 
     unsigned int roomWidth = 0, roomHeight = 0;

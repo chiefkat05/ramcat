@@ -25,7 +25,7 @@ struct ui_element
     sprite visual;
     double trueX, trueY, trueWidth, trueHeight;
     double posX, posY, width, height, sliderPos = 0;
-    int sliderLimit = 1;
+    int sliderLimit = 1, sliderMin = 0;
     int *value;
     bool selected = false;
     glm::vec4 color;
@@ -44,7 +44,7 @@ struct ui_element
                void func(character *, game_system *, world *, int) = nullFunc, bool bg = false,
                character *_func_p = nullptr, game_system *_func_gs = nullptr, world *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
-    void slider_values(double sP, int sL);
+    void slider_values(int sM, int sL);
 
     void update(GLFWwindow *window, double mouseX, double mouseY, double delta_time);
 };

@@ -171,15 +171,15 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         if (selected)
         {
             double position = ((mouseX / current_win_width) * 2.0 - 1.0);
-            if (position > trueX + (visual.w / windowAspectDivision) * 0.5f)
-                position = trueX + (visual.w / windowAspectDivision) * 0.5f;
-            if (position < trueX - (visual.w / windowAspectDivision) * 0.5f)
-                position = trueX - (visual.w / windowAspectDivision) * 0.5f;
+            if (position > trueX + (visual.w / windowAspectDivision) * 0.5)
+                position = trueX + (visual.w / windowAspectDivision) * 0.5;
+            if (position < trueX - (visual.w / windowAspectDivision) * 0.5)
+                position = trueX - (visual.w / windowAspectDivision) * 0.5;
 
             sliderPos = position * windowAspectDivision; // limit
             if (value != nullptr)
             {
-                *value = (sliderPos - (visual.x - visual.w * 0.5f)) * 1.2f * sliderLimit;
+                *value = sliderMin + ((sliderPos - (visual.x - visual.w * 0.5)) * 1.2 * sliderLimit);
             }
         }
         break;
@@ -187,18 +187,21 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         break;
     }
 }
-void ui_element::slider_values(double sP, int sL)
+
+// v = m + (p - l) * 1.2 * s
+// v / 1.2s - m/1.2s + l = p
+// p = v / 1.2s - m/1.2s + l
+// sliderPos = *value / 1.2*sliderLimit - sliderMin / 1.2*sliderLimit + (visual.x - visual.w * 0.5)
+
+void ui_element::slider_values(int sM, int sL)
 {
-    sliderPos = visual.x + sP;
-
-    if (sP > sL)
-        sliderPos = visual.x + sL;
-
-    sliderLimit = sL;
+    sliderMin = sM;
+    sliderLimit = sL - sM;
 
     if (value != nullptr)
     {
-        sliderPos = static_cast<double>(*value) / (1.2f * static_cast<double>(sliderLimit)) + (visual.x - (visual.w * 0.5f));
+        sliderPos = static_cast<double>(*value) / (1.2 * static_cast<double>(sliderLimit)) + (visual.x - (visual.w * 0.5f)) -
+                    (static_cast<double>(sliderMin) / (1.2 * static_cast<double>(sliderLimit))); // do this math please :)
     }
 }
 
