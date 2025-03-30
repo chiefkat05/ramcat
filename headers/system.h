@@ -197,6 +197,10 @@ struct game_system
         particles[particlesystemcount] = sys;
         ++particlesystemcount;
     }
+    particlesystem *lastParticleSet()
+    {
+        return &particles[particlesystemcount - 1];
+    }
     void removeParticles(unsigned int index)
     {
         for (int i = index; i < particlesystemcount; ++i)

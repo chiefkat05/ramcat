@@ -458,10 +458,6 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                     characters[i]->velocityY *= firstCollisionHitTest;
                 if (xNormal != 0.0)
                     characters[i]->velocityX *= firstCollisionHitTest;
-                // if (yNormal != 0.0)
-                //     characters[i]->velocityY *= 0.0;
-                // if (xNormal != 0.0)
-                //     characters[i]->velocityX *= 0.0;
                 if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
@@ -478,21 +474,21 @@ void game_system::update(world &floor, shader &particle_program, object &particl
         characters[i]->updatePosition(delta_time);
     }
 
-    // for (int i = 0; i < particlesystemcount; ++i)
-    // {
-    //     particles[i].spawn(delta_time);
-    //     particles[i].update(delta_time);
-    //     if (particles[i].particles_alive > 0)
-    //     {
-    //         particles[i].draw(particle_program, particle_sprite, delta_time);
-    //     }
+    for (int i = 0; i < particlesystemcount; ++i)
+    {
+        particles[i].spawn(delta_time);
+        particles[i].update(delta_time);
+        if (particles[i].particles_alive > 0)
+        {
+            particles[i].draw(particle_program, particle_sprite, delta_time);
+        }
 
-    //     if (particles[i].particles_alive <= 0)
-    //     {
-    //         particles[i].kill();
-    //         removeParticles(i);
-    //     }
-    // }
+        // if (particles[i].particles_alive <= 0)
+        // {
+        //     particles[i].kill();
+        //     removeParticles(i);
+        // }
+    }
 }
 
 void game_system::killParticles()

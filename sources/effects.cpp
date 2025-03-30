@@ -14,7 +14,7 @@ particlesystem::particlesystem()
 
     particle_count = 0.0;
 }
-particlesystem::particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, double _life_lower, double _life_upper,
+particlesystem::particlesystem(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
                                double sX, double sY, double sW, double sH)
 {
     variables[PV_SPAWN_TIMER] = 0.0;
@@ -29,21 +29,21 @@ particlesystem::particlesystem(const char *path, unsigned int frame, unsigned in
     if (_particle_count < particle_limit)
         particle_count = _particle_count;
 
-    // visual = sprite(path, 0.0, 0.0, 1, 1);
-    visual = sprite(path, 1, 1);
-    // visual.rect.setTextureRect(sf::IntRect(visual.spriteW * ((frame % visual.framesX) - 1), visual.spriteH * (frame / visual.framesX),
-    //                                        visual.spriteW, visual.spriteH));
-    // visual.textureX = visual.spriteW * ((frame % visual.framesX) - 1);
+    visual = sprite(path, fx, fy);
 }
 
 void particlesystem::spawn(double delta_time)
 {
-    // if (variable_pointers[PV_SPAWN_TIMER] == nullptr)
+    for (int i = 0; i < pv_variable_limit; ++i)
+    {
+        if (variable_pointers[i] != nullptr)
+        {
+            variables[i] = *variable_pointers[i];
+        }
+    }
     variables[PV_SPAWN_TIMER] -= 10.0 * delta_time;
 
     double spawnTimer = variables[PV_SPAWN_TIMER];
-    // if (variable_pointers[PV_SPAWN_TIMER] != nullptr)
-    //     spawnTimer = *variable_pointers[PV_SPAWN_TIMER];
 
     if (particles_alive >= particle_count || spawnTimer > 0.0)
         return;
@@ -56,7 +56,12 @@ void particlesystem::spawn(double delta_time)
     particles[particles_alive].velX = 0.0;
     particles[particles_alive].velY = 0.0;
     particles[particles_alive].life = lifeRand(numGen);
-    particles[particles_alive].lifestartalphamultiple = 255.0 / particles[particles_alive].life;
+    particles[particles_alive].w = variables[PV_WIDTH];
+    particles[particles_alive].h = variables[PV_HEIGHT];
+    particles[particles_alive].red = variables[PV_RED];
+    particles[particles_alive].green = variables[PV_GREEN];
+    particles[particles_alive].blue = variables[PV_BLUE];
+    particles[particles_alive].alpha = variables[PV_ALPHA];
 
     std::uniform_real_distribution<double> parXVel(variables[PV_PUSHMIN_X], variables[PV_PUSHMAX_X]);
     std::uniform_real_distribution<double> parYVel(variables[PV_PUSHMIN_Y], variables[PV_PUSHMAX_Y]);
@@ -75,6 +80,14 @@ void particlesystem::linkVariable(PARTICLE_VARIABLE pv, double *value)
 
 void particlesystem::update(double delta_time)
 {
+    for (int i = 0; i < pv_variable_limit; ++i)
+    {
+        if (variable_pointers[i] != nullptr)
+        {
+            variables[i] = *variable_pointers[i];
+        }
+    }
+
     for (int i = 0; i < particles_alive; ++i)
     {
         if (particles[i].life < 0.0)
@@ -86,22 +99,54 @@ void particlesystem::update(double delta_time)
 
         particles[i].Move(particles[i].velX * delta_time, particles[i].velY * delta_time);
         particles[i].life -= 10.0 * delta_time;
-        // if (fadewithlife)  // should go in particlesystem::draw()
-        //     particles[i].visual.rect.setColor(sf::Color(255, 255, 255, static_cast<int>(particles[i].life * particles[i].lifestartalphamultiple)));
     }
 }
 void particlesystem::draw(shader &program, object &sprite_object, double delta_time)
 {
     for (int i = 0; i < particle_count; ++i)
     {
+        particles[i].w = variables[PV_WIDTH];
+        particles[i].h = variables[PV_HEIGHT];
+        particles[i].red = variables[PV_RED];
+        particles[i].green = variables[PV_GREEN];
+        particles[i].blue = variables[PV_BLUE];
+        if (variables[PV_ALPHA_LIFE_FALLOFF] > 0.0)
+        {
+            particles[i].alpha = particles[i].life * variables[PV_ALPHA_LIFE_FALLOFF];
+        }
+        else
+        {
+            particles[i].alpha = variables[PV_ALPHA];
+        }
+
+        particles[i].animationTime += variables[PV_ANIM_SPEED] * delta_time;
+        if (particles[i].animationTime < variables[PV_ANIM_START])
+            particles[i].animationTime = variables[PV_ANIM_START];
+        if (particles[i].animationTime >= variables[PV_ANIM_END])
+            particles[i].animationTime = variables[PV_ANIM_START];
+
         visual.Put(particles[i].x, particles[i].y, 0.0);
 
-        if (fadewithlife)
-            visual.SetColor(255, 255, 255, static_cast<int>(particles[i].life * particles[i].lifestartalphamultiple));
+        visual.SetColor(particles[i].red, particles[i].green, particles[i].blue, particles[i].alpha);
+        if (variables[PV_WIDTH_LIFE_FALLOFF] > 0.0)
+        {
+            visual.w = particles[i].life * variables[PV_WIDTH_LIFE_FALLOFF] * variables[PV_WIDTH];
+        }
+        else
+        {
+            visual.w = variables[PV_WIDTH];
+        }
+        if (variables[PV_HEIGHT_LIFE_FALLOFF] > 0.0)
+        {
+            visual.h = particles[i].life * variables[PV_HEIGHT_LIFE_FALLOFF] * variables[PV_HEIGHT];
+        }
+        else
+        {
+            visual.h = variables[PV_HEIGHT];
+        }
+        visual.textureX = static_cast<int>(particles[i].animationTime) % visual.framesX;
+        visual.textureY = static_cast<int>(particles[i].animationTime) / visual.framesX;
 
-        // std::cout << visual.rect.getPosition().x << ", " << visual.rect.getPosition().y << " pos\n";
-
-        // win.draw(visual.rect);
         visual.Draw(program, sprite_object);
     }
 }

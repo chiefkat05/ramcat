@@ -636,7 +636,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0, 10.0, 1, 1, quitGame));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0, 10.0, 1, 1, goMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
@@ -649,7 +649,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         mainCam.offsetZ = 0.0;
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0, 10.0, 1, 1, leaveMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, START_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, START_SCREEN));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0, 10.0, 1, 1, quitGame));
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
@@ -722,7 +722,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0, 16.0, 1, 1, removePlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, startGame, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
         for (int i = 0; i < playerCount; ++i)
@@ -886,6 +886,27 @@ int main()
     glm::mat4 textProjection = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height));
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
+
+    game.particleSet(particlesystem("./img/gfx/spawn.png", 4, 1, 50, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2));
+    game.lastParticleSet()->setVariable(PV_PUSHMIN_Y, 1.0);
+    game.lastParticleSet()->setVariable(PV_PUSHMAX_Y, 2.0);
+    game.lastParticleSet()->setVariable(PV_PUSHMIN_X, -1.0);
+    game.lastParticleSet()->setVariable(PV_PUSHMAX_X, 1.0);
+    game.lastParticleSet()->setVariable(PV_RED, 1.0);
+    game.lastParticleSet()->setVariable(PV_GREEN, 1.0);
+    game.lastParticleSet()->setVariable(PV_BLUE, 1.0);
+    game.lastParticleSet()->setVariable(PV_ALPHA, 0.2);
+    game.lastParticleSet()->setVariable(PV_WIDTH, 0.1);
+    game.lastParticleSet()->setVariable(PV_HEIGHT, 0.1);
+    game.lastParticleSet()->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+    game.lastParticleSet()->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+    game.lastParticleSet()->setVariable(PV_ANIM_START, 0.0);
+    game.lastParticleSet()->setVariable(PV_ANIM_END, 4.0);
+    game.lastParticleSet()->setVariable(PV_ANIM_SPEED, 8.0);
+    game.lastParticleSet()->linkVariable(PV_SPAWN_X, &players[0].visual.x);
+    game.lastParticleSet()->linkVariable(PV_SPAWN_W, &players[0].visual.x);
+    game.lastParticleSet()->linkVariable(PV_SPAWN_Y, &players[0].visual.y);
+    game.lastParticleSet()->linkVariable(PV_SPAWN_H, &players[0].visual.y);
 
     while (!glfwWindowShouldClose(window))
     {

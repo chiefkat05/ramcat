@@ -6,6 +6,7 @@
 
 const unsigned int particle_limit = 2512;
 const unsigned int particle_system_limit = 6;
+const unsigned int transition_limit = 12;
 
 // struct soundhandler
 // {
@@ -20,7 +21,7 @@ const unsigned int particle_system_limit = 6;
 struct particle
 {
     double x = 0.0, y = 0.0, velX = 0.0, velY = 0.0, life = 0.0;
-    double lifestartalphamultiple = 1.0;
+    double w = 0.0, h = 0.0, red = 0.0, green = 0.0, blue = 0.0, alpha = 0.0, animationTime = 0.0;
 
     void Put(double _x, double _y)
     {
@@ -48,6 +49,18 @@ enum PARTICLE_VARIABLE
     PV_PUSHMAX_X,
     PV_PUSHMAX_Y,
     PV_SPAWN_SPEED,
+    PV_WIDTH,
+    PV_HEIGHT,
+    PV_RED,
+    PV_GREEN,
+    PV_BLUE,
+    PV_ALPHA,
+    PV_ALPHA_LIFE_FALLOFF,
+    PV_WIDTH_LIFE_FALLOFF,
+    PV_HEIGHT_LIFE_FALLOFF,
+    PV_ANIM_START,
+    PV_ANIM_END,
+    PV_ANIM_SPEED,
     pv_variable_limit
 };
 
@@ -55,7 +68,6 @@ struct particlesystem
 {
     particle particles[particle_limit];
     unsigned int particle_count, particles_alive = 0;
-    bool fadewithlife = true;
 
     double variables[pv_variable_limit] = {0.0};
     double *variable_pointers[pv_variable_limit];
@@ -63,44 +75,21 @@ struct particlesystem
     sprite visual;
 
     particlesystem();
-    particlesystem(const char *path, unsigned int frame, unsigned int _particle_count, double _life_lower, double _life_upper,
+    particlesystem(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
                    double sX, double sY, double sW, double sH);
 
     void spawn(double delta_time);
 
+    void setVariable(PARTICLE_VARIABLE pv, double value)
+    {
+        variables[pv] = value;
+    }
     void linkVariable(PARTICLE_VARIABLE pv, double *value);
 
     void update(double delta_time);
     void draw(shader &program, object &sprite_object, double delta_time);
 
     void kill();
-};
-
-enum TRANSITION_TYPES
-{
-    TR_BLACKOUT,
-    TR_ZOOMOUT,
-    TR_LEFTSLIDE,
-    TR_RIGHTSLIDE
-};
-
-const double timerStart = 100.0;
-struct transition
-{
-    double timer = 0.0, speed = 0.0;
-
-    void *function = nullptr;
-
-    transition(double spd, void *f)
-    {
-        speed = spd;
-        function = f;
-    }
-
-    void run()
-    {
-        timer = timerStart;
-    }
 };
 
 #endif

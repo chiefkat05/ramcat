@@ -253,11 +253,8 @@ ui_element *gui::mostRecentCreatedElement()
     return &elements[elements.size() - 1];
 }
 
-void startGame(character *p, game_system *gs, world *w, int argv)
+void changeScene(character *p, game_system *gs, world *w, int argv)
 {
-    if (state > CHARACTER_CREATION_SCREEN)
-        return;
-
     state = static_cast<game_state>(argv);
 }
 void optionsTab(character *p, game_system *gs, world *w, int argv)

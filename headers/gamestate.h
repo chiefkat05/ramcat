@@ -61,6 +61,167 @@ enum game_state
     state_total_count
 };
 
+struct transition
+{
+    double destination = 0.0, speed = 0.0;
+    double *valueD = nullptr;
+    float *valueF = nullptr;
+    int *valueI = nullptr;
+
+    void (*function)(character *, game_system *, world *, int);
+    character *func_p;
+    game_system *func_gs;
+    world *func_d;
+    int func_i;
+
+    bool ready = true, finished = false;
+
+    transition(double spd, double destination, double *v, void func(character *, game_system *, world *, int) = nullFunc,
+               character *_func_p = nullptr, game_system *_func_gs = nullptr, world *_func_d = nullptr,
+               int _func_i = 0, bool r = true)
+    {
+        speed = spd;
+        function = func;
+        ready = r;
+        finished = false;
+        valueD = v;
+    }
+    transition(double spd, float destination, float *v, void func(character *, game_system *, world *, int) = nullFunc,
+               character *_func_p = nullptr, game_system *_func_gs = nullptr, world *_func_d = nullptr,
+               int _func_i = 0, bool r = true)
+    {
+        speed = spd;
+        function = func;
+        ready = r;
+        finished = false;
+        valueF = v;
+    }
+    transition(double spd, int destination, int *v, void func(character *, game_system *, world *, int) = nullFunc,
+               character *_func_p = nullptr, game_system *_func_gs = nullptr, world *_func_d = nullptr,
+               int _func_i = 0, bool r = true)
+    {
+        speed = spd;
+        function = func;
+        ready = r;
+        finished = false;
+        valueI = v;
+    }
+    transition()
+    {
+        speed = 0.0;
+        function = nullptr;
+        ready = false;
+        finished = true;
+    }
+
+    void trigger()
+    {
+        ready = true;
+    }
+    void runD(float delta_time)
+    {
+        if (*valueD < destination)
+        {
+            *valueD += speed * delta_time;
+            if (*valueD >= destination)
+            {
+                *valueD = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueD > destination)
+        {
+            *valueD -= speed * delta_time;
+            if (*valueD <= destination)
+            {
+                *valueD = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueD == destination)
+        {
+            function(func_p, func_gs, func_d, func_i);
+            finished = true;
+        }
+    }
+    void runF(float delta_time)
+    {
+        if (*valueF < destination)
+        {
+            *valueF += speed * delta_time;
+            if (*valueF >= destination)
+            {
+                *valueF = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueF > destination)
+        {
+            *valueF -= speed * delta_time;
+            if (*valueF <= destination)
+            {
+                *valueF = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueF == destination)
+        {
+            function(func_p, func_gs, func_d, func_i);
+            finished = true;
+        }
+    }
+    void runI(float delta_time)
+    {
+        if (*valueI < destination)
+        {
+            *valueI += speed * delta_time;
+            if (*valueI >= destination)
+            {
+                *valueI = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueI > destination)
+        {
+            *valueI -= speed * delta_time;
+            if (*valueI <= destination)
+            {
+                *valueI = destination;
+                function(func_p, func_gs, func_d, func_i);
+                finished = true;
+            }
+        }
+        if (*valueI == destination)
+        {
+            function(func_p, func_gs, func_d, func_i);
+            finished = true;
+        }
+    }
+    void run(float delta_time)
+    {
+        if (!ready || finished)
+            return;
+
+        if (valueD != nullptr)
+        {
+            runD(delta_time);
+        }
+        if (valueF != nullptr)
+        {
+            runF(delta_time);
+        }
+        if (valueI != nullptr)
+        {
+            runI(delta_time);
+        }
+    }
+};
+
 struct gui
 {
     std::vector<ui_element> elements;
@@ -70,7 +231,7 @@ struct gui
     ui_element *mostRecentCreatedElement();
 };
 
-void startGame(character *p, game_system *gs, world *w, int argv);
+void changeScene(character *p, game_system *gs, world *w, int argv);
 void optionsTab(character *p, game_system *gs, world *w, int argv);
 
 void quitGame(character *p, game_system *gs, world *w, int argv);
