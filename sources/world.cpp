@@ -88,12 +88,12 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = -1;
                 break;
             case 'S':
-                tiles[i][roomHeight].id = 15;
+                tiles[i][roomHeight].id = 21;
                 tiles[i][roomHeight].collisionID = 9;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case 'c':
-                tiles[i][roomHeight].id = 16;
+                tiles[i][roomHeight].id = 23;
                 tiles[i][roomHeight].collisionID = 10;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
@@ -102,7 +102,7 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = 2;
                 break;
             case 'f':
-                tiles[i][roomHeight].id = 18;
+                tiles[i][roomHeight].id = 25;
                 tiles[i][roomHeight].collisionID = 8;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
@@ -111,24 +111,29 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = 1;
                 break;
             case '3':
-                tiles[i][roomHeight].id = 8;
+                tiles[i][roomHeight].id = 12;
                 tiles[i][roomHeight].collisionID = 3;
                 break;
             case '4':
-                tiles[i][roomHeight].id = 9;
+                tiles[i][roomHeight].id = 13;
                 tiles[i][roomHeight].collisionID = 4;
                 break;
             case '5':
-                tiles[i][roomHeight].id = 10;
+                tiles[i][roomHeight].id = 14;
                 tiles[i][roomHeight].collisionID = 5;
                 break;
             case '6':
-                tiles[i][roomHeight].id = 11;
+                tiles[i][roomHeight].id = 15;
                 tiles[i][roomHeight].collisionID = 6;
                 break;
             case 'r':
-                tiles[i][roomHeight].id = 6;
+                tiles[i][roomHeight].id = 8;
                 tiles[i][roomHeight].collisionID = 7;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                break;
+            case '!':
+                tiles[i][roomHeight].id = 4;
+                tiles[i][roomHeight].collisionID = 11;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             default:
@@ -237,8 +242,8 @@ void world::readRoomFile(const char *path)
             collisionAddition:
                 int newystart = static_cast<int>(roomHeight) - collisionstarty + 1;
                 int newyend = static_cast<int>(roomHeight) - collisionendy + 1;
-                collision_boxes[collision_box_count] = aabb(collisionstartx * 0.16f, newyend * 0.16f + 0.08f,
-                                                            collisionendx * 0.16f, newystart * 0.16f + 0.08f);
+                collision_boxes[collision_box_count] = aabb(collisionstartx * (worldSprite.spriteW * 0.02), newyend * (worldSprite.spriteH * 0.02),
+                                                            collisionendx * (worldSprite.spriteW * 0.02), newystart * (worldSprite.spriteH * 0.02));
 
                 collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
                 collision_boxes[collision_box_count].collisionID = c;

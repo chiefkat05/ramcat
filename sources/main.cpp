@@ -13,7 +13,13 @@
 
 // tiiiiiiile animaaaaaations
 
-// enemies and npcs
+// transitions? Maybe only for screens?
+
+// quadtrees for collisions
+
+// enemies and npcs // this seems like it will be difficult since the game.characters array is all wrapped around the players so figure that out first
+
+// fix strange but inimportant issue with the particles sometimes just sitting on (0, 0) or not moving
 
 // use linkvalue in the ui_element initialization to take out some of the need for the variable updates happening in if (state == MENU_SCREEN) in main
 // ^ isn't that what I made it for anyway??
@@ -31,19 +37,15 @@
 
 // clean this up and put all functions at the bottom so menuData and main can be easiest to access
 
-// Particle effects should be re-written from scratch that whole system is just a mess :)
-
 // Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
 // Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
 // Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
-
-// player falling makes camera follow
 
 #include "../headers/system.h"
 #include "../headers/gamestate.h"
 #include "../headers/miniaudio.h"
 
-// #define COLLISION_DEBUG
+#define COLLISION_DEBUG
 
 double texCoords[] = {
     0.0, 0.0,
@@ -66,7 +68,7 @@ double lowestCamYLevel = 0.0;
 bool playerSpawned = false;
 bool playerFacingRight = true;
 
-const double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
+extern double windowAspectDivision;
 
 extern gui gui_data;
 extern game_state state;
@@ -396,7 +398,7 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller)
 {
-    pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
+    pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, 0.0, -0.08, 0.16, 0.24, CH_PLAYER);
     pl.visual.Scale(0.32f, 0.32f, 1.0);
 
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
@@ -478,16 +480,7 @@ void removePlayer(character *ch, game_system *gs, world *wo, int x)
     playerCount--;
     gs->Remove(&players[playerCount]);
 }
-/**
-    CONTROL_UP,
-    CONTROL_LEFT,
-    CONTROL_RIGHT,
-    CONTROL_DOWN,
-    CONTROL_SHIELD,
-    CONTROL_SWORD,
-    CONTROL_BUBBLE,
-    CONTROL_SPAWN_PLAYER,
-    control_limit **/
+
 controlset changingControl = control_limit;
 int uiElementForControlChangeIndex = 0;
 int playerIDForControl = 0;
@@ -568,10 +561,6 @@ int gamepadInputWatch()
         return PAD_TRIGGER_R;
     }
     return -1;
-    // for (int i = 0; i < GLFW_GAMEPAD_AXIS_LAST; ++i)
-    // {
-
-    // }
 }
 void increaseLevel(character *ch, game_system *gs, world *wo, int x)
 {
@@ -599,8 +588,18 @@ void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x)
 {
     mainCam.fullscreen = !mainCam.fullscreen;
 }
+void particleToggleFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    gs->particlesenabled = !gs->particlesenabled;
+    if (!gs->particlesenabled)
+    {
+        gs->killParticles();
+    }
+}
 void goMenuScreen(character *p, game_system *gs, world *w, int argv);
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv);
+
+character enemyList[4];
 
 int playerIDForControlStrElementIndex = -1;
 int prevState = -1;
@@ -711,7 +710,8 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
                                                false, nullptr, &mainG, nullptr, 0, &mainCam.default_fov));
         gui_data.mostRecentCreatedElement()->slider_values(7000, 12000);
 
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.5f, 0.9f, 32.0, 0.0, 1, 1, fullScreenToggleFunc));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.15f, -0.7f, 32.0, 0.0, 1, 1, fullScreenToggleFunc));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Particles", 0.2f, -0.8f, 32.0, 0.0, 1, 1, particleToggleFunc, false, nullptr, &mainG));
 
         break;
     case CHARACTER_CREATION_SCREEN:
@@ -725,6 +725,40 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
+        for (int i = 0; i < mainG.characterCount; ++i)
+        {
+            if (mainG.characters[i]->plControl != nullptr)
+                return;
+
+            mainG.Remove(mainG.characters[i]);
+        }
+        mainG.enemyCount = 0;
+
+        mainG.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 3);
+
+        if (mainG.particleByID(3) != nullptr)
+        {
+            mainG.particleByID(3)->setVariable(PV_PUSHMIN_Y, -1.0);
+            mainG.particleByID(3)->setVariable(PV_PUSHMAX_Y, 1.0);
+            mainG.particleByID(3)->setVariable(PV_PUSHMIN_X, -1.0);
+            mainG.particleByID(3)->setVariable(PV_PUSHMAX_X, 1.0);
+            mainG.particleByID(3)->setVariable(PV_RED, 0.0);
+            mainG.particleByID(3)->setVariable(PV_GREEN, 0.0);
+            mainG.particleByID(3)->setVariable(PV_BLUE, 0.0);
+            mainG.particleByID(3)->setVariable(PV_ALPHA, 1.0);
+            mainG.particleByID(3)->setVariable(PV_WIDTH, 0.1);
+            mainG.particleByID(3)->setVariable(PV_HEIGHT, 0.1);
+            mainG.particleByID(3)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+            mainG.particleByID(3)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+            mainG.particleByID(3)->setVariable(PV_ANIM_START, 0.0);
+            mainG.particleByID(3)->setVariable(PV_ANIM_END, 4.0);
+            mainG.particleByID(3)->setVariable(PV_ANIM_SPEED, 8.0);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_X, &players[0].visual.x);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_W, &players[0].visual.x);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_Y, &players[0].visual.y);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_H, &players[0].visual.y);
+        }
+
         for (int i = 0; i < playerCount; ++i)
         {
             players[i].visual.Scale(0.32f, 0.32f, 1.0);
@@ -742,19 +776,19 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         {
         case 0:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6);
             break;
         case 1:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 6, 6);
             break;
         case 2:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 6, 6);
             break;
         case 3:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 4:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
@@ -782,7 +816,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             break;
         case 16:
             gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 4, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 17:
             state = START_SCREEN;
@@ -867,8 +901,7 @@ int main()
 
     game_system game;
 
-    world mainWorld("./img/tiles.png", 4, 2); // lmao
-    mainWorld.readRoomFile("./levels/01.lvl");
+    world mainWorld; // lmao
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
     playerInit(players[0], game, playerControllers[0]);
     players[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
@@ -886,27 +919,6 @@ int main()
     glm::mat4 textProjection = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height));
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
-
-    game.particleSet(particlesystem("./img/gfx/spawn.png", 4, 1, 50, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2));
-    game.lastParticleSet()->setVariable(PV_PUSHMIN_Y, 1.0);
-    game.lastParticleSet()->setVariable(PV_PUSHMAX_Y, 2.0);
-    game.lastParticleSet()->setVariable(PV_PUSHMIN_X, -1.0);
-    game.lastParticleSet()->setVariable(PV_PUSHMAX_X, 1.0);
-    game.lastParticleSet()->setVariable(PV_RED, 1.0);
-    game.lastParticleSet()->setVariable(PV_GREEN, 1.0);
-    game.lastParticleSet()->setVariable(PV_BLUE, 1.0);
-    game.lastParticleSet()->setVariable(PV_ALPHA, 0.2);
-    game.lastParticleSet()->setVariable(PV_WIDTH, 0.1);
-    game.lastParticleSet()->setVariable(PV_HEIGHT, 0.1);
-    game.lastParticleSet()->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-    game.lastParticleSet()->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-    game.lastParticleSet()->setVariable(PV_ANIM_START, 0.0);
-    game.lastParticleSet()->setVariable(PV_ANIM_END, 4.0);
-    game.lastParticleSet()->setVariable(PV_ANIM_SPEED, 8.0);
-    game.lastParticleSet()->linkVariable(PV_SPAWN_X, &players[0].visual.x);
-    game.lastParticleSet()->linkVariable(PV_SPAWN_W, &players[0].visual.x);
-    game.lastParticleSet()->linkVariable(PV_SPAWN_Y, &players[0].visual.y);
-    game.lastParticleSet()->linkVariable(PV_SPAWN_H, &players[0].visual.y);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -935,7 +947,9 @@ int main()
             prevState = WON_LEVEL_STATE;
             state = WORLD_SCREEN;
         }
+
         menuData(game, players[0], mainWorld, soundEngine);
+
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
         // for (int i = 0; i < game.particlesystemcount; ++i)
         // {
@@ -953,6 +967,19 @@ int main()
         }
         if (state == MENU_SCREEN)
         {
+            game.particleSet("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
+            if (game.particleByID(52) != nullptr)
+            {
+                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
+                game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
+                game.particleByID(52)->setVariable(PV_RED, 1.0);
+                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+                game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
+                game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
+                game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
+            }
+
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
             if (currentMusicVolume != game.music_volume)
@@ -1019,6 +1046,7 @@ int main()
 
             fullscreenChangeFunction(window);
         }
+        game.update(mainWorld, shaderProgram, spriteRect, delta_time);
         if (state == WORLD_SCREEN && mainWorld.worldInitialized)
         {
             if (playerFacingRight && mainCam.offsetX < 0.2)
@@ -1065,6 +1093,14 @@ int main()
             {
                 lowestCamYLevel -= 2.0 * delta_time;
             }
+            if (players[0].visual.y < lowestCamYLevel - 0.5)
+            {
+                lowestCamYLevel = players[0].visual.y + 0.5;
+            }
+            if (players[0].visual.y > lowestCamYLevel + 0.4)
+            {
+                lowestCamYLevel = players[0].visual.y - 0.4;
+            }
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < collision_box_limit; ++i)
             {
@@ -1084,8 +1120,6 @@ int main()
             }
 #endif
 
-            game.update(mainWorld, shaderProgram, spriteRect, delta_time);
-
             double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
             double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
 #ifdef COLLISION_DEBUG
@@ -1100,7 +1134,7 @@ int main()
 
             for (int i = 0; i < game.characterCount; ++i)
             {
-                if (game.characters[i]->visual.empty)
+                if (game.characters[i] == nullptr)
                     continue;
 
                 game.characters[i]->visual.Draw(shaderProgram, spriteRect);
@@ -1121,6 +1155,29 @@ int main()
                         game.characters[i]->visual.Put(players[0].visual.x, players[0].visual.y, 0.0);
                         game.characters[i]->velocityY = 1.0f;
                         game.characters[i]->velocityX = -1.0f;
+                    }
+                    game.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
+                    if (game.particleByID(i + 30) != nullptr)
+                    {
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_RED, players[i].visual.colr);
+                        game.particleByID(i + 30)->setVariable(PV_GREEN, players[i].visual.colg);
+                        game.particleByID(i + 30)->setVariable(PV_BLUE, players[i].visual.colb);
+                        game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
+                        game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
+                        game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+                        game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &players[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &players[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &players[i].visual.y);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &players[i].visual.y);
                     }
                     // player animation here???
                     game.characters[i]->hp = game.characters[i]->maxhp;

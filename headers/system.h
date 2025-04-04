@@ -9,6 +9,7 @@
 #include "miniaudio.h"
 
 const unsigned int entity_limit = 64; // also change in world.h since there's another one there, also delete one of these so that there's only one pls
+const unsigned int enemy_limit = 32;
 const unsigned int animation_limit = 24;
 const unsigned int sound_limit = 26;
 const unsigned int sound_is_music_cutoff = 2;
@@ -22,9 +23,16 @@ struct character;
 
 enum IDENTIFICATION
 {
+    CH_NULL,
     CH_PLAYER,
-    CH_MONSTER,
-    CH_NPC
+    CH_GULK,
+    CH_TERROR,
+    CH_BLAUNCH,
+    CH_WIGHT,
+    CH_CROCC,
+    CH_TOMMY,
+    CH_BINK,
+    CH_MIMIC
 };
 
 enum ANIMATION_MAPPINGS
@@ -106,7 +114,7 @@ struct character
 {
     double velocityX = 0.0, velocityY = 0.0;
     bool onGround = false, jumped = false;
-    player *plControl;
+    player *plControl = nullptr;
 
     // everything below should be in the player struct
     float parryCooloff = 20, parryTimer = 0, parryWindow = 5;
@@ -121,9 +129,11 @@ struct character
     // double posX = 0.0, posY = 0.0;
     // double walkToX = 0.0, walkToY = 0.0;
     sprite visual;
+
+    float colW, colH, colOffsetX, colOffsetY;
     aabb collider;
 
-    IDENTIFICATION id = CH_MONSTER;
+    IDENTIFICATION id = CH_NULL;
     double attackTimer = 0.0;
     int hp = 10, maxhp = 10;
     double runSpeed = 1.7f;
@@ -135,7 +145,7 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH, IDENTIFICATION _id);
 
     void MoveTo(double _x, double _y, world *currentWorld);
 
@@ -170,10 +180,13 @@ struct characterQuadTree
 
 struct game_system
 {
+    character enemies[enemy_limit];
+    unsigned int enemyCount = 0;
     character *characters[entity_limit];
     sprite *sortedSprites[entity_limit];
     particlesystem particles[particle_system_limit];
     int particlesystemcount;
+    bool particlesenabled = true;
     int level = 0;
     bool levelincreasing = false;
 
@@ -188,18 +201,57 @@ struct game_system
     int fishCollected = 0, fishNeeded = 5;
 
     void Add(character *e);
-    // void Add(particlesystem *p);
+    // void Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH);
+    void Spawn_Enemy(character e);
     void Remove(character *e);
-    // void Remove(particlesystem *p);
+    void Delete_Enemy(int index);
+    void Clear_Enemies();
 
-    void particleSet(particlesystem sys)
+    void particleSet(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+                     double sX, double sY, double sW, double sH, unsigned int uniqueID)
     {
-        particles[particlesystemcount] = sys;
+        if (particlesystemcount >= particle_system_limit || !particlesenabled)
+            return;
+
+        for (int i = 0; i < particlesystemcount; ++i)
+        {
+            if (uniqueID == particles[i].id)
+            {
+                particles[i].totalParticlesSpawned = 0;
+                return;
+            }
+        }
+
+        particles[particlesystemcount].visual.texture_path = path;
+        particles[particlesystemcount].visual.framesX = fx;
+        particles[particlesystemcount].visual.framesY = fy;
+        particles[particlesystemcount].visual.textureInit();
+
+        particles[particlesystemcount].particle_count = _particle_count;
+        if (_particle_count >= particle_limit)
+            particles[particlesystemcount].particle_count = particle_limit;
+        particles[particlesystemcount].variables[PV_LIFE_LOW] = _life_lower;
+        particles[particlesystemcount].variables[PV_LIFE_HIGH] = _life_upper;
+        particles[particlesystemcount].variables[PV_SPAWN_X] = sX;
+        particles[particlesystemcount].variables[PV_SPAWN_Y] = sY;
+        particles[particlesystemcount].variables[PV_SPAWN_W] = sW;
+        particles[particlesystemcount].variables[PV_SPAWN_H] = sH;
+
+        particles[particlesystemcount].id = uniqueID;
         ++particlesystemcount;
     }
     particlesystem *lastParticleSet()
     {
         return &particles[particlesystemcount - 1];
+    }
+    particlesystem *particleByID(unsigned int id)
+    {
+        for (int i = 0; i < particle_system_limit; ++i)
+        {
+            if (particles[i].id == id)
+                return &particles[i];
+        }
+        return nullptr;
     }
     void removeParticles(unsigned int index)
     {

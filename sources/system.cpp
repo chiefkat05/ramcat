@@ -4,6 +4,8 @@
 #include "../headers/miniaudio.h"
 
 int gamepad_stick_sensitivity = 500;
+extern double windowAspectDivision;
+
 bool player::getInput(GLFWwindow *window, controlset action)
 {
     if (gamepad_id > -1)
@@ -81,25 +83,30 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     id = _id;
     hp = maxhp;
 
-    // collider = aabb(visual.x - visual.spriteW * 0.5f, visual.y - visual.spriteH,
-    //                 visual.x + visual.spriteW * 0.5f, visual.y);
-    collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24);
-    // collider = aabb(visual.x, visual.y, visual.x + 0.01f, visual.y + 0.01f);
+    collider = aabb(visual.x, visual.y, visual.x + 0.16, visual.y + 0.16);
 }
-character::character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy,
+                     double cOffX, double cOffY, double cW, double cH, IDENTIFICATION _id)
 {
-    // visual = sprite(filepath.c_str(), x, y, fx, fy);
-    // visual.rect.setTextureRect(sf::IntRect(0, 0, visual.spriteW, visual.spriteH));
-    // visual.rect.setOrigin(sf::Vector2(static_cast<double>(visual.spriteW) * 0.5f, static_cast<double>(visual.spriteH)));
     visual = sprite(filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0);
-    // posX = visual.rect.getPosition().x;
-    // posY = visual.rect.getPosition().y;
-    // walkToX = posX;
-    // walkToY = posY;
+    visual.Scale(w, h, 0.1);
     id = _id;
     hp = maxhp;
-    collider = aabb(visual.x, visual.y, visual.x + 0.16f, visual.y + 0.24f);
+    colOffsetX = cOffX;
+    colOffsetY = cOffY;
+    colW = cW;
+    colH = cH;
+    collider = aabb(visual.x + colOffsetX, visual.y + colOffsetY, visual.x + colOffsetX + colW, visual.y + colOffsetY + colH);
+
+    switch (id)
+    {
+    case CH_GULK:
+        velocityX = -0.5;
+        break;
+    default:
+        break;
+    }
 }
 
 void character::MoveTo(double _x, double _y, world *currentWorld)
@@ -109,9 +116,6 @@ void character::MoveTo(double _x, double _y, world *currentWorld)
         _x -= currentWorld->spawnLocationX;
         _y -= currentWorld->spawnLocationY;
     }
-
-    // walkToX = _x;
-    // walkToY = _y;
 }
 
 void character::Update(double delta_time)
@@ -130,7 +134,8 @@ void character::Update(double delta_time)
     // collider.max_x = visual.x + 0.16f;
     // collider.min_y = visual.y;
     // collider.max_y = visual.y + 0.16f;
-    collider.Put(visual.x, visual.y, 0.16f, 0.24f);
+    collider.Put(visual.x, visual.y - 0.08, 0.16, 0.24);
+    // collider.Move(visual.x, visual.y);
 
     if (hp <= 0)
     {
@@ -148,8 +153,6 @@ void character::Update(double delta_time)
     }
 
     animations[playingAnim].run(delta_time, animationLooping);
-
-    // visual.Put(posX + screenOffsetX, posY + screenOffsetY);
 
     animationFinished = false;
 
@@ -189,7 +192,7 @@ void character::StopAnimation(ANIMATION_MAPPINGS id)
 {
     animations[id].finished = true;
     animations[id].timer = 0.0;
-    animations[id].frame = animations[id].end;
+    animations[id].frame = animations[id].end; // fix collision stuff in character creation
 }
 
 int qsPartition(sprite *sprites[entity_limit], int low, int high) // see if there's a better optimized way to do this, such as random pivot
@@ -226,6 +229,40 @@ void game_system::Add(character *e)
     sortedSprites[characterCount] = &characters[characterCount]->visual;
     ++characterCount;
 }
+// void game_system::Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH)
+void game_system::Spawn_Enemy(character e)
+{
+    for (int i = 0; i < enemyCount; ++i)
+    {
+        for (int j = 0; j < characterCount; ++j)
+        {
+            if (&enemies[i] == characters[j])
+            {
+                return;
+            }
+        }
+    }
+    enemies[enemyCount] = e;
+    enemies[enemyCount].plControl = nullptr;
+    // enemies[enemyCount].visual = sprite(filepath.c_str(), fx, fy);
+    // enemies[enemyCount].visual.Put(x, y, 0.0);
+    // enemies[enemyCount].id = _id;
+    // enemies[enemyCount].hp = enemies[enemyCount].maxhp;
+    // enemies[enemyCount].collider = aabb(enemies[enemyCount].visual.x, enemies[enemyCount].visual.y,
+    //                                     enemies[enemyCount].visual.x + 0.16, enemies[enemyCount].visual.y + 0.16);
+    // enemies[enemyCount].visual.Scale(scaleX, scaleY, 1.0);
+
+    enemies[enemyCount].SetAnimation(ANIM_IDLE, 0, 0, 0.0);
+    enemies[enemyCount].SetAnimation(ANIM_WALK, 0, 0, 100.0);
+    enemies[enemyCount].SetAnimation(ANIM_HURT, 0, 0, 250.0);
+    enemies[enemyCount].SetAnimation(ANIM_DEAD, 0, 0, 100.0);
+    enemies[enemyCount].SetAnimation(ANIM_ABILITY_2, 0, 0, 100.0);
+    enemies[enemyCount].SetAnimation(ANIM_ABILITY_0, 0, 0, 100.0);
+    enemies[enemyCount].SetAnimation(ANIM_ABILITY_1, 0, 0, 100.0);
+
+    Add(&enemies[enemyCount]);
+    ++enemyCount;
+}
 void game_system::Remove(character *e)
 {
     int removeIndex = -1;
@@ -248,8 +285,18 @@ void game_system::Remove(character *e)
         characters[i] = characters[i + 1];
     }
     --characterCount;
-
-    // char_tree.remove(e);
+}
+void game_system::Delete_Enemy(int index)
+{
+    for (int i = index; i < enemyCount; ++i)
+    {
+        enemies[i] = enemies[i + 1];
+    }
+    --enemyCount;
+}
+void game_system::Clear_Enemies()
+{
+    enemyCount = 0;
 }
 
 void game_system::loopSound(unsigned int id)
@@ -322,17 +369,48 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i]->Update(delta_time);
+
+        // in-game character updates
+        switch (characters[i]->id)
+        {
+        case CH_GULK:
+            break;
+        }
+
         if (!characters[i]->onGround)
         {
             characters[i]->velocityY -= 10.0 * delta_time;
         }
 
+        for (int j = 0; j < characterCount; ++j)
+        {
+            double xNormal = 0.0, yNormal = 0.0;
+            double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
+                                                                            characters[i]->velocityY * delta_time,
+                                                                            0.0, 0.0, characters[j]->collider, xNormal, yNormal);
+
+            if (yNormal != 0.0)
+                characters[i]->velocityY *= firstCollisionHitTest;
+            if (xNormal != 0.0)
+                characters[i]->velocityX *= firstCollisionHitTest;
+            if (xNormal == 0.0 && yNormal == 0.0)
+            {
+                characters[i]->velocityY *= firstCollisionHitTest;
+                characters[i]->velocityX *= firstCollisionHitTest;
+            }
+            if (yNormal > 0.0)
+            {
+                characters[i]->onGround = true;
+            }
+        }
+
         for (int j = 0; j < floor.collision_box_count; ++j)
         {
             if (floor.collision_boxes[j].min_x == 0.0 &&
-                floor.collision_boxes[j].min_y == 0.0 &&
-                floor.collision_boxes[j].max_x == 0.0 &&
-                floor.collision_boxes[j].max_y == 0.0)
+                    floor.collision_boxes[j].min_y == 0.0 &&
+                    floor.collision_boxes[j].max_x == 0.0 &&
+                    floor.collision_boxes[j].max_y == 0.0 ||
+                floor.collision_boxes[j].collisionID <= -1)
             {
                 continue;
             }
@@ -345,6 +423,8 @@ void game_system::update(world &floor, shader &particle_program, object &particl
 
             switch (floor.collision_boxes[j].collisionID)
             {
+            case -1:
+                break;
             case 1:
                 if (xNormal != 0.0)
                     characters[i]->velocityX *= firstCollisionHitTest;
@@ -453,6 +533,23 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                     characters[i]->runSpeed *= 1.001;
                 }
                 break;
+            case 11:
+                for (int x = 0; x < floor.roomWidth; ++x)
+                {
+                    for (int y = 0; y < floor.roomHeight; ++y)
+                    {
+                        if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
+                        {
+                            floor.tiles[x][y].id = -1;
+                            floor.tiles[x][y].collisionID = -1;
+                            floor.collision_boxes[j].collisionID = -1;
+
+                            Spawn_Enemy(character("./img/char/gulk.png", x * 0.16, static_cast<double>(floor.roomHeight - y) * 0.16, 0.32, 0.32,
+                                                  4, 1, 0.0, -0.64, 0.16, 0.16, CH_GULK));
+                        }
+                    }
+                }
+                break;
             default:
                 if (yNormal != 0.0)
                     characters[i]->velocityY *= firstCollisionHitTest;
@@ -470,24 +567,38 @@ void game_system::update(world &floor, shader &particle_program, object &particl
 
                 break;
             }
+
+            if (firstCollisionHitTest < 1.0 && std::abs(characters[i]->velocityX) < 0.5 && xNormal > 0.0 && characters[i]->id == CH_GULK)
+            {
+                characters[i]->velocityX = 0.5;
+            }
+            if (firstCollisionHitTest < 1.0 && std::abs(characters[i]->velocityX) < 0.5 && xNormal < 0.0 && characters[i]->id == CH_GULK)
+            {
+                characters[i]->velocityX = -0.5;
+            }
         }
         characters[i]->updatePosition(delta_time);
     }
 
+    if (!particlesenabled)
+        return;
+
     for (int i = 0; i < particlesystemcount; ++i)
     {
-        particles[i].spawn(delta_time);
+        if (particles[i].totalParticlesSpawned < particles[i].particle_count)
+        {
+            particles[i].spawn(delta_time);
+        }
         particles[i].update(delta_time);
         if (particles[i].particles_alive > 0)
         {
             particles[i].draw(particle_program, particle_sprite, delta_time);
         }
 
-        // if (particles[i].particles_alive <= 0)
-        // {
-        //     particles[i].kill();
-        //     removeParticles(i);
-        // }
+        if (particles[i].particles_alive <= 0 && particles[i].totalParticlesSpawned >= particles[i].particle_count)
+        {
+            removeParticles(i);
+        }
     }
 }
 

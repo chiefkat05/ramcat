@@ -4,7 +4,7 @@ gui gui_data;
 game_state state;
 
 const double pixel_divider = 36.0;
-const double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
+double windowAspectDivision = (static_cast<double>(window_width) / static_cast<double>(window_height));
 int current_win_width = window_width, current_win_height = window_height;
 double win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
 double win_ratio_y = static_cast<double>(current_win_height) / static_cast<double>(window_height);

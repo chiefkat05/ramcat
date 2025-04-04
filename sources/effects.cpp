@@ -43,10 +43,10 @@ void particlesystem::spawn(double delta_time)
     }
     variables[PV_SPAWN_TIMER] -= 10.0 * delta_time;
 
-    double spawnTimer = variables[PV_SPAWN_TIMER];
-
-    if (particles_alive >= particle_count || spawnTimer > 0.0)
+    if (particles_alive >= particle_count || variables[PV_SPAWN_TIMER] > 0.0)
         return;
+
+    ++totalParticlesSpawned;
 
     std::uniform_real_distribution<double> posXRand(variables[PV_SPAWN_X], variables[PV_SPAWN_W]);
     std::uniform_real_distribution<double> posYRand(variables[PV_SPAWN_Y], variables[PV_SPAWN_H]);

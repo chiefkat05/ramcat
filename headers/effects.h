@@ -68,6 +68,8 @@ struct particlesystem
 {
     particle particles[particle_limit];
     unsigned int particle_count, particles_alive = 0;
+    unsigned int totalParticlesSpawned = 0;
+    unsigned int id;
 
     double variables[pv_variable_limit] = {0.0};
     double *variable_pointers[pv_variable_limit];
