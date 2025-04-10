@@ -27,34 +27,24 @@ bool player::getInput(GLFWwindow *window, controlset action)
             {
             case PAD_LSTICK_LEFT:
                 return (state.axes[0] < -realSensitivity);
-                break;
             case PAD_LSTICK_RIGHT:
                 return (state.axes[0] > realSensitivity);
-                break;
             case PAD_LSTICK_DOWN:
                 return (state.axes[1] > realSensitivity);
-                break;
             case PAD_LSTICK_UP:
                 return (state.axes[1] < -realSensitivity);
-                break;
             case PAD_RSTICK_LEFT:
                 return (state.axes[2] < -realSensitivity);
-                break;
             case PAD_RSTICK_RIGHT:
                 return (state.axes[2] > realSensitivity);
-                break;
             case PAD_RSTICK_DOWN:
                 return (state.axes[3] > realSensitivity);
-                break;
             case PAD_RSTICK_UP:
                 return (state.axes[3] < -realSensitivity);
-                break;
             case PAD_TRIGGER_L:
                 return (state.axes[4] > realSensitivity);
-                break;
             case PAD_TRIGGER_R:
                 return (state.axes[5] > realSensitivity);
-                break;
             default:
                 break;
             }
@@ -370,39 +360,65 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     {
         characters[i]->Update(delta_time);
 
-        // in-game character updates
-        switch (characters[i]->id)
-        {
-        case CH_GULK:
-            break;
-        }
-
         if (!characters[i]->onGround)
         {
             characters[i]->velocityY -= 10.0 * delta_time;
         }
 
-        for (int j = 0; j < characterCount; ++j)
-        {
-            double xNormal = 0.0, yNormal = 0.0;
-            double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
-                                                                            characters[i]->velocityY * delta_time,
-                                                                            0.0, 0.0, characters[j]->collider, xNormal, yNormal);
+        // for (int j = 0; j < characterCount; ++j)
+        // {
+        //     double xNormal = 0.0, yNormal = 0.0;
+        //     double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
+        //                                                                     characters[i]->velocityY * delta_time,
+        //                                                                     0.0, 0.0, characters[j]->collider, xNormal, yNormal);
 
-            if (yNormal != 0.0)
-                characters[i]->velocityY *= firstCollisionHitTest;
-            if (xNormal != 0.0)
-                characters[i]->velocityX *= firstCollisionHitTest;
-            if (xNormal == 0.0 && yNormal == 0.0)
-            {
-                characters[i]->velocityY *= firstCollisionHitTest;
-                characters[i]->velocityX *= firstCollisionHitTest;
-            }
-            if (yNormal > 0.0)
-            {
-                characters[i]->onGround = true;
-            }
-        }
+        //     if (yNormal != 0.0)
+        //         characters[i]->velocityY *= firstCollisionHitTest;
+        //     if (xNormal != 0.0)
+        //         characters[i]->velocityX *= firstCollisionHitTest;
+        //     if (xNormal == 0.0 && yNormal == 0.0)
+        //     {
+        //         characters[i]->velocityY *= firstCollisionHitTest;
+        //         characters[i]->velocityX *= firstCollisionHitTest;
+        //     }
+        //     if (yNormal > 0.0)
+        //     {
+        //         characters[i]->onGround = true;
+        //     }
+
+        //     if (yNormal != 0.0)
+        //         characters[i]->velocityY *= firstCollisionHitTest;
+        //     if (xNormal != 0.0)
+        //         characters[i]->velocityX *= firstCollisionHitTest;
+        //     if (xNormal == 0.0 && yNormal == 0.0)
+        //     {
+        //         characters[i]->velocityY *= firstCollisionHitTest;
+        //         characters[i]->velocityX *= firstCollisionHitTest;
+        //     }
+        //     if (yNormal > 0.0)
+        //     {
+        //         characters[i]->onGround = true;
+        //     }
+
+        //     switch (characters[i]->id)
+        //     {
+        //     case CH_PLAYER:
+        //         if (firstCollisionHitTest < 1.0 && characters[j]->id != CH_PLAYER && characters[i]->strikeTimer > 0.0)
+        //         {
+        //             characters[j]->hp = 0;
+        //             Remove(characters[j]);
+        //         }
+        //         break;
+        //     case CH_GULK:
+        //         if (firstCollisionHitTest < 1.0 && characters[j]->id == CH_PLAYER && characters[i]->strikeTimer > 0.0)
+        //         {
+        //             characters[j]->hp = 0;
+        //         }
+        //         break;
+        //     default:
+        //         break;
+        //     }
+        // }
 
         for (int j = 0; j < floor.collision_box_count; ++j)
         {
@@ -416,10 +432,12 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             }
 
             double xNormal = 0.0, yNormal = 0.0;
+            bool insideCollision = true;
 
             double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
                                                                             characters[i]->velocityY * delta_time,
-                                                                            0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal);
+                                                                            0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal,
+                                                                            characters[i]->visual.x, characters[i]->visual.y, insideCollision);
 
             switch (floor.collision_boxes[j].collisionID)
             {
@@ -430,8 +448,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                     characters[i]->velocityX *= firstCollisionHitTest;
                 if (yNormal != 0.0)
                 {
-                    if (!characters[i]->parrySuccess)
-                        characters[i]->hp = 0;
+                    characters[i]->hp = 0;
                 }
                 if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
                 {
@@ -446,31 +463,49 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 3:
-                if (yNormal > 0.0)
+                if (yNormal > 0.0 && !insideCollision)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i]->onGround = true;
+                }
+                if (yNormal > 0.0 && insideCollision)
+                {
+                    characters[i]->visual.y = firstCollisionHitTest;
+                    characters[i]->velocityY = 0.0;
                     characters[i]->onGround = true;
                 }
                 break;
             case 4:
-                if (xNormal < 0.0)
+                if (xNormal < 0.0 && !insideCollision)
                 {
                     characters[i]->velocityX *= firstCollisionHitTest;
-                    characters[i]->onGround = true;
+                }
+                if (xNormal < 0.0 && insideCollision)
+                {
+                    characters[i]->visual.x = firstCollisionHitTest;
+                    characters[i]->velocityX = 0.0;
                 }
                 break;
             case 5:
-                if (yNormal < 0.0)
+                if (yNormal < 0.0 && !insideCollision)
                 {
                     characters[i]->velocityY *= firstCollisionHitTest;
-                    characters[i]->onGround = true;
+                }
+                if (yNormal < 0.0 && insideCollision)
+                {
+                    characters[i]->visual.y = firstCollisionHitTest;
+                    characters[i]->velocityY = 0.0;
                 }
                 break;
             case 6:
-                if (xNormal > 0.0)
+                if (xNormal > 0.0 && !insideCollision)
                 {
                     characters[i]->velocityX *= firstCollisionHitTest;
-                    characters[i]->onGround = true;
+                }
+                if (xNormal > 0.0 && insideCollision)
+                {
+                    characters[i]->visual.x = firstCollisionHitTest;
+                    characters[i]->velocityX = 0.0;
                 }
                 break;
             case 7:
@@ -490,6 +525,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                             {
                                 floor.tiles[x][y].id = -1;
                                 floor.tiles[x][y].collisionID = -1;
+                                floor.collision_boxes[j].collisionID = -1;
                             }
                         }
                     }
@@ -508,6 +544,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                             {
                                 floor.tiles[x][y].id = 2;
                                 floor.tiles[x][y].collisionID = -1;
+                                floor.collision_boxes[j].collisionID = -1;
 
                                 floor.spawnLocationX = x * 0.16f;
                                 floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + y) * 0.16f;
@@ -527,6 +564,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                             {
                                 floor.tiles[x][y].id = -1;
                                 floor.tiles[x][y].collisionID = -1;
+                                floor.collision_boxes[j].collisionID = -1;
                             }
                         }
                     }
@@ -551,18 +589,34 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             default:
-                if (yNormal != 0.0)
-                    characters[i]->velocityY *= firstCollisionHitTest;
-                if (xNormal != 0.0)
-                    characters[i]->velocityX *= firstCollisionHitTest;
-                if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
+                if (insideCollision)
                 {
-                    characters[i]->velocityY *= firstCollisionHitTest;
-                    characters[i]->velocityX *= firstCollisionHitTest;
+                    if (xNormal != 0.0)
+                    {
+                        characters[i]->velocityX = 0.0;
+                        characters[i]->visual.x = firstCollisionHitTest;
+                    }
+                    if (yNormal != 0.0)
+                    {
+                        characters[i]->velocityY = 0.0;
+                        characters[i]->visual.y = firstCollisionHitTest;
+                    }
                 }
-                if (yNormal > 0.0)
+                else if (!insideCollision)
                 {
-                    characters[i]->onGround = true;
+                    if (yNormal != 0.0)
+                        characters[i]->velocityY *= firstCollisionHitTest;
+                    if (xNormal != 0.0)
+                        characters[i]->velocityX *= firstCollisionHitTest;
+                    if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
+                    {
+                        characters[i]->velocityY *= firstCollisionHitTest;
+                        characters[i]->velocityX *= firstCollisionHitTest;
+                    }
+                    if (yNormal > 0.0)
+                    {
+                        characters[i]->onGround = true;
+                    }
                 }
 
                 break;
@@ -595,7 +649,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             particles[i].draw(particle_program, particle_sprite, delta_time);
         }
 
-        if (particles[i].particles_alive <= 0 && particles[i].totalParticlesSpawned >= particles[i].particle_count)
+        if (particles[i].particles_alive <= 0)
         {
             removeParticles(i);
         }

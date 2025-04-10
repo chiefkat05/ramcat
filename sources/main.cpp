@@ -45,7 +45,7 @@
 #include "../headers/gamestate.h"
 #include "../headers/miniaudio.h"
 
-#define COLLISION_DEBUG
+// #define COLLISION_DEBUG
 
 double texCoords[] = {
     0.0, 0.0,
@@ -515,7 +515,6 @@ int gamepadInputWatch()
         if (gState.buttons[i])
         {
             return i;
-            break;
         }
     }
 
@@ -728,7 +727,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         for (int i = 0; i < mainG.characterCount; ++i)
         {
             if (mainG.characters[i]->plControl != nullptr)
-                return;
+                continue;
 
             mainG.Remove(mainG.characters[i]);
         }
@@ -951,10 +950,6 @@ int main()
         menuData(game, players[0], mainWorld, soundEngine);
 
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
-        // for (int i = 0; i < game.particlesystemcount; ++i)
-        // {
-        //     game.particles[i].draw(window, shaderProgram, spriteRect, delta_time);
-        // }
 
         if (state == CHARACTER_CREATION_SCREEN)
         {

@@ -255,7 +255,7 @@ struct game_system
     }
     void removeParticles(unsigned int index)
     {
-        for (int i = index; i < particlesystemcount; ++i)
+        for (int i = index; i < particlesystemcount - 1; ++i)
         {
             particles[i] = particles[i + 1];
         }
