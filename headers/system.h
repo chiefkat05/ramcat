@@ -25,6 +25,7 @@ enum IDENTIFICATION
 {
     CH_NULL,
     CH_PLAYER,
+    ch_monster_ids,
     CH_GULK,
     CH_TERROR,
     CH_BLAUNCH,
@@ -32,7 +33,8 @@ enum IDENTIFICATION
     CH_CROCC,
     CH_TOMMY,
     CH_BINK,
-    CH_MIMIC
+    CH_MIMIC,
+    ch_other_ids
 };
 
 enum ANIMATION_MAPPINGS
@@ -180,9 +182,9 @@ struct characterQuadTree
 
 struct game_system
 {
-    character enemies[enemy_limit];
-    unsigned int enemyCount = 0;
-    character *characters[entity_limit];
+    character characters[entity_limit];
+    int characterCount = 0;
+
     sprite *sortedSprites[entity_limit];
     particlesystem particles[particle_system_limit];
     int particlesystemcount;
@@ -190,7 +192,6 @@ struct game_system
     int level = 0;
     bool levelincreasing = false;
 
-    int characterCount = 0;
     bool paused = false;
     ma_result game_sound_result;
     ma_sound game_sounds[sound_limit];
@@ -200,14 +201,13 @@ struct game_system
     int music_volume = 100, sound_volume = 100;
     int fishCollected = 0, fishNeeded = 5;
 
-    void Add(character *e);
+    void Add(character e);
     // void Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH);
-    void Spawn_Enemy(character e);
-    void Remove(character *e);
-    void Delete_Enemy(int index);
-    void Clear_Enemies();
+    // void Spawn_Enemy(character e);
+    void Remove(int index);
+    void ClearEnemies();
 
-    void particleSet(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+    void particleSet(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
                      double sX, double sY, double sW, double sH, unsigned int uniqueID)
     {
         if (particlesystemcount >= particle_system_limit || !particlesenabled)

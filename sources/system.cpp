@@ -88,15 +88,6 @@ character::character(std::string filepath, double x, double y, double w, double 
     colW = cW;
     colH = cH;
     collider = aabb(visual.x + colOffsetX, visual.y + colOffsetY, visual.x + colOffsetX + colW, visual.y + colOffsetY + colH);
-
-    switch (id)
-    {
-    case CH_GULK:
-        velocityX = -0.5;
-        break;
-    default:
-        break;
-    }
 }
 
 void character::MoveTo(double _x, double _y, world *currentWorld)
@@ -213,80 +204,48 @@ void quicksortSprites(sprite *sprites[entity_limit], int low, int high)
     }
 }
 
-void game_system::Add(character *e)
+void game_system::Add(character e)
 {
     characters[characterCount] = e;
-    sortedSprites[characterCount] = &characters[characterCount]->visual;
+    sortedSprites[characterCount] = &characters[characterCount].visual;
+
+    if (characters[characterCount].id >= ch_monster_ids)
+    {
+        characters[characterCount].SetAnimation(ANIM_IDLE, 0, 0, 0.0);
+        characters[characterCount].SetAnimation(ANIM_WALK, 0, 0, 100.0);
+        characters[characterCount].SetAnimation(ANIM_HURT, 0, 0, 250.0);
+        characters[characterCount].SetAnimation(ANIM_DEAD, 0, 0, 100.0);
+        characters[characterCount].SetAnimation(ANIM_ABILITY_2, 0, 0, 100.0);
+        characters[characterCount].SetAnimation(ANIM_ABILITY_0, 0, 0, 100.0);
+        characters[characterCount].SetAnimation(ANIM_ABILITY_1, 0, 0, 100.0);
+    }
+    switch (characters[characterCount].id)
+    {
+    case CH_GULK:
+        characters[characterCount].velocityX = -0.5;
+        break;
+    default:
+        break;
+    }
     ++characterCount;
 }
-// void game_system::Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH)
-void game_system::Spawn_Enemy(character e)
+void game_system::Remove(int index)
 {
-    for (int i = 0; i < enemyCount; ++i)
-    {
-        for (int j = 0; j < characterCount; ++j)
-        {
-            if (&enemies[i] == characters[j])
-            {
-                return;
-            }
-        }
-    }
-    enemies[enemyCount] = e;
-    enemies[enemyCount].plControl = nullptr;
-    // enemies[enemyCount].visual = sprite(filepath.c_str(), fx, fy);
-    // enemies[enemyCount].visual.Put(x, y, 0.0);
-    // enemies[enemyCount].id = _id;
-    // enemies[enemyCount].hp = enemies[enemyCount].maxhp;
-    // enemies[enemyCount].collider = aabb(enemies[enemyCount].visual.x, enemies[enemyCount].visual.y,
-    //                                     enemies[enemyCount].visual.x + 0.16, enemies[enemyCount].visual.y + 0.16);
-    // enemies[enemyCount].visual.Scale(scaleX, scaleY, 1.0);
-
-    enemies[enemyCount].SetAnimation(ANIM_IDLE, 0, 0, 0.0);
-    enemies[enemyCount].SetAnimation(ANIM_WALK, 0, 0, 100.0);
-    enemies[enemyCount].SetAnimation(ANIM_HURT, 0, 0, 250.0);
-    enemies[enemyCount].SetAnimation(ANIM_DEAD, 0, 0, 100.0);
-    enemies[enemyCount].SetAnimation(ANIM_ABILITY_2, 0, 0, 100.0);
-    enemies[enemyCount].SetAnimation(ANIM_ABILITY_0, 0, 0, 100.0);
-    enemies[enemyCount].SetAnimation(ANIM_ABILITY_1, 0, 0, 100.0);
-
-    Add(&enemies[enemyCount]);
-    ++enemyCount;
-}
-void game_system::Remove(character *e)
-{
-    int removeIndex = -1;
-    for (int i = 0; i < characterCount; ++i)
-    {
-        if (characters[i] == e)
-        {
-            removeIndex = i;
-            break;
-        }
-    }
-    if (removeIndex == -1)
-    {
-        std::cout << "\n\tWarning - character not found in game_system and could not be removed.\n";
-        return;
-    }
-
-    for (int i = removeIndex; i < characterCount; ++i)
+    for (int i = index; i < characterCount - 1; ++i)
     {
         characters[i] = characters[i + 1];
     }
     --characterCount;
 }
-void game_system::Delete_Enemy(int index)
+void game_system::ClearEnemies()
 {
-    for (int i = index; i < enemyCount; ++i)
+    for (int i = 0; i < characterCount; ++i)
     {
-        enemies[i] = enemies[i + 1];
+        if (characters[i].plControl != nullptr || characters[i].id <= ch_monster_ids || characters[i].id >= ch_other_ids)
+            continue;
+
+        Remove(i);
     }
-    --enemyCount;
-}
-void game_system::Clear_Enemies()
-{
-    enemyCount = 0;
 }
 
 void game_system::loopSound(unsigned int id)
@@ -350,7 +309,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     // {
     //     for (int i = 0; i < characterCount; ++i)
     //     {
-    //         characters[i]->visual.Put(characters[i]->visual.x, characters[i]->visual.y, 0.0);
+    //         characters[i].visual.Put(characters[i].visual.x, characters[i].visual.y, 0.0);
     //     }
     //     return;
     // }
@@ -358,67 +317,84 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     // quicksortSprites(sortedSprites, 0, characterCount - 1);
     for (int i = 0; i < characterCount; ++i)
     {
-        characters[i]->Update(delta_time);
+        characters[i].Update(delta_time);
 
-        if (!characters[i]->onGround)
+        if (!characters[i].onGround)
         {
-            characters[i]->velocityY -= 10.0 * delta_time;
+            characters[i].velocityY -= 10.0 * delta_time;
         }
 
-        // for (int j = 0; j < characterCount; ++j)
-        // {
-        //     double xNormal = 0.0, yNormal = 0.0;
-        //     double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
-        //                                                                     characters[i]->velocityY * delta_time,
-        //                                                                     0.0, 0.0, characters[j]->collider, xNormal, yNormal);
+        for (int j = 0; j < characterCount; ++j)
+        {
+            if (j == i)
+                continue;
 
-        //     if (yNormal != 0.0)
-        //         characters[i]->velocityY *= firstCollisionHitTest;
-        //     if (xNormal != 0.0)
-        //         characters[i]->velocityX *= firstCollisionHitTest;
-        //     if (xNormal == 0.0 && yNormal == 0.0)
-        //     {
-        //         characters[i]->velocityY *= firstCollisionHitTest;
-        //         characters[i]->velocityX *= firstCollisionHitTest;
-        //     }
-        //     if (yNormal > 0.0)
-        //     {
-        //         characters[i]->onGround = true;
-        //     }
+            double xNormal = 0.0, yNormal = 0.0;
+            bool insideCollision = false;
+            double firstCollisionHitTest = characters[i].collider.response(characters[i].velocityX * delta_time,
+                                                                           characters[i].velocityY * delta_time,
+                                                                           characters[j].velocityX * delta_time,
+                                                                           characters[j].velocityY * delta_time,
+                                                                           characters[j].collider, xNormal, yNormal,
+                                                                           characters[i].visual.x, characters[i].visual.y, insideCollision);
 
-        //     if (yNormal != 0.0)
-        //         characters[i]->velocityY *= firstCollisionHitTest;
-        //     if (xNormal != 0.0)
-        //         characters[i]->velocityX *= firstCollisionHitTest;
-        //     if (xNormal == 0.0 && yNormal == 0.0)
-        //     {
-        //         characters[i]->velocityY *= firstCollisionHitTest;
-        //         characters[i]->velocityX *= firstCollisionHitTest;
-        //     }
-        //     if (yNormal > 0.0)
-        //     {
-        //         characters[i]->onGround = true;
-        //     }
+            std::cout << "character i " << characters[i].visual.texture_path << ", y = " << characters[i].collider.min_y << ", " << characters[i].collider.max_y << "\n";
+            std::cout << "character j " << characters[j].visual.texture_path << ", y = " << characters[j].collider.min_y << ", " << characters[j].collider.max_y << "\n";
 
-        //     switch (characters[i]->id)
-        //     {
-        //     case CH_PLAYER:
-        //         if (firstCollisionHitTest < 1.0 && characters[j]->id != CH_PLAYER && characters[i]->strikeTimer > 0.0)
-        //         {
-        //             characters[j]->hp = 0;
-        //             Remove(characters[j]);
-        //         }
-        //         break;
-        //     case CH_GULK:
-        //         if (firstCollisionHitTest < 1.0 && characters[j]->id == CH_PLAYER && characters[i]->strikeTimer > 0.0)
-        //         {
-        //             characters[j]->hp = 0;
-        //         }
-        //         break;
-        //     default:
-        //         break;
-        //     }
-        // }
+            if (!insideCollision)
+            {
+                if (yNormal != 0.0)
+                    characters[i].velocityY *= firstCollisionHitTest;
+                if (xNormal != 0.0)
+                    characters[i].velocityX *= firstCollisionHitTest;
+                if (xNormal == 0.0 && yNormal == 0.0)
+                {
+                    characters[i].velocityY *= firstCollisionHitTest;
+                    characters[i].velocityX *= firstCollisionHitTest;
+                }
+                if (yNormal > 0.0)
+                {
+                    characters[i].onGround = true;
+                    characters[i].velocityX += characters[j].velocityX;
+                }
+            }
+            if (insideCollision)
+            {
+                if (yNormal != 0.0)
+                {
+                    characters[i].visual.y = firstCollisionHitTest;
+                    characters[i].velocityY = 0.0;
+                    characters[j].velocityY = 0.0;
+                }
+                if (xNormal != 0.0)
+                {
+                    characters[i].visual.x = firstCollisionHitTest;
+                    characters[i].velocityX = 0.0;
+                    characters[j].velocityX = 0.0;
+                }
+                if (yNormal > 0.0)
+                    characters[i].onGround = true;
+            }
+
+            switch (characters[i].id)
+            {
+            case CH_PLAYER:
+                if (firstCollisionHitTest < 1.0 && characters[j].id != CH_PLAYER && characters[i].strikeTimer > 0.0)
+                {
+                    characters[j].hp = 0;
+                    Remove(j);
+                }
+                break;
+            case CH_GULK:
+                if (firstCollisionHitTest < 1.0 && characters[j].id == CH_PLAYER && characters[i].strikeTimer > 0.0)
+                {
+                    characters[j].hp = 0;
+                }
+                break;
+            default:
+                break;
+            }
+        }
 
         for (int j = 0; j < floor.collision_box_count; ++j)
         {
@@ -432,12 +408,12 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             }
 
             double xNormal = 0.0, yNormal = 0.0;
-            bool insideCollision = true;
+            bool insideCollision = false;
 
-            double firstCollisionHitTest = characters[i]->collider.response(characters[i]->velocityX * delta_time,
-                                                                            characters[i]->velocityY * delta_time,
-                                                                            0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal,
-                                                                            characters[i]->visual.x, characters[i]->visual.y, insideCollision);
+            double firstCollisionHitTest = characters[i].collider.response(characters[i].velocityX * delta_time,
+                                                                           characters[i].velocityY * delta_time,
+                                                                           0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal,
+                                                                           characters[i].visual.x, characters[i].visual.y, insideCollision);
 
             switch (floor.collision_boxes[j].collisionID)
             {
@@ -445,19 +421,14 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 break;
             case 1:
                 if (xNormal != 0.0)
-                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i].velocityX *= firstCollisionHitTest;
                 if (yNormal != 0.0)
                 {
-                    characters[i]->hp = 0;
-                }
-                if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
-                {
-                    characters[i]->velocityY *= firstCollisionHitTest;
-                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i].hp = 0;
                 }
                 break;
             case 2:
-                if (firstCollisionHitTest < 1.0 && characters[i]->plControl != nullptr)
+                if (firstCollisionHitTest < 1.0 && characters[i].plControl != nullptr)
                 {
                     levelincreasing = true;
                 }
@@ -465,53 +436,53 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             case 3:
                 if (yNormal > 0.0 && !insideCollision)
                 {
-                    characters[i]->velocityY *= firstCollisionHitTest;
-                    characters[i]->onGround = true;
+                    characters[i].velocityY *= firstCollisionHitTest;
+                    characters[i].onGround = true;
                 }
                 if (yNormal > 0.0 && insideCollision)
                 {
-                    characters[i]->visual.y = firstCollisionHitTest;
-                    characters[i]->velocityY = 0.0;
-                    characters[i]->onGround = true;
+                    characters[i].visual.y = firstCollisionHitTest;
+                    characters[i].velocityY = 0.0;
+                    characters[i].onGround = true;
                 }
                 break;
             case 4:
                 if (xNormal < 0.0 && !insideCollision)
                 {
-                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i].velocityX *= firstCollisionHitTest;
                 }
                 if (xNormal < 0.0 && insideCollision)
                 {
-                    characters[i]->visual.x = firstCollisionHitTest;
-                    characters[i]->velocityX = 0.0;
+                    characters[i].visual.x = firstCollisionHitTest;
+                    characters[i].velocityX = 0.0;
                 }
                 break;
             case 5:
                 if (yNormal < 0.0 && !insideCollision)
                 {
-                    characters[i]->velocityY *= firstCollisionHitTest;
+                    characters[i].velocityY *= firstCollisionHitTest;
                 }
                 if (yNormal < 0.0 && insideCollision)
                 {
-                    characters[i]->visual.y = firstCollisionHitTest;
-                    characters[i]->velocityY = 0.0;
+                    characters[i].visual.y = firstCollisionHitTest;
+                    characters[i].velocityY = 0.0;
                 }
                 break;
             case 6:
                 if (xNormal > 0.0 && !insideCollision)
                 {
-                    characters[i]->velocityX *= firstCollisionHitTest;
+                    characters[i].velocityX *= firstCollisionHitTest;
                 }
                 if (xNormal > 0.0 && insideCollision)
                 {
-                    characters[i]->visual.x = firstCollisionHitTest;
-                    characters[i]->velocityX = 0.0;
+                    characters[i].visual.x = firstCollisionHitTest;
+                    characters[i].velocityX = 0.0;
                 }
                 break;
             case 7:
-                if (yNormal != 0.0 && characters[i]->velocityY < 0.0)
+                if (yNormal != 0.0 && characters[i].velocityY < 0.0)
                 {
-                    characters[i]->velocityY = 4.0;
+                    characters[i].velocityY = 4.0;
                 }
                 break;
             case 8:
@@ -568,7 +539,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                             }
                         }
                     }
-                    characters[i]->runSpeed *= 1.001;
+                    characters[i].runSpeed *= 1.001;
                 }
                 break;
             case 11:
@@ -582,8 +553,8 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                             floor.tiles[x][y].collisionID = -1;
                             floor.collision_boxes[j].collisionID = -1;
 
-                            Spawn_Enemy(character("./img/char/gulk.png", x * 0.16, static_cast<double>(floor.roomHeight - y) * 0.16, 0.32, 0.32,
-                                                  4, 1, 0.0, -0.64, 0.16, 0.16, CH_GULK));
+                            Add(character("./img/char/gulk.png", x * 0.16, static_cast<double>(floor.roomHeight - y) * 0.16, 0.32, 0.32,
+                                          4, 1, 0.0, -0.64, 0.16, 0.16, CH_GULK));
                         }
                     }
                 }
@@ -593,45 +564,49 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 {
                     if (xNormal != 0.0)
                     {
-                        characters[i]->velocityX = 0.0;
-                        characters[i]->visual.x = firstCollisionHitTest;
+                        characters[i].velocityX = 0.0;
+                        characters[i].visual.x = firstCollisionHitTest;
                     }
                     if (yNormal != 0.0)
                     {
-                        characters[i]->velocityY = 0.0;
-                        characters[i]->visual.y = firstCollisionHitTest;
-                    }
-                }
-                else if (!insideCollision)
-                {
-                    if (yNormal != 0.0)
-                        characters[i]->velocityY *= firstCollisionHitTest;
-                    if (xNormal != 0.0)
-                        characters[i]->velocityX *= firstCollisionHitTest;
-                    if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
-                    {
-                        characters[i]->velocityY *= firstCollisionHitTest;
-                        characters[i]->velocityX *= firstCollisionHitTest;
+                        characters[i].velocityY = 0.0;
+                        characters[i].visual.y = firstCollisionHitTest;
                     }
                     if (yNormal > 0.0)
                     {
-                        characters[i]->onGround = true;
+                        characters[i].onGround = true;
+                    }
+                }
+                if (!insideCollision)
+                {
+                    if (yNormal != 0.0)
+                        characters[i].velocityY *= firstCollisionHitTest;
+                    if (xNormal != 0.0)
+                        characters[i].velocityX *= firstCollisionHitTest;
+                    if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
+                    {
+                        characters[i].velocityY *= firstCollisionHitTest;
+                        characters[i].velocityX *= firstCollisionHitTest;
+                    }
+                    if (yNormal > 0.0)
+                    {
+                        characters[i].onGround = true;
                     }
                 }
 
                 break;
             }
 
-            if (firstCollisionHitTest < 1.0 && std::abs(characters[i]->velocityX) < 0.5 && xNormal > 0.0 && characters[i]->id == CH_GULK)
+            if (firstCollisionHitTest < 1.0 && std::abs(characters[i].velocityX) < 0.5 && xNormal > 0.0 && characters[i].id == CH_GULK)
             {
-                characters[i]->velocityX = 0.5;
+                characters[i].velocityX = 0.5;
             }
-            if (firstCollisionHitTest < 1.0 && std::abs(characters[i]->velocityX) < 0.5 && xNormal < 0.0 && characters[i]->id == CH_GULK)
+            if (firstCollisionHitTest < 1.0 && std::abs(characters[i].velocityX) < 0.5 && xNormal < 0.0 && characters[i].id == CH_GULK)
             {
-                characters[i]->velocityX = -0.5;
+                characters[i].velocityX = -0.5;
             }
         }
-        characters[i]->updatePosition(delta_time);
+        characters[i].updatePosition(delta_time);
     }
 
     if (!particlesenabled)

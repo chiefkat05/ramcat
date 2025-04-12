@@ -57,12 +57,13 @@ double cube_vertices[] = {
 sprite::sprite()
 {
 }
-sprite::sprite(const char *path, unsigned int _fx, unsigned int _fy, bool text)
+sprite::sprite(std::string path, unsigned int _fx, unsigned int _fy, bool text)
 {
     textureWidth = 1.0;
     textureHeight = 1.0;
 
     texture_path = path;
+    std::cout << path << " huh\n";
 
     framesX = 1;
     framesY = 1;
@@ -93,7 +94,7 @@ void sprite::textureInit()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     int width, height, nrChannels;
-    unsigned char *data = stbi_load(texture_path, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(texture_path.c_str(), &width, &height, &nrChannels, 0);
     if (data)
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);

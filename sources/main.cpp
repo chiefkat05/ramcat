@@ -72,10 +72,8 @@ extern double windowAspectDivision;
 
 extern gui gui_data;
 extern game_state state;
-// std::string GAMEPAD_MAP_STRINGS[];
 
 camera mainCam(CAMERA_STATIONARY);
-// planning time
 
 void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor)
 {
@@ -204,7 +202,6 @@ void mouseUpdate(GLFWwindow *window)
 
 bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
 player playerControllers[player_limit];
-character players[player_limit];
 
 std::string controlsetstrings[] = {
     "Up", "Left", "Right", "Down", "Shield", "Sword", "Bubble", "Spawn"};
@@ -400,6 +397,7 @@ void playerInit(character &pl, game_system &game, player &controller)
 {
     pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, 0.0, -0.08, 0.16, 0.24, CH_PLAYER);
     pl.visual.Scale(0.32f, 0.32f, 1.0);
+    std::cout << pl.visual.texture_path << " inside p1\n";
 
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
@@ -418,7 +416,7 @@ void playerInit(character &pl, game_system &game, player &controller)
     // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
     // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0);
 
-    game.Add(&pl);
+    game.Add(pl);
 }
 
 void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
@@ -465,11 +463,11 @@ void addPlayer(character *ch, game_system *gs, world *wo, int x)
     if (playerCount >= player_limit)
         return;
 
-    playerInit(players[playerCount], *gs, playerControllers[playerCount]);
-    players[playerCount].visual.Scale(0.48, 0.48, 1.0);
-    players[playerCount].visual.SetColor(0.083333334 * static_cast<double>(playerCount + 1),
-                                         0.083333334 * static_cast<double>(playerCount + 1),
-                                         0.083333334 * static_cast<double>(playerCount + 1), 1.0);
+    playerInit(gs->characters[playerCount], *gs, playerControllers[playerCount]);
+    gs->characters[playerCount].visual.Scale(0.48, 0.48, 1.0);
+    gs->characters[playerCount].visual.SetColor(0.083333334 * static_cast<double>(playerCount + 1),
+                                                0.083333334 * static_cast<double>(playerCount + 1),
+                                                0.083333334 * static_cast<double>(playerCount + 1), 1.0);
     playerCount++;
 }
 void removePlayer(character *ch, game_system *gs, world *wo, int x)
@@ -478,7 +476,7 @@ void removePlayer(character *ch, game_system *gs, world *wo, int x)
         return;
 
     playerCount--;
-    gs->Remove(&players[playerCount]);
+    gs->Remove(playerCount);
 }
 
 controlset changingControl = control_limit;
@@ -673,20 +671,20 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         for (int i = 0; i < control_limit; ++i)
         {
             // control buttons here
-            if (players[playerIDForControl].plControl == nullptr)
+            if (mainG.characters[playerIDForControl].plControl == nullptr)
             {
                 continue;
             }
-            if (players[playerIDForControl].plControl->gamepad_id <= -1)
+            if (mainG.characters[playerIDForControl].plControl->gamepad_id <= -1)
             {
-                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(players[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
-                                                       1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
+                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(mainG.characters[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
+                                                       1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &mainG, &floor, i));
                 gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0);
             }
             else
             {
-                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
-                                                       1, 1, changeControlFunc, false, &players[playerIDForControl], &mainG, &floor, i));
+                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[mainG.characters[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
+                                                       1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &mainG, &floor, i));
             }
         }
 
@@ -716,7 +714,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
-            players[i].visual.Scale(0.48f, 0.48f, 1.0); // fun
+            mainG.characters[i].visual.Scale(0.48f, 0.48f, 1.0); // fun
         }
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
@@ -724,14 +722,13 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
-        for (int i = 0; i < mainG.characterCount; ++i)
+        for (int i = playerCount; i < mainG.characterCount; ++i)
         {
-            if (mainG.characters[i]->plControl != nullptr)
+            if (mainG.characters[i].plControl != nullptr)
                 continue;
 
-            mainG.Remove(mainG.characters[i]);
+            mainG.Remove(i);
         }
-        mainG.enemyCount = 0;
 
         mainG.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 3);
 
@@ -752,15 +749,15 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             mainG.particleByID(3)->setVariable(PV_ANIM_START, 0.0);
             mainG.particleByID(3)->setVariable(PV_ANIM_END, 4.0);
             mainG.particleByID(3)->setVariable(PV_ANIM_SPEED, 8.0);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_X, &players[0].visual.x);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_W, &players[0].visual.x);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_Y, &players[0].visual.y);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_H, &players[0].visual.y);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
+            mainG.particleByID(3)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
         }
 
         for (int i = 0; i < playerCount; ++i)
         {
-            players[i].visual.Scale(0.32f, 0.32f, 1.0);
+            mainG.characters[i].visual.Scale(0.32f, 0.32f, 1.0);
         }
         mainCam.lockTo(&camCenterX, &lowestCamYLevel);
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
@@ -835,11 +832,11 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         playerSpawnDist = 0;
         for (int i = 0; i < playerCount; ++i)
         {
-            if (players[i].plControl == nullptr)
+            if (mainG.characters[i].plControl == nullptr)
                 continue;
 
-            players[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
-            playerSpawnDist += players[i].visual.h + 0.02f;
+            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
+            playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
 
@@ -857,6 +854,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
     prevState = state;
 }
 
+game_system game;
 int main()
 {
     glfwInit();
@@ -898,12 +896,11 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    game_system game;
-
     world mainWorld; // lmao
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
-    playerInit(players[0], game, playerControllers[0]);
-    players[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
+    playerInit(game.characters[0], game, playerControllers[0]);
+    game.characters[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
+    std::cout << game.characters[0].visual.texture_path << " pl1\n"; // remove
     prevState = WIN_SCREEN;
 
     ma_engine soundEngine;
@@ -947,7 +944,7 @@ int main()
             state = WORLD_SCREEN;
         }
 
-        menuData(game, players[0], mainWorld, soundEngine);
+        menuData(game, game.characters[0], mainWorld, soundEngine);
 
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
 
@@ -955,8 +952,8 @@ int main()
         {
             for (int i = 0; i < playerCount; ++i)
             {
-                players[i].visual.Put(-1.4f + i * 0.22f, 0.0, 0.0);
-                players[i].visual.Draw(shaderProgram, spriteRect);
+                game.characters[i].visual.Put(-1.4f + i * 0.22f, 0.0, 0.0);
+                game.characters[i].visual.Draw(shaderProgram, spriteRect);
             }
             renderText(spriteText, textShaderProgram, "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
@@ -1007,19 +1004,19 @@ int main()
             currentSoundVolume = game.sound_volume;
 
             int gamepadButtonPressedLast = gamepadInputWatch();
-            if (changingControl != control_limit && gamepadButtonPressedLast != -1 && players[playerIDForControl].plControl != nullptr)
+            if (changingControl != control_limit && gamepadButtonPressedLast != -1 && game.characters[playerIDForControl].plControl != nullptr)
             {
-                players[playerIDForControl].plControl->gamepad_inputs[changingControl] = static_cast<GAMEPAD_MAP>(gamepadButtonPressedLast);
+                game.characters[playerIDForControl].plControl->gamepad_inputs[changingControl] = static_cast<GAMEPAD_MAP>(gamepadButtonPressedLast);
                 changingControl = control_limit;
             }
 
             std::string playerIDTextStr = std::string("Player ") + std::to_string(playerIDForControl);
             if (playerIDForControlStrElementIndex != -1)
-                gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr.c_str();
+                gui_data.elements[playerIDForControlStrElementIndex].visual.texture_path = playerIDTextStr;
 
             for (int i = 0; i < control_limit; ++i)
             {
-                if (players[playerIDForControl].plControl == nullptr)
+                if (game.characters[playerIDForControl].plControl == nullptr)
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path = "[No Player]";
                     gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_TEXT;
@@ -1027,15 +1024,15 @@ int main()
                 }
 
                 gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_CLICKABLE_TEXT;
-                if (players[playerIDForControl].plControl->gamepad_id <= -1)
+                if (game.characters[playerIDForControl].plControl->gamepad_id <= -1)
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
-                        KeyCodeToString(players[playerIDForControl].plControl->inputs[i]);
+                        KeyCodeToString(game.characters[playerIDForControl].plControl->inputs[i]);
                 }
                 else
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
-                        gamepadInputStrings[players[playerIDForControl].plControl->gamepad_inputs[i]];
+                        gamepadInputStrings[game.characters[playerIDForControl].plControl->gamepad_inputs[i]];
                 }
             }
 
@@ -1061,15 +1058,15 @@ int main()
 
             for (int i = 0; i < playerCount; ++i)
             {
-                if (players[i].visual.x < xleft)
+                if (game.characters[i].visual.x < xleft)
                 {
-                    xleft = players[i].visual.x;
+                    xleft = game.characters[i].visual.x;
                 }
-                if (players[i].visual.x > xright)
+                if (game.characters[i].visual.x > xright)
                 {
-                    xright = players[i].visual.x;
+                    xright = game.characters[i].visual.x;
                 }
-                if (!players[i].onGround)
+                if (!game.characters[i].onGround)
                     continue;
             }
 
@@ -1080,21 +1077,21 @@ int main()
             }
             camCenterX = (xleft + xright) * 0.5;
 
-            if (players[0].onGround && players[0].visual.y > -0.2 + lowestCamYLevel)
+            if (game.characters[0].onGround && game.characters[0].visual.y > -0.2 + lowestCamYLevel)
             {
                 lowestCamYLevel += 2.0 * delta_time;
             }
-            if (players[0].onGround && players[0].visual.y < lowestCamYLevel)
+            if (game.characters[0].onGround && game.characters[0].visual.y < lowestCamYLevel)
             {
                 lowestCamYLevel -= 2.0 * delta_time;
             }
-            if (players[0].visual.y < lowestCamYLevel - 0.5)
+            if (game.characters[0].visual.y < lowestCamYLevel - 0.5)
             {
-                lowestCamYLevel = players[0].visual.y + 0.5;
+                lowestCamYLevel = game.characters[0].visual.y + 0.5;
             }
-            if (players[0].visual.y > lowestCamYLevel + 0.4)
+            if (game.characters[0].visual.y > lowestCamYLevel + 0.4)
             {
-                lowestCamYLevel = players[0].visual.y - 0.4;
+                lowestCamYLevel = game.characters[0].visual.y - 0.4;
             }
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < collision_box_limit; ++i)
@@ -1115,11 +1112,11 @@ int main()
             }
 #endif
 
-            double mpcXScale = players[0].collider.max_x - players[0].collider.min_x;
-            double mpcYScale = players[0].collider.max_y - players[0].collider.min_y;
+            double mpcXScale = game.characters[0].collider.max_x - game.characters[0].collider.min_x;
+            double mpcYScale = game.characters[0].collider.max_y - game.characters[0].collider.min_y;
 #ifdef COLLISION_DEBUG
             dePl.Scale(mpcXScale, mpcYScale, 1.0);
-            dePl.Put(players[0].collider.min_x, players[0].collider.min_y, 0.0);
+            dePl.Put(game.characters[0].collider.min_x, game.characters[0].collider.min_y, 0.0);
             dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             if (!dePl.empty)
                 dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
@@ -1129,27 +1126,27 @@ int main()
 
             for (int i = 0; i < game.characterCount; ++i)
             {
-                if (game.characters[i] == nullptr)
+                // if (game.characters[i] == nullptr)
+                //     continue;
+
+                game.characters[i].visual.Draw(shaderProgram, spriteRect);
+
+                if (game.characters[i].plControl == nullptr)
                     continue;
 
-                game.characters[i]->visual.Draw(shaderProgram, spriteRect);
+                playerControl(game, game.characters[i], window, &mainWorld);
 
-                if (game.characters[i]->plControl == nullptr)
-                    continue;
-
-                playerControl(game, *game.characters[i], window, &mainWorld);
-
-                if (game.characters[i]->hp <= 0 || game.characters[i]->visual.y < -20.0)
+                if (game.characters[i].hp <= 0 || game.characters[i].visual.y < -20.0)
                 {
-                    if (game.characters[i] == &players[0])
+                    if (i == 0)
                     {
-                        game.characters[i]->visual.Put(mainWorld.spawnLocationX, -mainWorld.spawnLocationY, 0.0);
+                        game.characters[i].visual.Put(mainWorld.spawnLocationX, -mainWorld.spawnLocationY, 0.0);
                     }
                     else
                     {
-                        game.characters[i]->visual.Put(players[0].visual.x, players[0].visual.y, 0.0);
-                        game.characters[i]->velocityY = 1.0f;
-                        game.characters[i]->velocityX = -1.0f;
+                        game.characters[i].visual.Put(game.characters[0].visual.x, game.characters[0].visual.y, 0.0);
+                        game.characters[i].velocityY = 1.0f;
+                        game.characters[i].velocityX = -1.0f;
                     }
                     game.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
                     if (game.particleByID(i + 30) != nullptr)
@@ -1158,9 +1155,9 @@ int main()
                         game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
                         game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
                         game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_RED, players[i].visual.colr);
-                        game.particleByID(i + 30)->setVariable(PV_GREEN, players[i].visual.colg);
-                        game.particleByID(i + 30)->setVariable(PV_BLUE, players[i].visual.colb);
+                        game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
+                        game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
+                        game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
                         game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
                         game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
                         game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
@@ -1169,13 +1166,13 @@ int main()
                         game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
                         game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
                         game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &players[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &players[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &players[i].visual.y);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &players[i].visual.y);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
                     }
                     // player animation here???
-                    game.characters[i]->hp = game.characters[i]->maxhp;
+                    game.characters[i].hp = game.characters[i].maxhp;
                 }
             }
 
@@ -1268,9 +1265,9 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 }
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    if (state == MENU_SCREEN && changingControl != control_limit && players[playerIDForControl].plControl->gamepad_id <= -1)
+    if (state == MENU_SCREEN && changingControl != control_limit && game.characters[playerIDForControl].plControl->gamepad_id <= -1)
     {
-        players[playerIDForControl].plControl->inputs[changingControl] = key;
+        game.characters[playerIDForControl].plControl->inputs[changingControl] = key;
         changingControl = control_limit;
     }
 }

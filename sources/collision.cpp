@@ -29,38 +29,38 @@ void aabb::Put(double x, double y, double w, double h)
 
 // special thanks to the excellent book, "real time collision detection" by Christer Ericson,
 // as well as the online tutorial -> https://gamedev.net/tutorials/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/ by BrendanL.K
-double aabb::response(double xV, double yV, double xV2, double yV2, aabb &test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision)
+double aabb::response(double xV, double yV, double xV2, double yV2, aabb test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision)
 {
-    aabb boundingbox1;
+    aabb boundingbox1, boundingbox2;
 
     double velX = xV;
     double velY = yV;
 
-    boundingbox1 = aabb(min_x + std::min(0.0, velX), min_y + std::min(0.0, velY), max_x + std::max(0.0, velX), max_y + std::max(0.0, velY));
+    // velX = xV;
+    // velY = yV;
+    // velX = xV - xV2;
+    // velY = yV - yV2;
+    // velX = xV2 - xV;
+    // velY = yV2 - yV;
 
-    velX = xV;
-    velY = yV;
-    // if (xV != 0.0 && yV == 0.0)
-    //     boundingbox1 = aabb(min_x + std::min(0.0, xV * 2.0), min_y + 0.01f, max_x + std::max(0.0, xV * 2.0), max_y - 0.01f);
-    // if (xV == 0.0 && yV != 0.0)
-    // boundingbox1 = aabb(min_x + 0.01f, min_y + std::min(0.0, yV * 2.0), max_x - 0.01f, max_y + std::max(0.0, yV * 2.0));
-    // boundingbox1 = aabb(min_x + std::max)
+    boundingbox1 = aabb(min_x + std::min(0.0, xV), min_y + std::min(0.0, yV), max_x + std::max(0.0, xV), max_y + std::max(0.0, yV));
+    boundingbox2 = aabb(test.min_x + std::min(0.0, xV2), test.min_y + std::min(0.0, yV2), test.max_x + std::max(0.0, xV2), test.max_y + std::max(0.0, yV2));
 
-    // aabb boundingbox1(min_x + 0.1f, min_y + 0.1f, max_x - 0.1f, max_y - 0.1f);
-    // aabb boundingbox2(test.min_x + std::min(0.0, xV2 * 2.0), test.min_y + std::min(0.0, yV2 * 2.0), test.max_x + std::max(0.0, xV2 * 2.0), test.max_y + std::max(0.0, yV2 * 2.0));
-
-    if (!boundingbox1.colliding(test))
+    if (!boundingbox1.colliding(boundingbox2))
     {
         xNormal = 0.0;
         yNormal = 0.0;
         return 1.0;
     }
+    // if (yV2 != 0.0)
+    //     std::cout << " hoawiefjqoeifjqoeirf\n";
 
     // Kinda proud of this one too, inside-block-collisions was very fun to solve and I feel like this is very compact and simple enough that there's
     // unlikely to be any major bugs resulting from normal usage of it
-    insideCollision = false;
+    // boundingbox1 = aabb(min_x + xV - xV2, min_y + yV - yV2, max_x + xV - xV2, max_y + yV - yV2);
     if (colliding(test))
     {
+        // std::cout << velX << ", xV = " << xV << ", xV2 = " << xV2 << " COLLISION COLLISION\n";
         // for future me that's probably a little thick in the head, let me explain real quick
         // it's negative (minus) velocity for all the values below because it needs to be the opposite of wherever the
         // player is moving. If the player is going to the left (-0.5) then it needs to check to the right of the player (0.5)
@@ -69,60 +69,75 @@ double aabb::response(double xV, double yV, double xV2, double yV2, aabb &test, 
 
         // Also, why does using the current frame's velocity work? I thought I would need to use the last frame's velocity but
         // somehow this doesn't lead to any floating point errors
-        double badLastYPositionUnder = max_y - velY;
-        double badLastYPositionAbove = min_y - velY;
-        double badLastYPositionLeft = min_x - velX;
-        double badLastYPositionRight = max_x - velX;
+        double lastPositionTop = max_y - yV;
+        double lastPositionBottom = min_y - yV;
+        double lastPositionLeft = min_x - xV;
+        double lastPositionRight = max_x - xV;
 
         // also, I just noticed a potential bug in this system, where if the hitbox is smaller than the player's hitbox
         // then he will always just move to the right or down when he's inside of it since all of the badLastPosition variables
         // are correctly outside the hitbox boundaries and it will trigger only based off player movement...
         // this won't likely be a problem in any of the games I make, and it's not a big deal in general, and in every other way
         // this solution is pretty much perfect, so I'm going to leave it like this. But I will also document this in case it ever comes up.
-        if (velY != 0.0)
+
+        // well, I think I ironed out most of the major issues with moving objects colliding with moving objects... but I feel like I've not seen the last of them.
+
+        // one last note because I just spent a long time not understanding a basic function of this code
+        // lastPositionBottom >= test.max_y - yV2 IS CORRECT
+        // because the if statement is checking whether the player was OUTSIDE the block, NOT INSIDE
+        // WHETHER THE PLAYER IS INSIDE THE BLOCK IS HANDLED BY THE ABOVE IF(COLLIDING(TEST)) STATEMENT, YOU SPONGE-BRAINED MONGREL
+        // thank you for understanding, have a great day and work hard :)
+        float returnY = yPos;
+        if (yV < 0.0 && lastPositionBottom >= test.max_y - yV2)
+        // if (yV < 0.0 && lastPositionBottom >= test.max_y + yV2)
         {
-            float returnY = yPos;
-            if (velY < 0.0 && badLastYPositionAbove >= test.max_y)
-            {
-                double yoffset = yPos - min_y;
-                returnY = test.max_y + ((max_y - min_y) - yoffset) * 0.5;
-                yNormal = 1.0;
-            }
-            if (velY > 0.0 && badLastYPositionUnder <= test.min_y)
-            {
-                double yoffset = max_y - yPos;
-                returnY = test.min_y - ((max_y - min_y) + yoffset) * 0.5;
-                yNormal = -1.0;
-            }
-            insideCollision = true;
+            double yoffset = yPos - min_y;
+            returnY = test.max_y + yoffset; // sigh
+
+            yNormal = 1.0;
             xNormal = 0.0;
+            insideCollision = true;
+
             return returnY;
         }
-        if (velX != 0.0)
+        if (yV > 0.0 && lastPositionTop <= test.min_y - yV2)
+        // if (yV > 0.0 && lastPositionTop <= test.min_y + yV2)
         {
-            float returnX = xPos;
-            xNormal = 0.0;
-            if (velX > 0.0 && badLastYPositionLeft <= test.min_x)
-            {
-                double xoffset = max_x - xPos;
-                returnX = test.min_x - ((max_x - min_x) + xoffset) * 0.5;
+            double yoffset = max_y - yPos;
+            returnY = test.min_y - yoffset;
 
-                xNormal = -1.0;
-            }
-            if (velX < 0.0 && badLastYPositionRight >= test.max_x)
-            {
-                double xoffset = xPos - min_x;
-                returnX = test.max_x + ((max_x - min_x) - xoffset) * 0.5;
-                yNormal = 1.0;
-            }
+            yNormal = -1.0;
+            xNormal = 0.0;
             insideCollision = true;
+
+            return returnY;
+        }
+        float returnX = xPos;
+        if (xV < 0.0 && lastPositionLeft >= test.max_x - xV2)
+        // if (xV < 0.0 && lastPositionLeft >= test.max_x + xV2)
+        {
+            double xoffset = xPos - min_x;
+            returnX = test.max_x + xoffset;
+
+            xNormal = -1.0;
             yNormal = 0.0;
+            insideCollision = true;
+
+            return returnX;
+        }
+        if (xV > 0.0 && lastPositionRight <= test.min_x - xV2)
+        // if (xV > 0.0 && lastPositionRight <= test.min_x + xV2)
+        {
+            double xoffset = max_x - xPos;
+            returnX = test.min_x - xoffset;
+
+            xNormal = 1.0;
+            yNormal = 0.0;
+            insideCollision = true;
+
             return returnX;
         }
     }
-
-    // double velX = xV2 - xV;
-    // double velY = yV2 - yV;
 
     double xInvEntry = 0.0, yInvEntry = 0.0;
     double xInvExit = 0.0, yInvExit = 0.0;

@@ -39,12 +39,11 @@ struct sprite
     unsigned int sprite_texture;
     bool empty = true;
     // object_type obj_type;
-    const char *texture_path;
+    std::string texture_path;
 
     sprite();
-    sprite(const char *path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
+    sprite(std::string path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
 
-    // sprite(const char *_path, double _x, double _y, unsigned int _fx, unsigned int _fy);
     void textureInit();
 
     void Put(double _x, double _y, double _z);
