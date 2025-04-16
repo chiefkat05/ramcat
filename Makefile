@@ -1,5 +1,5 @@
 all:
-	g++ -c ./sources/*.cpp ./sources/*.c
+	g++ -c -g ./sources/*.cpp ./sources/*.c
 	g++ -c ./glad/glad.c
 	g++ ./*.o -o main -lglfw3 -lfreetype -O2
 

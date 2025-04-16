@@ -100,7 +100,7 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
     }
     if (p.plControl->getInput(window, CONTROL_DOWN) && !p.onGround)
     {
-        p.velocityY = 3.0 * -p.runSpeed;
+        p.velocityY = 5.0 * -p.runSpeed;
     }
     if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
     {
@@ -397,7 +397,6 @@ void playerInit(character &pl, game_system &game, player &controller)
 {
     pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, 0.0, -0.08, 0.16, 0.24, CH_PLAYER);
     pl.visual.Scale(0.32f, 0.32f, 1.0);
-    std::cout << pl.visual.texture_path << " inside p1\n";
 
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
@@ -835,7 +834,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             if (mainG.characters[i].plControl == nullptr)
                 continue;
 
-            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
+            mainG.characters[i].visual.Put(floor.spawnLocationX + playerSpawnDist * 2.0, -floor.spawnLocationY + playerSpawnDist, 0.0); // change back
             playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
@@ -900,7 +899,6 @@ int main()
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
     playerInit(game.characters[0], game, playerControllers[0]);
     game.characters[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
-    std::cout << game.characters[0].visual.texture_path << " pl1\n"; // remove
     prevState = WIN_SCREEN;
 
     ma_engine soundEngine;

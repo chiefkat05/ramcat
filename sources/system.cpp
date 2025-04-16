@@ -115,7 +115,7 @@ void character::Update(double delta_time)
     // collider.max_x = visual.x + 0.16f;
     // collider.min_y = visual.y;
     // collider.max_y = visual.y + 0.16f;
-    collider.Put(visual.x, visual.y - 0.08, 0.16, 0.24);
+    // collider.Put(visual.x, visual.y - 0.08, 0.16, 0.24);
     // collider.Move(visual.x, visual.y);
 
     if (hp <= 0)
@@ -149,6 +149,11 @@ void character::updatePosition(double delta_time)
         return;
     }
     visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0);
+    collider.Put(visual.x, visual.y - 0.08, 0.16, 0.24);
+    if (onGround && velocityY < 0.0)
+    {
+        velocityY = 0.0;
+    }
 }
 
 void character::SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd)
@@ -338,39 +343,17 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                                                                            characters[j].collider, xNormal, yNormal,
                                                                            characters[i].visual.x, characters[i].visual.y, insideCollision);
 
-            std::cout << "character i " << characters[i].visual.texture_path << ", y = " << characters[i].collider.min_y << ", " << characters[i].collider.max_y << "\n";
-            std::cout << "character j " << characters[j].visual.texture_path << ", y = " << characters[j].collider.min_y << ", " << characters[j].collider.max_y << "\n";
-
-            if (!insideCollision)
-            {
-                if (yNormal != 0.0)
-                    characters[i].velocityY *= firstCollisionHitTest;
-                if (xNormal != 0.0)
-                    characters[i].velocityX *= firstCollisionHitTest;
-                if (xNormal == 0.0 && yNormal == 0.0)
-                {
-                    characters[i].velocityY *= firstCollisionHitTest;
-                    characters[i].velocityX *= firstCollisionHitTest;
-                }
-                if (yNormal > 0.0)
-                {
-                    characters[i].onGround = true;
-                    characters[i].velocityX += characters[j].velocityX;
-                }
-            }
             if (insideCollision)
             {
-                if (yNormal != 0.0)
-                {
-                    characters[i].visual.y = firstCollisionHitTest;
-                    characters[i].velocityY = 0.0;
-                    characters[j].velocityY = 0.0;
-                }
                 if (xNormal != 0.0)
                 {
                     characters[i].visual.x = firstCollisionHitTest;
                     characters[i].velocityX = 0.0;
-                    characters[j].velocityX = 0.0;
+                }
+                if (yNormal != 0.0)
+                {
+                    characters[i].visual.y = firstCollisionHitTest;
+                    characters[i].velocityY = 0.0;
                 }
                 if (yNormal > 0.0)
                     characters[i].onGround = true;
@@ -410,10 +393,9 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             double xNormal = 0.0, yNormal = 0.0;
             bool insideCollision = false;
 
-            double firstCollisionHitTest = characters[i].collider.response(characters[i].velocityX * delta_time,
-                                                                           characters[i].velocityY * delta_time,
-                                                                           0.0, 0.0, floor.collision_boxes[j], xNormal, yNormal,
-                                                                           characters[i].visual.x, characters[i].visual.y, insideCollision);
+            double firstCollisionHitTest = characters[i].collider.response(characters[i].velocityX * delta_time, characters[i].velocityY * delta_time, 0.0, 0.0,
+                                                                           floor.collision_boxes[j], xNormal, yNormal, characters[i].visual.x,
+                                                                           characters[i].visual.y, insideCollision);
 
             switch (floor.collision_boxes[j].collisionID)
             {
@@ -428,7 +410,11 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 2:
-                if (firstCollisionHitTest < 1.0 && characters[i].plControl != nullptr)
+                // if (firstCollisionHitTest < 1.0 && characters[i].plControl != nullptr)
+                // {
+                //     levelincreasing = true;
+                // }
+                if (insideCollision && characters[i].plControl != nullptr)
                 {
                     levelincreasing = true;
                 }
@@ -564,36 +550,17 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 {
                     if (xNormal != 0.0)
                     {
-                        characters[i].velocityX = 0.0;
                         characters[i].visual.x = firstCollisionHitTest;
+                        characters[i].velocityX = 0.0;
                     }
                     if (yNormal != 0.0)
                     {
-                        characters[i].velocityY = 0.0;
                         characters[i].visual.y = firstCollisionHitTest;
+                        characters[i].velocityY = 0.0;
                     }
                     if (yNormal > 0.0)
-                    {
                         characters[i].onGround = true;
-                    }
                 }
-                if (!insideCollision)
-                {
-                    if (yNormal != 0.0)
-                        characters[i].velocityY *= firstCollisionHitTest;
-                    if (xNormal != 0.0)
-                        characters[i].velocityX *= firstCollisionHitTest;
-                    if (firstCollisionHitTest < 1.0 && xNormal == 0.0 && yNormal == 0.0)
-                    {
-                        characters[i].velocityY *= firstCollisionHitTest;
-                        characters[i].velocityX *= firstCollisionHitTest;
-                    }
-                    if (yNormal > 0.0)
-                    {
-                        characters[i].onGround = true;
-                    }
-                }
-
                 break;
             }
 

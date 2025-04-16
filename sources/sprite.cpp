@@ -63,7 +63,6 @@ sprite::sprite(std::string path, unsigned int _fx, unsigned int _fy, bool text)
     textureHeight = 1.0;
 
     texture_path = path;
-    std::cout << path << " huh\n";
 
     framesX = 1;
     framesY = 1;
