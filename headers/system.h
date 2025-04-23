@@ -8,8 +8,20 @@
 #include "effects.h"
 #include "miniaudio.h"
 
-const unsigned int entity_limit = 64; // also change in world.h since there's another one there, also delete one of these so that there's only one pls
-const unsigned int enemy_limit = 32;
+enum game_state
+{
+    START_SCREEN,
+    MENU_SCREEN,
+    CHARACTER_CREATION_SCREEN,
+    WORLD_SCREEN,
+    WON_LEVEL_STATE,
+    COFFEE_MUG_DEATH_STATE,
+    LOSE_SCREEN,
+    WIN_SCREEN,
+    state_total_count
+};
+
+const unsigned int character_limit = 64; // also change in world.h since there's another one there, also delete one of these so that there's only one pls
 const unsigned int animation_limit = 24;
 const unsigned int sound_limit = 26;
 const unsigned int sound_is_music_cutoff = 2;
@@ -34,6 +46,8 @@ enum IDENTIFICATION
     CH_TOMMY,
     CH_BINK,
     CH_MIMIC,
+    ch_npc_ids,
+    CH_COFFEEMUGGUY,
     ch_other_ids
 };
 
@@ -112,6 +126,13 @@ struct player
     bool getInput(GLFWwindow *window, controlset action);
 };
 
+// this is simply for clarity in the code, please change according to what purpose each collision box serves in the character collider lists.
+enum COLLIDER_BOX_IDS
+{
+    COLLIDER_SOLID,
+    COLLIDER_STRIKE,
+    character_collider_limit
+};
 struct character
 {
     double velocityX = 0.0, velocityY = 0.0;
@@ -128,16 +149,36 @@ struct character
     // everything above should be in the player struct
 
     animation animations[animation_limit];
-    // double posX = 0.0, posY = 0.0;
-    // double walkToX = 0.0, walkToY = 0.0;
+    void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd);
+    void PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loops);
+    void StopAnimation(ANIMATION_MAPPINGS id);
+
     sprite visual;
 
-    float colW, colH, colOffsetX, colOffsetY;
-    aabb collider;
+    aabb colliders[character_collider_limit];
+    void setCollider(COLLIDER_BOX_IDS id, aabb newBox)
+    {
+        colliders[id] = newBox;
+    }
+    void putCollider(COLLIDER_BOX_IDS id, double x, double y)
+    {
+        colliders[id].Put(x, y);
+    }
+    void scaleCollider(COLLIDER_BOX_IDS id, double w, double h)
+    {
+        colliders[id].Scale(w, h);
+    }
+    void colliderOn(COLLIDER_BOX_IDS id)
+    {
+        colliders[id].collisionID = id;
+    }
+    void colliderOff(COLLIDER_BOX_IDS id)
+    {
+        colliders[id].collisionID = -1;
+    }
 
     IDENTIFICATION id = CH_NULL;
-    double attackTimer = 0.0;
-    int hp = 10, maxhp = 10;
+    int hp = 4, maxhp = 4;
     double runSpeed = 1.7f;
 
     bool animationFinished = true, animationLooping = false;
@@ -147,16 +188,12 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH, IDENTIFICATION _id);
+    character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
     void MoveTo(double _x, double _y, world *currentWorld);
 
     void Update(double delta_time);
     void updatePosition(double delta_time);
-
-    void SetAnimation(ANIMATION_MAPPINGS id, unsigned int s, unsigned int e, double spd);
-    void PlayAnimation(ANIMATION_MAPPINGS id, double delta_time, bool loops);
-    void StopAnimation(ANIMATION_MAPPINGS id);
 };
 
 struct characterQuadTree
@@ -180,12 +217,15 @@ struct characterQuadTree
     void draw(shader &program, object &sprite_object);
 };
 
+// set character collider collision_id to it's num in array so you can use it for collision resolution
 struct game_system
 {
-    character characters[entity_limit];
+    game_state state;
+
+    character characters[character_limit];
     int characterCount = 0;
 
-    sprite *sortedSprites[entity_limit];
+    sprite *sortedSprites[character_limit];
     particlesystem particles[particle_system_limit];
     int particlesystemcount;
     bool particlesenabled = true;

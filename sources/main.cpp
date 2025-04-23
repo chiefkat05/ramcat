@@ -17,9 +17,8 @@
 
 // quadtrees for collisions
 
-// enemies and npcs // this seems like it will be difficult since the game.characters array is all wrapped around the players so figure that out first
-
-// fix strange but inimportant issue with the particles sometimes just sitting on (0, 0) or not moving
+// fix strange but unimportant issue with the particles sometimes just sitting on (0, 0) or not moving
+// also fix incredibly broken particle system stuff
 
 // use linkvalue in the ui_element initialization to take out some of the need for the variable updates happening in if (state == MENU_SCREEN) in main
 // ^ isn't that what I made it for anyway??
@@ -42,7 +41,7 @@
 // Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
 
 #include "../headers/system.h"
-#include "../headers/gamestate.h"
+#include "../headers/userinterface.h"
 #include "../headers/miniaudio.h"
 
 // #define COLLISION_DEBUG
@@ -71,7 +70,6 @@ bool playerFacingRight = true;
 extern double windowAspectDivision;
 
 extern gui gui_data;
-extern game_state state;
 
 camera mainCam(CAMERA_STATIONARY);
 
@@ -162,12 +160,14 @@ void playerControl(game_system &game, character &p, GLFWwindow *window, world *f
     {
         if (p.strikeTimer > p.strikeCooloff - p.strikeWindow)
         {
+            p.colliderOn(COLLIDER_STRIKE);
             p.striking = true;
         }
         p.strikeTimer -= 60.0 * delta_time;
     }
-    if (p.strikeTimer <= 0.0 && p.strikeButtonPressed)
+    if (p.strikeTimer <= 0.0 && p.strikeButtonPressed) // seems strange keep an eye on this?
     {
+        p.colliderOff(COLLIDER_STRIKE);
         p.strikeButtonPressed = false;
     }
     if (p.plControl->getInput(window, CONTROL_SWORD) && !p.strikeButtonPressed)
@@ -395,7 +395,11 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller)
 {
-    pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, 0.0, -0.08, 0.16, 0.24, CH_PLAYER);
+    pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, CH_PLAYER);
+    pl.setCollider(COLLIDER_SOLID, aabb(pl.visual.x, pl.visual.y, pl.visual.x + 0.16, pl.visual.y + 0.24));
+    pl.setCollider(COLLIDER_STRIKE, aabb(pl.visual.x - 0.08, pl.visual.y, pl.visual.x + 0.24, pl.visual.y + 0.16));
+    pl.colliderOn(COLLIDER_SOLID);
+
     pl.visual.Scale(0.32f, 0.32f, 1.0);
 
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
@@ -607,7 +611,7 @@ sprite dePl;
 // edit all guis here
 void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engine)
 {
-    if (state == prevState)
+    if (mainG.state == prevState)
         return;
 
     gui_data.elements.clear();
@@ -615,7 +619,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
 
     std::string playerIDForControlStr = "Player " + std::to_string(playerIDForControl);
 
-    switch (state)
+    switch (mainG.state)
     {
     case START_SCREEN:
         p1.visual.Put(0.0, 0.0, 0.0);
@@ -630,8 +634,8 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         mainG.playSound(0, 0.0);
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0, 10.0, 1, 1, quitGame));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0, 10.0, 1, 1, goMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0, 10.0, 1, 1, goMenuScreen, false, nullptr, &mainG));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
@@ -644,7 +648,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         mainCam.offsetZ = 0.0;
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0, 10.0, 1, 1, leaveMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, START_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, START_SCREEN));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0, 10.0, 1, 1, quitGame));
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
@@ -718,7 +722,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
         gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0, 16.0, 1, 1, removePlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, nullptr, nullptr, WORLD_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
         for (int i = playerCount; i < mainG.characterCount; ++i)
@@ -814,7 +818,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 17:
-            state = START_SCREEN;
+            mainG.state = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
@@ -846,11 +850,15 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             std::cout << "how did you do this\n";
         }
         break;
+    case COFFEE_MUG_DEATH_STATE:
+        gui_data.elements.push_back(ui_element(UI_TEXT, "HOW COULD YOU :C", -0.2, 0.0, 32.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "(btw the little square where his hand should be is a coffee mug)", -0.6, -0.7, 20.0, 0.0, 1, 1));
+        break;
     default:
         break;
     }
 
-    prevState = state;
+    prevState = mainG.state;
 }
 
 game_system game;
@@ -936,17 +944,17 @@ int main()
         uiShaderProgram.setUniformMat4("projection", proj);
         uiShaderProgram.setUniformMat4("view", view);
 
-        if (state == WON_LEVEL_STATE && game.levelincreasing)
+        if (game.state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
-            state = WORLD_SCREEN;
+            game.state = WORLD_SCREEN;
         }
 
         menuData(game, game.characters[0], mainWorld, soundEngine);
 
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
 
-        if (state == CHARACTER_CREATION_SCREEN)
+        if (game.state == CHARACTER_CREATION_SCREEN)
         {
             for (int i = 0; i < playerCount; ++i)
             {
@@ -955,7 +963,7 @@ int main()
             }
             renderText(spriteText, textShaderProgram, "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
-        if (state == MENU_SCREEN)
+        if (game.state == MENU_SCREEN)
         {
             game.particleSet("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
             if (game.particleByID(52) != nullptr)
@@ -1037,7 +1045,7 @@ int main()
             fullscreenChangeFunction(window);
         }
         game.update(mainWorld, shaderProgram, spriteRect, delta_time);
-        if (state == WORLD_SCREEN && mainWorld.worldInitialized)
+        if (game.state == WORLD_SCREEN && mainWorld.worldInitialized)
         {
             if (playerFacingRight && mainCam.offsetX < 0.2)
             {
@@ -1110,11 +1118,11 @@ int main()
             }
 #endif
 
-            double mpcXScale = game.characters[0].collider.max_x - game.characters[0].collider.min_x;
-            double mpcYScale = game.characters[0].collider.max_y - game.characters[0].collider.min_y;
 #ifdef COLLISION_DEBUG
+            double mpcXScale = game.characters[0].colliders[0].max_x - game.characters[0].colliders[0].min_x;
+            double mpcYScale = game.characters[0].colliders[0].max_y - game.characters[0].colliders[0].min_y;
             dePl.Scale(mpcXScale, mpcYScale, 1.0);
-            dePl.Put(game.characters[0].collider.min_x, game.characters[0].collider.min_y, 0.0);
+            dePl.Put(game.characters[0].colliders[0].min_x, game.characters[0].colliders[0].min_y, 0.0);
             dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             if (!dePl.empty)
                 dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
@@ -1176,7 +1184,7 @@ int main()
 
             if (game.levelincreasing)
             {
-                state = WON_LEVEL_STATE;
+                game.state = WON_LEVEL_STATE;
             }
         }
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, false);
@@ -1263,7 +1271,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 }
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    if (state == MENU_SCREEN && changingControl != control_limit && game.characters[playerIDForControl].plControl->gamepad_id <= -1)
+    if (game.state == MENU_SCREEN && changingControl != control_limit && game.characters[playerIDForControl].plControl->gamepad_id <= -1)
     {
         game.characters[playerIDForControl].plControl->inputs[changingControl] = key;
         changingControl = control_limit;
@@ -1273,12 +1281,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 static game_state returnState;
 void goMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
-    returnState = state;
-    state = MENU_SCREEN;
+    returnState = game.state;
+    game.state = MENU_SCREEN;
 }
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
-    state = returnState;
+    game.state = returnState;
 }
 void processInput(GLFWwindow *window)
 {
@@ -1344,15 +1352,15 @@ void processInput(GLFWwindow *window)
     {
         menuKeyHeld = false;
     }
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && state != MENU_SCREEN)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && game.state != MENU_SCREEN)
     {
-        returnState = state;
-        state = MENU_SCREEN;
+        returnState = game.state;
+        game.state = MENU_SCREEN;
         menuKeyHeld = true;
     }
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && state == MENU_SCREEN)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && game.state == MENU_SCREEN)
     {
-        state = returnState;
+        game.state = returnState;
         menuKeyHeld = true;
     }
 

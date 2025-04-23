@@ -9,7 +9,6 @@
 const unsigned int width_limit = 128;
 const unsigned int height_limit = 128;
 const unsigned int collision_box_limit = 128;
-// const unsigned int collision_box_limit = 2;
 const unsigned int collision_id_limit = 24;
 const unsigned int tile_animation_limit = 24;
 
@@ -18,6 +17,14 @@ struct tile
     unsigned int id = 0;
     int collisionID = -1, specialTileID = -1;
     bool collisionTaken = false;
+
+    void emptyTile()
+    {
+        id = -1;
+        collisionID = -1;
+        specialTileID = -1;
+        collisionTaken = false;
+    }
 };
 
 enum specialTiles
@@ -73,6 +80,8 @@ struct world
     void draw(GLFWwindow *win, shader &program, object &sprite_object);
 
     void readRoomFile(const char *path);
+    tile *getTile(unsigned int tileID);
+    tile *getTileFromCollisionSpecialID(unsigned int collisionIndex);
 };
 
 #endif

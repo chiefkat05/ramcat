@@ -1,5 +1,5 @@
-#ifndef GAMESTATE_H
-#define GAMESTATE_H
+#ifndef USER_INTERFACE_H
+#define USER_INTERFACE_H
 
 #include "sprite.h"
 // #include "network.h"
@@ -47,18 +47,6 @@ struct ui_element
     void slider_values(int sM, int sL);
 
     void update(GLFWwindow *window, double mouseX, double mouseY, double delta_time);
-};
-
-enum game_state
-{
-    START_SCREEN,
-    MENU_SCREEN,
-    CHARACTER_CREATION_SCREEN,
-    WORLD_SCREEN,
-    WON_LEVEL_STATE,
-    LOSE_SCREEN,
-    WIN_SCREEN,
-    state_total_count
 };
 
 struct transition

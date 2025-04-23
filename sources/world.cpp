@@ -136,6 +136,11 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].collisionID = 11;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
+            case 'C':
+                tiles[i][roomHeight].id = 5;
+                tiles[i][roomHeight].collisionID = 12;
+                tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                break;
             default:
                 tiles[i][roomHeight].id = -1;
                 tiles[i][roomHeight].collisionID = -1;
@@ -270,4 +275,33 @@ void world::readRoomFile(const char *path)
             }
         }
     }
+}
+
+tile *world::getTile(unsigned int tileID)
+{
+    for (int x = 0; x < roomWidth; ++x)
+    {
+        for (int y = 0; y < roomHeight; ++y)
+        {
+            if (tiles[x][y].specialTileID == tileID)
+            {
+                return &tiles[x][y];
+            }
+        }
+    }
+    return nullptr;
+}
+tile *world::getTileFromCollisionSpecialID(unsigned int collisionIndex)
+{
+    for (int x = 0; x < roomWidth; ++x)
+    {
+        for (int y = 0; y < roomHeight; ++y)
+        {
+            if (tiles[x][y].specialTileID == collision_boxes[collisionIndex].specialTileID)
+            {
+                return &tiles[x][y];
+            }
+        }
+    }
+    return nullptr;
 }

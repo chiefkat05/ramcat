@@ -1,4 +1,4 @@
-#include "../headers/gamestate.h"
+#include "../headers/userinterface.h"
 
 gui gui_data;
 game_state state;
@@ -255,11 +255,11 @@ ui_element *gui::mostRecentCreatedElement()
 
 void changeScene(character *p, game_system *gs, world *w, int argv)
 {
-    state = static_cast<game_state>(argv);
+    gs->state = static_cast<game_state>(argv);
 }
 void optionsTab(character *p, game_system *gs, world *w, int argv)
 {
-    state = MENU_SCREEN;
+    gs->state = MENU_SCREEN;
 }
 void nullFunc(character *p, game_system *gs, world *w, int argv) {}
 
