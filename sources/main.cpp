@@ -917,7 +917,7 @@ int main()
         std::cout << game_sound_result << " sound error\n";
     }
 
-    loadFont("./stb/rainyhearts.ttf");
+    loadFont("./fonts/rainyhearts.ttf");
     glm::mat4 textProjection = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height));
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
@@ -954,7 +954,7 @@ int main()
 
         gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
 
-        if (game.state == CHARACTER_CREATION_SCREEN)
+        if (game.state == CHARACTER_CREATION_SCREEN && prevState == CHARACTER_CREATION_SCREEN)
         {
             for (int i = 0; i < playerCount; ++i)
             {
@@ -963,7 +963,7 @@ int main()
             }
             renderText(spriteText, textShaderProgram, "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
-        if (game.state == MENU_SCREEN)
+        if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
             game.particleSet("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
             if (game.particleByID(52) != nullptr)
@@ -1045,7 +1045,7 @@ int main()
             fullscreenChangeFunction(window);
         }
         game.update(mainWorld, shaderProgram, spriteRect, delta_time);
-        if (game.state == WORLD_SCREEN && mainWorld.worldInitialized)
+        if (game.state == WORLD_SCREEN && mainWorld.worldInitialized && prevState == WORLD_SCREEN)
         {
             if (playerFacingRight && mainCam.offsetX < 0.2)
             {
