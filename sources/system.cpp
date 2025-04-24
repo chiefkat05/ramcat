@@ -503,20 +503,23 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 //         }
                 //     }
                 // }
-                tile *gulkTile = floor.getTileFromCollisionSpecialID(j);
+                if (true)
+                {
+                    tile *gulkTile = floor.getTileFromCollisionSpecialID(j);
 
-                gulkTile->id = -1;
-                gulkTile->collisionID = -1;
-                floor.collision_boxes[j].collisionID = -1;
+                    gulkTile->id = -1;
+                    gulkTile->collisionID = -1;
+                    floor.collision_boxes[j].collisionID = -1;
 
-                Add(character("./img/char/gulk.png", x * 0.16, y * 0.16f + 0.2, 0.32, 0.32,
-                              4, 1, CH_GULK));
-                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                                                                                characters[characterCount - 1].visual.y,
-                                                                                characters[characterCount - 1].visual.x + 0.16,
-                                                                                characters[characterCount - 1].visual.y + 0.24));
-                characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+                    Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
+                                  4, 1, CH_GULK));
+                    characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
+                                                                                    characters[characterCount - 1].visual.y,
+                                                                                    characters[characterCount - 1].visual.x + 0.16,
+                                                                                    characters[characterCount - 1].visual.y + 0.24));
+                    characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+                    characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+                }
                 break;
             case 12:
                 for (int x = 0; x < floor.roomWidth; ++x)
