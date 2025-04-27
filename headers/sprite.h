@@ -8,21 +8,27 @@
 #include FT_FREETYPE_H
 #include <freetype/freetype.h>
 
+const unsigned int instance_limit = 256;
+
 enum object_type
 {
     OBJ_QUAD,
     OBJ_CUBE,
     OBJ_MODEL,
     OBJ_TEXT,
-    OBJ_INSTANCED,
     OBJ_NULL
 };
 
 struct object
 {
     unsigned int VBO, VAO, EBO;
+    unsigned int instanceCount = 0, instanceVBO, instanceTextureVBO;
+    glm::mat4 *instanceArray;
+    glm::vec2 *instanceTextureArray;
     object_type obj_type;
+    object();
     object(object_type _obj);
+    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec2 *textureInstanceMap = nullptr);
     void objectKill();
 };
 

@@ -174,7 +174,14 @@ void sprite::Draw(shader &program, object &sprite_object)
     case OBJ_QUAD:
         glBindVertexArray(sprite_object.VAO);
         glBindBuffer(1, sprite_object.EBO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        if (sprite_object.instanceCount == 0)
+        {
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        }
+        else
+        {
+            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, sprite_object.instanceCount);
+        }
         break;
     case OBJ_CUBE:
         glBindVertexArray(sprite_object.VAO);
@@ -190,6 +197,7 @@ void sprite::Draw(shader &program, object &sprite_object)
     }
 }
 
+object::object() {}
 object::object(object_type _obj)
 {
     obj_type = _obj;
@@ -246,13 +254,57 @@ object::object(object_type _obj)
         break;
     }
 }
+void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, glm::vec2 *textureInstanceMap)
+{
+    instanceCount = _instanceCount;
+
+    if (instanceCount > 1 && instanceMap != nullptr)
+    {
+        instanceArray = instanceMap;
+
+        glGenBuffers(1, &instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * instanceCount, &instanceArray[0], GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO);
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void *)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void *)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void *)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void *)(3 * sizeof(glm::vec4)));
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+        glBindVertexArray(0);
+    }
+    if (instanceCount > 1 && textureInstanceMap != nullptr)
+    {
+        instanceTextureArray = textureInstanceMap;
+
+        glGenBuffers(1, &instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * instanceCount, &instanceTextureArray[0], GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO);
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void *)0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(2, 1);
+        glBindVertexArray(0);
+    }
+}
 void object::objectKill()
 {
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
 }
-
 // Text globals maybe can be made not global? But who cares? Also get rid of the absurd amount of globals in main.cpp? You terrible coder?
 std::map<char, textCharacter> textCharacters;
 FT_Library font_ft;

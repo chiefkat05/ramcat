@@ -59,6 +59,7 @@ struct world
     animation tileAnimations[tile_animation_limit]; // unimplemented, do later pls
     int animationToIDMap[tile_animation_limit];
 
+    object worldObject;
     sprite worldSprite;
 
     unsigned int roomWidth = 0, roomHeight = 0;
@@ -73,11 +74,11 @@ struct world
     unsigned int collision_box_count = 0;
 
     world();
-    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy);
+    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj);
 
     // void changeScreenViewPosition(glview &view, double newX, double newY);
 
-    void draw(GLFWwindow *win, shader &program, object &sprite_object);
+    void draw(GLFWwindow *win, shader &program);
 
     void readRoomFile(const char *path);
     tile *getTile(unsigned int tileID);

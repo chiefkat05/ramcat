@@ -424,16 +424,13 @@ void playerInit(character &pl, game_system &game, player &controller)
 
 void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    dg = world(tilePath.c_str(), fx, fy);
+    dg = world(tilePath.c_str(), fx, fy, OBJ_QUAD);
     dg.readRoomFile(levelPath.c_str());
 }
 
 // feh
 void updateView(shader &_program)
 {
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glm::mat4 view = glm::mat4(1.0);
     glm::mat4 proj;
 
@@ -890,9 +887,17 @@ int main()
     }
 
     shader shaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
+    shader mapShaderProgram("./shaders/map.vertex", "./shaders/default.fragment");
     shader uiShaderProgram("./shaders/default.vertex", "./shaders/default.fragment");
     shader textShaderProgram("./shaders/text.vertex", "./shaders/text.fragment");
 
+    glm::vec3 translations[6];
+    for (int i = 0; i < 6; ++i)
+    {
+        translations[i].x = 0.1 * i;
+        translations[i].y = 0.2 * i;
+        translations[i].z = 0.0;
+    }
     object spriteRect(OBJ_QUAD);
     object spriteCube(OBJ_CUBE);
     object spriteText(OBJ_TEXT);
@@ -935,6 +940,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         updateView(shaderProgram);
+        updateView(mapShaderProgram);
 
         uiShaderProgram.use();
         glm::mat4 view = glm::mat4(1.0);
@@ -1061,6 +1067,7 @@ int main()
             // check topmost and lowermost players that are on ground and put them in yup and ydown
             // if yup and ydown past holdyup and holdydown levels, update holdy vars
             // if yup and ydown less than players actual distance (inculding not onGround players) then don't lower holdy vars
+            // dunno if I'll ever implement this
 
             for (int i = 0; i < playerCount; ++i)
             {
@@ -1128,7 +1135,8 @@ int main()
                 dePl.Draw(shaderProgram, spriteRect); // debug pls get rid of this later
 #endif
 
-            mainWorld.draw(window, shaderProgram, spriteRect);
+            mainWorld.draw(window, mapShaderProgram);
+            // mainWorld.draw(window, shaderProgram, spriteRect);
 
             for (int i = 0; i < game.characterCount; ++i)
             {

@@ -6,7 +6,7 @@ world::world()
 {
     worldInitialized = false;
 }
-world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
+world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj)
 {
     tileSetPath = _tileSetPath;
     worldSprite = sprite(tileSetPath, _fx, _fy);
@@ -17,27 +17,17 @@ world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy)
         {
             tiles[x][y].id = -1;
         }
-    } // the pointer to the ui_element's visual object is incorrect inside the element's update function
+    }
+    // the pointer to the ui_element's visual object is incorrect inside the element's update function
+    // what does this mean
+
+    worldObject = object(obj);
 }
 
-void world::draw(GLFWwindow *win, shader &program, object &sprite_object)
+void world::draw(GLFWwindow *win, shader &program)
 {
-    for (unsigned int x = 0; x < roomWidth; ++x)
-    {
-        for (unsigned int y = 0; y < roomHeight; ++y)
-        {
-            if (tiles[x][y].id == -1)
-                continue;
-
-            // worldSprite.Put(x * worldSprite.spriteW * 0.125, (roomHeight - y) * worldSprite.spriteH * 0.125, 9.0);
-            worldSprite.textureX = tiles[x][y].id % worldSprite.framesX;
-            worldSprite.textureY = tiles[x][y].id / worldSprite.framesX;
-            worldSprite.Put(x * 0.16, (roomHeight - y) * 0.16, 0.0);
-            worldSprite.Scale(0.16, 0.16, 1.0);
-
-            worldSprite.Draw(program, sprite_object);
-        }
-    }
+    // worldSprite.Put(1.0, 1.0, 0.0);
+    worldSprite.Draw(program, worldObject);
 }
 
 void world::readRoomFile(const char *path)
@@ -275,6 +265,31 @@ void world::readRoomFile(const char *path)
             }
         }
     }
+
+    // instancing work
+    glm::mat4 translations[roomHeight * roomWidth];
+    glm::vec2 textureTranslations[roomHeight * roomWidth];
+    int index = 0;
+    for (int x = 0; x < roomWidth; ++x)
+    {
+        for (int y = 0; y < roomHeight; ++y)
+        {
+            if (tiles[x][y].id == -1)
+                continue;
+
+            translations[index] = glm::mat4(1.0);
+            translations[index] = glm::translate(translations[index], glm::vec3(0.16 * x, 0.16 * (roomHeight - y), 0.0));
+            // rotations go here if you add them
+            translations[index] = glm::scale(translations[index], glm::vec3(0.16, 0.16, 0.0)); // mke the 0.16s be dynamic and not static numbers
+
+            textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
+            textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
+
+            ++index;
+        }
+    }
+
+    worldObject.setInstances(index, translations, textureTranslations);
 }
 
 tile *world::getTile(unsigned int tileID)

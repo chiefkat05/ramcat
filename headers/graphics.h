@@ -170,10 +170,6 @@ struct camera
                 cameraPosition.z = boundarySizeCorner.z;
         }
     }
-
-    void init()
-    {
-    }
 };
 
 #endif
