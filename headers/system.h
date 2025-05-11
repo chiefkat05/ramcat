@@ -29,7 +29,8 @@ const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 const unsigned int player_limit = 12;
 
-const int character_quadtree_capacity = 3;
+const int quadtree_leaf_capacity = 4;
+const int quadtree_node_limit = 12;
 
 struct character;
 
@@ -196,28 +197,107 @@ struct character
     void updatePosition(double delta_time);
 };
 
-struct characterQuadTree
+struct quadtree_node
 {
-    double left, top, right, bottom;
+    aabb bounds;
+    quadtree_node *northwest = nullptr;
+    quadtree_node *northeast = nullptr;
+    quadtree_node *southwest = nullptr;
+    quadtree_node *southeast = nullptr;
+    aabb *obj_list;
+    unsigned int obj_count = 0;
 
-    character *characters[character_quadtree_capacity];
+    sprite visual;
 
-    characterQuadTree *topLeftTree;
-    characterQuadTree *topRightTree;
-    characterQuadTree *botLeftTree;
-    characterQuadTree *botRightTree;
+    quadtree_node()
+    {
+        visual = sprite("./img/debug.png", 1, 1, false);
+    }
 
-    sprite *visual;
+    void insert(aabb *input)
+    {
+        if (input->max_x < bounds.min_x || input->min_x > bounds.max_x || input->max_y < bounds.min_y || input->min_y > bounds.max_y)
+            return;
 
-    characterQuadTree();
-    characterQuadTree(double l, double t, double r, double b);
-    void insert(character *inputChar);
-    bool withinBounds(double x, double y);
+        bool straddle = false;
+        double xCenter = (bounds.max_x + bounds.min_x) * 0.5;
+        double yCenter = (bounds.max_y + bounds.min_y) * 0.5;
 
-    void draw(shader &program, object &sprite_object);
+        if (input->min_x <= xCenter && input->max_x >= xCenter)
+            straddle = true;
+        if (input->min_y <= yCenter && input->max_y >= yCenter)
+            straddle = true;
+
+        if (straddle)
+        {
+            input->next_obj = obj_list;
+            obj_list = input;
+            return;
+        }
+
+        if (input->min_x > xCenter && input->min_y > yCenter)
+        {
+            if (northeast == nullptr)
+            {
+                northeast = new quadtree_node;
+                northeast->bounds = bounds;
+                northeast->bounds.min_x = xCenter;
+                northeast->bounds.min_y = yCenter;
+            }
+            northeast->insert(input);
+        }
+        if (input->max_x < xCenter && input->min_y > yCenter)
+        {
+            if (northwest == nullptr)
+            {
+                northwest = new quadtree_node;
+                northwest->bounds = bounds;
+                northwest->bounds.max_x = xCenter;
+                northwest->bounds.min_y = yCenter;
+            }
+            northwest->insert(input);
+        }
+        if (input->min_x > xCenter && input->max_y < yCenter)
+        {
+            if (southeast == nullptr)
+            {
+                southeast = new quadtree_node;
+                southeast->bounds = bounds;
+                southeast->bounds.min_x = xCenter;
+                southeast->bounds.max_y = yCenter;
+            }
+            southeast->insert(input);
+        }
+        if (input->max_x < xCenter && input->max_y < yCenter)
+        {
+            if (southwest == nullptr)
+            {
+                southwest = new quadtree_node;
+                southwest->bounds = bounds;
+                southwest->bounds.max_x = xCenter;
+                southwest->bounds.max_y = yCenter;
+            }
+            southwest->insert(input);
+        }
+    }
+
+    void draw(shader &program, object &sprite_obj)
+    {
+        visual.Put((bounds.min_x + bounds.max_x) * 0.5, (bounds.min_y + bounds.max_y) * 0.5, 0.0);
+        visual.Scale(bounds.max_x - bounds.min_x, bounds.max_y - bounds.min_y, 0.0);
+
+        visual.Draw(program, sprite_obj, true);
+        if (northwest != nullptr)
+            northwest->draw(program, sprite_obj);
+        if (northeast != nullptr)
+            northeast->draw(program, sprite_obj);
+        if (southwest != nullptr)
+            southwest->draw(program, sprite_obj);
+        if (southeast != nullptr)
+            southeast->draw(program, sprite_obj);
+    }
 };
 
-// set character collider collision_id to it's num in array so you can use it for collision resolution
 struct game_system
 {
     game_state state;
@@ -311,6 +391,7 @@ struct game_system
     // void uninitMusic();
 
     void update(world &floor, shader &particle_program, object &particle_sprite, double delta_time);
+    void handleCollisions(quadtree_node *tree, world &floor, double delta_time);
 
     void killParticles();
 };

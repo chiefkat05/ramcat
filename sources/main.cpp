@@ -15,10 +15,10 @@
 
 // transitions? Maybe only for screens?
 
-// quadtrees for collisions
-
 // fix strange but unimportant issue with the particles sometimes just sitting on (0, 0) or not moving
 // also fix incredibly broken particle system stuff
+
+// learn proper memory management and fix your terrible pointer code please
 
 // use linkvalue in the ui_element initialization to take out some of the need for the variable updates happening in if (state == MENU_SCREEN) in main
 // ^ isn't that what I made it for anyway??

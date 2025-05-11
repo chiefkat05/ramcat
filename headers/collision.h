@@ -21,6 +21,9 @@ struct aabb
     double response(double xV, double yV, double xV2, double yV2, aabb test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision, double &distanceToSide);
     // double response(double xV, double yV, double xV2, double yV2, aabb test, double &tfirst, double &tlast, double &xNormal, double &yNormal,
     // double &xPos, double &yPos, bool &insideCollision);
+
+    // for quadtree linked list
+    aabb *next_obj;
 };
 
 #endif

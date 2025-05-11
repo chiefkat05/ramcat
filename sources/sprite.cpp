@@ -11,6 +11,11 @@ double quad_vertices[] = {
 unsigned int quad_indices[] = {
     0, 1, 2,
     0, 3, 2};
+double text_quad_vertices[] = {
+    0.0, 1.0,
+    1.0, 1.0,
+    0.0, 0.0,
+    1.0, 0.0};
 double cube_vertices[] = {
     -0.5f, -0.5f, -0.5f, 0.0, 0.0,
     0.5f, -0.5f, -0.5f, 1.0, 0.0,
@@ -147,7 +152,7 @@ void sprite::SetColor(double _r, double _g, double _b, double _a)
     cola = _a;
 }
 
-void sprite::Draw(shader &program, object &sprite_object)
+void sprite::Draw(shader &program, object &sprite_object, bool wireframe)
 {
     program.use();
     if (sprite_object.obj_type != OBJ_TEXT)
@@ -169,6 +174,10 @@ void sprite::Draw(shader &program, object &sprite_object)
         glBindTexture(GL_TEXTURE_2D, sprite_texture);
     }
 
+    if (wireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
     switch (sprite_object.obj_type)
     {
     case OBJ_QUAD:
@@ -194,6 +203,10 @@ void sprite::Draw(shader &program, object &sprite_object)
         break;
     default:
         break;
+    }
+    if (wireframe)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 
@@ -244,9 +257,9 @@ object::object(object_type _obj)
         glGenBuffers(1, &VBO);
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(double) * 24, NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(text_quad_vertices), text_quad_vertices, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_DOUBLE, GL_FALSE, 4 * sizeof(double), 0);
+        glVertexAttribPointer(0, 4, GL_DOUBLE, GL_FALSE, 0, 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         break;
@@ -309,8 +322,10 @@ void object::objectKill()
 std::map<char, textCharacter> textCharacters;
 FT_Library font_ft;
 FT_Face font_face;
+glm::mat4 text_transform;
 glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color)
 {
+    double newlineX = x;
     shaderProgram.use();
     shaderProgram.setUniformVec4("textColor", color.x, color.y, color.z, color.w);
 
@@ -324,27 +339,40 @@ glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string te
     {
         textCharacter ch = textCharacters[*c];
 
+        if (*c == '\n')
+        {
+            y -= ((ch.Size.y)) * 1.3 * scale;
+            x = newlineX;
+            continue;
+        }
+        if (*c == ' ')
+        {
+            x += (ch.Advance >> 6) * scale;
+            continue;
+        }
+
         double xpos = x + ch.Bearing.x * scale;
         double ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
         double w = ch.Size.x * scale;
         double h = ch.Size.y * scale;
 
-        double vertices[6][4] = {
-            {xpos, ypos + h, 0.0, 0.0},
-            {xpos, ypos, 0.0, 1.0},
-            {xpos + w, ypos, 1.0, 1.0},
-            {xpos, ypos + h, 0.0, 0.0},
-            {xpos + w, ypos, 1.0, 1.0},
-            {xpos + w, ypos + h, 1.0, 0.0},
-        };
+        // double vertices[6][4] = {
+        //     {xpos, ypos + h, 0.0, 0.0},
+        //     {xpos, ypos, 0.0, 1.0},
+        //     {xpos + w, ypos, 1.0, 1.0},
+        //     {xpos, ypos + h, 0.0, 0.0},
+        //     {xpos + w, ypos, 1.0, 1.0},
+        //     {xpos + w, ypos + h, 1.0, 0.0},
+        // };
+
+        text_transform = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0));
 
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
 
         glBindBuffer(GL_ARRAY_BUFFER, spriteObject.VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 1);
 
         unsigned int testAdvance = ch.Advance;
 
@@ -355,6 +383,7 @@ glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string te
     }
     returnVec = glm::vec4(returnVec.x, returnVec.y, x, returnVec.y + returnVec.w);
 
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
 

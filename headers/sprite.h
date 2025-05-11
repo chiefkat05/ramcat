@@ -58,7 +58,7 @@ struct sprite
     void Rotate(double _rx, double _ry, double _rz);
     void SetColor(double _r, double _g, double _b, double _a);
 
-    void Draw(shader &program, object &sprite_object);
+    void Draw(shader &program, object &sprite_object, bool wireframe = false);
 };
 
 struct animation

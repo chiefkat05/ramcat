@@ -284,6 +284,103 @@ void game_system::stopSound(unsigned int id)
     ma_sound_stop(&game_sounds[id]);
 }
 
+// void testQuadtreeCollision(quadtree_node *pTree)
+// {
+//     static quadtree_node *ancestorStack[quadtree_node_limit];
+//     static int depth = 0;
+
+//     ancestorStack[depth++] = pTree;
+
+//     for (int i = 0; i < depth; ++i)
+//     {
+//         aabb_linked_list *obj1, *obj2;
+//         for (obj1 = &ancestorStack[i]->pObjList; obj1; obj1->obj = obj1->next_obj)
+//         {
+//             for (obj2 = &pTree->pObjList; obj2; obj2->obj = obj2->next_obj)
+//             {
+//                 if (obj1 == obj2)
+//                     break;
+
+//                 // testcollision()
+//             }
+//         }
+//     }
+
+//     if (pTree->northwest != nullptr)
+//         testQuadtreeCollision(pTree->northwest);
+//     if (pTree->northeast != nullptr)
+//         testQuadtreeCollision(pTree->northeast);
+//     if (pTree->southwest != nullptr)
+//         testQuadtreeCollision(pTree->southwest);
+//     if (pTree->southeast != nullptr)
+//         testQuadtreeCollision(pTree->southeast);
+
+//     --depth;
+// }
+const int max_depth = 40;
+quadtree_node *ancestor_stack[max_depth];
+void game_system::handleCollisions(quadtree_node *tree, world &floor, double delta_time) // possibly something to do with the pointers getting lost on function return
+{
+    static int depth = 0;
+
+    // if (depth >= max_depth - 1)
+    //     return;
+
+    ancestor_stack[depth++] = tree;
+
+    for (int i = 0; i < depth; ++i)
+    {
+        aabb *objA, *objB;
+
+        for (objA = ancestor_stack[i]->obj_list; objA; objA = objA->next_obj)
+        {
+            std::cout << objA << ", " << &ancestor_stack[i]->obj_list << " huh\n";
+            // std::cout << ancestor_stack[i]->obj_list.obj << " huh\n";
+            // if (objA == nullptr)
+            //     continue;
+            // if (objA->obj == nullptr)
+            // continue;
+
+            for (objB = tree->obj_list; objB; objB = objB->next_obj)
+            {
+                // if (objB == nullptr)
+                //     continue;
+                // if (objB->obj == nullptr)
+                //     continue;
+
+                if (objA == objB)
+                    break;
+
+                // collision test
+                // std::cout << objA->obj << ", " << objB->obj << ", " << nullptr << " hmm\n";
+                if (objA->colliding(*objB))
+                {
+                    std::cout << " collision!\n";
+                }
+            }
+        }
+    }
+
+    if (tree->northwest != nullptr)
+    {
+        handleCollisions(tree->northwest, floor, delta_time);
+    }
+    if (tree->northeast != nullptr)
+    {
+        handleCollisions(tree->northeast, floor, delta_time);
+    }
+    if (tree->southwest != nullptr)
+    {
+        handleCollisions(tree->southwest, floor, delta_time);
+    }
+    if (tree->southeast != nullptr)
+    {
+        handleCollisions(tree->southeast, floor, delta_time);
+    }
+
+    --depth;
+}
+quadtree_node collision_tree;
 void game_system::update(world &floor, shader &particle_program, object &particle_sprite, double delta_time)
 {
     // if (paused)
@@ -296,6 +393,25 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     // }
 
     // quicksortSprites(sortedSprites, 0, characterCount - 1);
+
+    collision_tree.bounds = aabb(0.0, 0.0, floor.roomWidth * 0.16, floor.roomHeight * 0.16);
+    for (int i = 0; i < characterCount; ++i)
+    {
+        collision_tree.insert(&characters[i].colliders[COLLIDER_SOLID]);
+    }
+    for (int i = 0; i < floor.collision_box_count; ++i)
+    {
+        collision_tree.insert(&floor.collision_boxes[i]);
+    }
+    collision_tree.draw(particle_program, particle_sprite);
+
+    handleCollisions(&collision_tree, floor, delta_time);
+
+    delete collision_tree.northwest;
+    delete collision_tree.northeast;
+    delete collision_tree.southwest;
+    delete collision_tree.southeast;
+
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i].Update(delta_time);
