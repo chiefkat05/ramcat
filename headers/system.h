@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <memory>
 #include "collision.h"
 #include "world.h"
 #include "effects.h"
@@ -197,106 +198,135 @@ struct character
     void updatePosition(double delta_time);
 };
 
-struct quadtree_node
-{
-    aabb bounds;
-    quadtree_node *northwest = nullptr;
-    quadtree_node *northeast = nullptr;
-    quadtree_node *southwest = nullptr;
-    quadtree_node *southeast = nullptr;
-    aabb *obj_list;
-    unsigned int obj_count = 0;
+// struct quadtree_node
+// {
+//     aabb bounds;
+//     quadtree_node *northwest = nullptr;
+//     quadtree_node *northeast = nullptr;
+//     quadtree_node *southwest = nullptr;
+//     quadtree_node *southeast = nullptr;
+//     aabb *obj_list;
+//     unsigned int obj_count = 0;
 
-    sprite visual;
+//     sprite visual;
 
-    quadtree_node()
-    {
-        visual = sprite("./img/debug.png", 1, 1, false);
-    }
+//     quadtree_node()
+//     {
+//         visual = sprite("./img/debug.png", 1, 1, false);
+//     }
 
-    void insert(aabb *input)
-    {
-        if (input->max_x < bounds.min_x || input->min_x > bounds.max_x || input->max_y < bounds.min_y || input->min_y > bounds.max_y)
-            return;
+//     void insert(aabb *input)
+//     {
+//         if (input->max_x < bounds.min_x || input->min_x > bounds.max_x || input->max_y < bounds.min_y || input->min_y > bounds.max_y)
+//             return;
 
-        bool straddle = false;
-        double xCenter = (bounds.max_x + bounds.min_x) * 0.5;
-        double yCenter = (bounds.max_y + bounds.min_y) * 0.5;
+//         bool straddle = false;
+//         double xCenter = (bounds.max_x + bounds.min_x) * 0.5;
+//         double yCenter = (bounds.max_y + bounds.min_y) * 0.5;
 
-        if (input->min_x <= xCenter && input->max_x >= xCenter)
-            straddle = true;
-        if (input->min_y <= yCenter && input->max_y >= yCenter)
-            straddle = true;
+//         if (input->min_x <= xCenter && input->max_x >= xCenter)
+//             straddle = true;
+//         if (input->min_y <= yCenter && input->max_y >= yCenter)
+//             straddle = true;
 
-        if (straddle)
-        {
-            input->next_obj = obj_list;
-            obj_list = input;
-            return;
-        }
+//         if (straddle)
+//         {
+//             input->next_obj = obj_list;
+//             obj_list = input;
+//             return;
+//         }
 
-        if (input->min_x > xCenter && input->min_y > yCenter)
-        {
-            if (northeast == nullptr)
-            {
-                northeast = new quadtree_node;
-                northeast->bounds = bounds;
-                northeast->bounds.min_x = xCenter;
-                northeast->bounds.min_y = yCenter;
-            }
-            northeast->insert(input);
-        }
-        if (input->max_x < xCenter && input->min_y > yCenter)
-        {
-            if (northwest == nullptr)
-            {
-                northwest = new quadtree_node;
-                northwest->bounds = bounds;
-                northwest->bounds.max_x = xCenter;
-                northwest->bounds.min_y = yCenter;
-            }
-            northwest->insert(input);
-        }
-        if (input->min_x > xCenter && input->max_y < yCenter)
-        {
-            if (southeast == nullptr)
-            {
-                southeast = new quadtree_node;
-                southeast->bounds = bounds;
-                southeast->bounds.min_x = xCenter;
-                southeast->bounds.max_y = yCenter;
-            }
-            southeast->insert(input);
-        }
-        if (input->max_x < xCenter && input->max_y < yCenter)
-        {
-            if (southwest == nullptr)
-            {
-                southwest = new quadtree_node;
-                southwest->bounds = bounds;
-                southwest->bounds.max_x = xCenter;
-                southwest->bounds.max_y = yCenter;
-            }
-            southwest->insert(input);
-        }
-    }
+//         if (input->min_x > xCenter && input->min_y > yCenter)
+//         {
+//             if (northeast == nullptr)
+//             {
+//                 northeast = new quadtree_node;
+//                 northeast->bounds = bounds;
+//                 northeast->bounds.min_x = xCenter;
+//                 northeast->bounds.min_y = yCenter;
+//             }
+//             northeast->insert(input);
+//         }
+//         if (input->max_x < xCenter && input->min_y > yCenter)
+//         {
+//             if (northwest == nullptr)
+//             {
+//                 northwest = new quadtree_node;
+//                 northwest->bounds = bounds;
+//                 northwest->bounds.max_x = xCenter;
+//                 northwest->bounds.min_y = yCenter;
+//             }
+//             northwest->insert(input);
+//         }
+//         if (input->min_x > xCenter && input->max_y < yCenter)
+//         {
+//             if (southeast == nullptr)
+//             {
+//                 southeast = new quadtree_node;
+//                 southeast->bounds = bounds;
+//                 southeast->bounds.min_x = xCenter;
+//                 southeast->bounds.max_y = yCenter;
+//             }
+//             southeast->insert(input);
+//         }
+//         if (input->max_x < xCenter && input->max_y < yCenter)
+//         {
+//             if (southwest == nullptr)
+//             {
+//                 southwest = new quadtree_node;
+//                 southwest->bounds = bounds;
+//                 southwest->bounds.max_x = xCenter;
+//                 southwest->bounds.max_y = yCenter;
+//             }
+//             southwest->insert(input);
+//         }
+//     }
 
-    void draw(shader &program, object &sprite_obj)
-    {
-        visual.Put((bounds.min_x + bounds.max_x) * 0.5, (bounds.min_y + bounds.max_y) * 0.5, 0.0);
-        visual.Scale(bounds.max_x - bounds.min_x, bounds.max_y - bounds.min_y, 0.0);
+//     void draw(shader &program, object &sprite_obj)
+//     {
+//         visual.Put((bounds.min_x + bounds.max_x) * 0.5, (bounds.min_y + bounds.max_y) * 0.5, 0.0);
+//         visual.Scale(bounds.max_x - bounds.min_x, bounds.max_y - bounds.min_y, 0.0);
 
-        visual.Draw(program, sprite_obj, true);
-        if (northwest != nullptr)
-            northwest->draw(program, sprite_obj);
-        if (northeast != nullptr)
-            northeast->draw(program, sprite_obj);
-        if (southwest != nullptr)
-            southwest->draw(program, sprite_obj);
-        if (southeast != nullptr)
-            southeast->draw(program, sprite_obj);
-    }
-};
+//         visual.Draw(program, sprite_obj, true);
+//         if (northwest != nullptr)
+//             northwest->draw(program, sprite_obj);
+//         if (northeast != nullptr)
+//             northeast->draw(program, sprite_obj);
+//         if (southwest != nullptr)
+//             southwest->draw(program, sprite_obj);
+//         if (southeast != nullptr)
+//             southeast->draw(program, sprite_obj);
+//     }
+
+//     void empty()
+//     {
+//         obj_list = nullptr;
+//         obj_count = 0;
+
+//         if (northwest != nullptr)
+//             northwest->empty();
+//         if (northeast != nullptr)
+//             northeast->empty();
+//         if (southwest != nullptr)
+//             southwest->empty();
+//         if (southeast != nullptr)
+//             southeast->empty();
+//     }
+// };
+
+// this is tough
+// I'm post-poning the collision detection bounding structure stuff since I can't figure it out right now
+// struct aabb_bhv_node
+// {
+//     aabb bounds;
+//     aabb *obj_list_first;
+//     const unsigned int min_objects = 3;
+
+//     aabb_bhv_node *children[2];
+//     unsigned int child_count = 0;
+
+//     void construct()
+// };
 
 struct game_system
 {
@@ -391,7 +421,6 @@ struct game_system
     // void uninitMusic();
 
     void update(world &floor, shader &particle_program, object &particle_sprite, double delta_time);
-    void handleCollisions(quadtree_node *tree, world &floor, double delta_time);
 
     void killParticles();
 };

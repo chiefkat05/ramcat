@@ -1,7 +1,7 @@
 all:
 	g++ -c -g ./sources/*.cpp ./sources/*.c
 	g++ -c ./glad/glad.c
-	g++ ./*.o -o main -lglfw3 -lfreetype -O2
+	g++ ./*.o -o main -lglfw3 -lfreetype -O2 -fsanitize=address
 
 windows:
 	x86_64-w64-mingw32-g++ -c ./sources/*.cpp ./sources/*.c
