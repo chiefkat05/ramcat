@@ -284,6 +284,17 @@ void game_system::stopSound(unsigned int id)
     ma_sound_stop(&game_sounds[id]);
 }
 
+validCollisionType getCollisionType(unsigned int idA, unsigned int idB)
+{
+    if (idA == COLLIDER_SOLID && idB == COLLIDER_SOLID)
+        return VCT_SOLID_SOLID;
+    if (idA == COLLIDER_STRIKE && idB == COLLIDER_SOLID)
+        return VCT_STRIKE_SOLID;
+    if (idA == COLLIDER_SOLID && idB == COLLIDER_STRIKE)
+        return VCT_SOLID_STRIKE;
+
+    return VCT_INVALID;
+}
 void game_system::update(world &floor, shader &particle_program, object &particle_sprite, double delta_time)
 {
     for (int i = 0; i < characterCount; ++i)
@@ -310,45 +321,18 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                         continue;
 
                     double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
-                    bool insideCollision = false;
+                    bool collision = false;
                     double firstCollisionHitTest = characters[i].colliders[k].response(characters[i].velocityX * delta_time,
                                                                                        characters[i].velocityY * delta_time,
                                                                                        characters[j].velocityX * delta_time,
                                                                                        characters[j].velocityY * delta_time,
                                                                                        characters[j].colliders[l], xNormal, yNormal,
                                                                                        characters[i].visual.x, characters[i].visual.y,
-                                                                                       insideCollision, distanceToClosestSide);
+                                                                                       collision, distanceToClosestSide);
 
-                    if (k == COLLIDER_SOLID && l == COLLIDER_SOLID && insideCollision)
-                    {
-                        if (xNormal != 0.0)
-                        {
-                            characters[i].visual.x = firstCollisionHitTest;
-                            characters[i].velocityX = 0.0;
-                        }
-                        if (yNormal != 0.0)
-                        {
-                            characters[i].visual.y = firstCollisionHitTest;
-                            characters[i].velocityY = 0.0;
-                        }
-                        if (yNormal > 0.0)
-                        {
-                            characters[i].velocityX += characters[j].velocityX;
-                            characters[i].onGround = true;
-                            if (characters[j].id == CH_COFFEEMUGGUY)
-                            {
-                                characters[j].PlayAnimation(ANIM_ABILITY_0, delta_time, false);
-                            }
-                        }
-                    }
-                    if (k == COLLIDER_STRIKE && l == COLLIDER_SOLID && insideCollision)
-                    {
-                        characters[j].hp = 0;
-                        if (characters[j].id == CH_COFFEEMUGGUY)
-                        {
-                            state = COFFEE_MUG_DEATH_STATE;
-                        }
-                    }
+                    validCollisionType cType = getCollisionType(k, l);
+                    if (collision)
+                        handleCollisionSpecifics(characters[i], characters[j], cType, xNormal, yNormal, firstCollisionHitTest, delta_time);
                 }
             }
         }
@@ -365,7 +349,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             }
 
             double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
-            bool insideCollision = false; // now for taking these apart into more managable functions!
+            bool collision = false; // now for taking these apart into more managable functions!
             // something like
             // bool walkableInterior = (distanceToClosestSide >= -0.01);
             // and
@@ -373,14 +357,14 @@ void game_system::update(world &floor, shader &particle_program, object &particl
 
             double firstCollisionHitTest = characters[i].colliders[COLLIDER_SOLID].response(characters[i].velocityX * delta_time, characters[i].velocityY * delta_time, 0.0, 0.0,
                                                                                             floor.collision_boxes[j], xNormal, yNormal, characters[i].visual.x,
-                                                                                            characters[i].visual.y, insideCollision, distanceToClosestSide);
+                                                                                            characters[i].visual.y, collision, distanceToClosestSide);
 
             switch (floor.collision_boxes[j].collisionID)
             {
             case -1:
                 break;
             case 1:
-                if (insideCollision)
+                if (collision)
                 {
                     if (xNormal != 0.0)
                     {
@@ -394,13 +378,13 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 2:
-                if (insideCollision && characters[i].plControl != nullptr)
+                if (collision && characters[i].plControl != nullptr)
                 {
                     levelincreasing = true;
                 }
                 break;
             case 3:
-                if (insideCollision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY < 0.0)
+                if (collision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY < 0.0)
                 {
                     characters[i].visual.y = firstCollisionHitTest;
                     characters[i].velocityY = 0.0;
@@ -408,7 +392,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 4:
-                if (insideCollision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX > 0.0)
+                if (collision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX > 0.0)
                 {
                     characters[i].visual.x = firstCollisionHitTest;
                     characters[i].velocityX = 0.0;
@@ -416,7 +400,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 5:
-                if (insideCollision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY > 0.0)
+                if (collision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY > 0.0)
                 {
                     characters[i].visual.y = firstCollisionHitTest;
                     characters[i].velocityY = 0.0;
@@ -424,7 +408,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 6:
-                if (insideCollision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX < 0.0)
+                if (collision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX < 0.0)
                 {
                     characters[i].visual.x = firstCollisionHitTest;
                     characters[i].velocityX = 0.0;
@@ -432,13 +416,13 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 7:
-                if (insideCollision && yNormal != 0.0 && characters[i].velocityY < 0.0)
+                if (collision && yNormal != 0.0 && characters[i].velocityY < 0.0)
                 {
                     characters[i].velocityY = 4.0;
                 }
                 break;
             case 8:
-                if (insideCollision)
+                if (collision)
                 {
                     tile *fishTile = floor.getTileFromCollisionSpecialID(j);
                     if (fishTile == nullptr)
@@ -451,7 +435,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 9:
-                if (insideCollision)
+                if (collision) // something wrong here put std::cout to see if it goes through
                 {
                     tile *checkpointTile = floor.getTileFromCollisionSpecialID(j);
                     checkpointTile->id = 2;
@@ -463,7 +447,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 10:
-                if (insideCollision)
+                if (collision)
                 {
                     tile *coinTile = floor.getTileFromCollisionSpecialID(j);
                     coinTile->emptyTile();
@@ -472,70 +456,41 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 }
                 break;
             case 11:
-                // for (int x = 0; x < floor.roomWidth; ++x)
-                // {
-                //     for (int y = 0; y < floor.roomHeight; ++y)
-                //     {
-                //         if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
-                //         {
-                //             floor.tiles[x][y].id = -1;
-                //             floor.tiles[x][y].collisionID = -1;
-                //             floor.collision_boxes[j].collisionID = -1;
+            {
+                tile *gulkTile = floor.getTileFromCollisionSpecialID(j);
 
-                //             Add(character("./img/char/gulk.png", x * 0.16, y * 0.16f + 0.2, 0.32, 0.32,
-                //                           4, 1, CH_GULK));
-                //             characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                //                                                                             characters[characterCount - 1].visual.y,
-                //                                                                             characters[characterCount - 1].visual.x + 0.16,
-                //                                                                             characters[characterCount - 1].visual.y + 0.24));
-                //             characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                //             characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
-                //         }
-                //     }
-                // }
-                if (true)
-                {
-                    tile *gulkTile = floor.getTileFromCollisionSpecialID(j);
+                gulkTile->id = -1;
+                gulkTile->collisionID = -1;
+                floor.collision_boxes[j].collisionID = -1;
 
-                    gulkTile->id = -1;
-                    gulkTile->collisionID = -1;
-                    floor.collision_boxes[j].collisionID = -1;
-
-                    Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
-                                  4, 1, CH_GULK));
-                    characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                                                                                    characters[characterCount - 1].visual.y,
-                                                                                    characters[characterCount - 1].visual.x + 0.16,
-                                                                                    characters[characterCount - 1].visual.y + 0.24));
-                    characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                    characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
-                }
-                break;
+                Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
+                              4, 1, CH_GULK));
+                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
+                                                                                characters[characterCount - 1].visual.y,
+                                                                                characters[characterCount - 1].visual.x + 0.16,
+                                                                                characters[characterCount - 1].visual.y + 0.24));
+                characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+                characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+            }
+            break;
             case 12:
-                for (int x = 0; x < floor.roomWidth; ++x)
-                {
-                    for (int y = 0; y < floor.roomHeight; ++y)
-                    {
-                        if (floor.tiles[x][y].specialTileID == floor.collision_boxes[j].specialTileID)
-                        {
-                            floor.tiles[x][y].id = -1;
-                            floor.tiles[x][y].collisionID = -1;
-                            floor.collision_boxes[j].collisionID = -1;
-
-                            Add(character("./img/char/coffeemugguy.png", x * 0.16, y * 0.16f + 0.2, 0.32, 0.32,
-                                          5, 1, CH_COFFEEMUGGUY));
-                            characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                                                                                            characters[characterCount - 1].visual.y,
-                                                                                            characters[characterCount - 1].visual.x + 0.16,
-                                                                                            characters[characterCount - 1].visual.y + 0.24));
-                            characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
-                            characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                        }
-                    }
-                }
-                break;
+            {
+                tile *npcTile = floor.getTileFromCollisionSpecialID(j);
+                npcTile->id = -1;
+                npcTile->collisionID = -1;
+                floor.collision_boxes[j].collisionID = -1;
+                Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
+                              5, 1, CH_COFFEEMUGGUY));
+                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
+                                                                                characters[characterCount - 1].visual.y,
+                                                                                characters[characterCount - 1].visual.x + 0.16,
+                                                                                characters[characterCount - 1].visual.y + 0.24));
+                characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
+                characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+            }
+            break;
             default:
-                if (insideCollision)
+                if (collision)
                 {
                     if (xNormal != 0.0)
                     {
@@ -553,11 +508,11 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 break;
             }
 
-            if (insideCollision && std::abs(characters[i].velocityX) < 0.5 && xNormal > 0.0 && characters[i].id == CH_GULK)
+            if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal > 0.0 && characters[i].id == CH_GULK)
             {
                 characters[i].velocityX = 0.5;
             }
-            if (insideCollision && std::abs(characters[i].velocityX) < 0.5 && xNormal < 0.0 && characters[i].id == CH_GULK)
+            if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal < 0.0 && characters[i].id == CH_GULK)
             {
                 characters[i].velocityX = -0.5;
             }

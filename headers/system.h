@@ -327,6 +327,13 @@ struct character
 
 //     void construct()
 // };
+enum validCollisionType
+{
+    VCT_INVALID,
+    VCT_SOLID_SOLID,
+    VCT_STRIKE_SOLID,
+    VCT_SOLID_STRIKE
+};
 
 struct game_system
 {
@@ -421,6 +428,64 @@ struct game_system
     // void uninitMusic();
 
     void update(world &floor, shader &particle_program, object &particle_sprite, double delta_time);
+    void handleCollisionSpecifics(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
+    {
+        switch (charA.id)
+        {
+        case CH_PLAYER:
+            goto normal_collision;
+        case CH_COFFEEMUGGUY:
+            if (charB.id == CH_PLAYER)
+            {
+                if (collisionType == VCT_SOLID_SOLID)
+                {
+                    charA.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
+                }
+                if (collisionType == VCT_SOLID_STRIKE)
+                {
+                    state = COFFEE_MUG_DEATH_STATE;
+                }
+            }
+            goto normal_collision;
+        case CH_GULK:
+            if (charB.id == CH_PLAYER)
+            {
+                if (collisionType == VCT_SOLID_STRIKE)
+                {
+                    charA.hp = 0;
+                }
+            }
+            goto normal_collision;
+        default:
+        normal_collision: // cursed? maybe.
+            if (collisionType == VCT_SOLID_SOLID)
+            {
+                if (xNormal > 0.0 && charA.velocityX < 0.0)
+                {
+                    charA.visual.x = colValue;
+                    charA.velocityX = 0.0;
+                }
+                if (xNormal < 0.0 && charA.velocityX > 0.0)
+                {
+                    charA.visual.x = colValue;
+                    charA.velocityX = 0.0;
+                }
+                if (yNormal > 0.0 && charA.velocityY < 0.0)
+                {
+                    charA.visual.y = colValue;
+                    charA.velocityY = 0.0;
+                    charA.velocityX += charB.velocityX;
+                    charA.onGround = true;
+                }
+                if (yNormal < 0.0 && charA.velocityY > 0.0)
+                {
+                    charA.visual.y = colValue;
+                    charA.velocityY = 0.0;
+                }
+            }
+            break;
+        }
+    }
 
     void killParticles();
 };
