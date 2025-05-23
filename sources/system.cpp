@@ -68,11 +68,11 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     hp = maxhp;
 }
 // COLLISION BOXES SHOULD BE HANDLED IN WHATEVER FUNCTION IS CALLING CHARACTER CREATION
-character::character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
     visual = sprite(filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0);
-    visual.Scale(w, h, 0.1);
+    visual.Scale(visual.trueW(), visual.trueH(), 0.1);
     id = _id;
     hp = maxhp;
 }
@@ -297,6 +297,19 @@ validCollisionType getCollisionType(unsigned int idA, unsigned int idB)
 }
 void game_system::update(world &floor, shader &particle_program, object &particle_sprite, double delta_time)
 {
+    bool floorTilesNeedUpdate = false;
+    for (int i = 0; i < floor.tileAnimationCount; ++i)
+    {
+        if (floor.tileAnimations[i]._sprite == nullptr)
+            continue;
+
+        floor.tileAnimations[i].run(delta_time, true, false, &floorTilesNeedUpdate);
+    }
+    if (floorTilesNeedUpdate)
+    {
+        floor.updateTileTextures();
+    }
+
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i].Update(delta_time);
@@ -424,7 +437,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             case 8:
                 if (collision)
                 {
-                    tile *fishTile = floor.getTileFromCollisionSpecialID(j);
+                    tile *fishTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID); // this function's broke
                     if (fishTile == nullptr)
                         break;
 
@@ -437,19 +450,19 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             case 9:
                 if (collision) // something wrong here put std::cout to see if it goes through
                 {
-                    tile *checkpointTile = floor.getTileFromCollisionSpecialID(j);
+                    tile *checkpointTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
                     checkpointTile->id = 2;
                     checkpointTile->collisionID = -1;
                     floor.collision_boxes[j].collisionID = -1;
 
-                    floor.spawnLocationX = floor.collision_boxes[j].min_x * 0.16f;
-                    floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].min_y) * 0.16f;
+                    floor.spawnLocationX = floor.collision_boxes[j].min_x * floor.worldSprite.trueW();
+                    floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].min_y) * floor.worldSprite.trueW();
                 }
                 break;
             case 10:
                 if (collision)
                 {
-                    tile *coinTile = floor.getTileFromCollisionSpecialID(j);
+                    tile *coinTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
                     coinTile->emptyTile();
                     floor.collision_boxes[j].collisionID = -1;
                     characters[i].runSpeed *= 1.001;
@@ -457,14 +470,14 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 break;
             case 11:
             {
-                tile *gulkTile = floor.getTileFromCollisionSpecialID(j);
+                tile *gulkTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
 
                 gulkTile->id = -1;
                 gulkTile->collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
 
-                Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
-                              4, 1, CH_GULK));
+                Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
                 characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
                                                                                 characters[characterCount - 1].visual.y,
                                                                                 characters[characterCount - 1].visual.x + 0.16,
@@ -475,12 +488,12 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             break;
             case 12:
             {
-                tile *npcTile = floor.getTileFromCollisionSpecialID(j);
+                tile *npcTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
                 npcTile->id = -1;
                 npcTile->collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
-                Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * 0.16, floor.collision_boxes[j].min_y * 0.16f + 0.2, 0.32, 0.32,
-                              5, 1, CH_COFFEEMUGGUY));
+                Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY));
                 characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
                                                                                 characters[characterCount - 1].visual.y,
                                                                                 characters[characterCount - 1].visual.x + 0.16,

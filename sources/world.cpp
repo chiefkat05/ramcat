@@ -26,7 +26,6 @@ world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, objec
 
 void world::draw(GLFWwindow *win, shader &program)
 {
-    // worldSprite.Put(1.0, 1.0, 0.0);
     worldSprite.Draw(program, worldObject);
 }
 
@@ -73,7 +72,7 @@ void world::readRoomFile(const char *path)
             case 's':
                 tiles[i][roomHeight].id = 2;
 
-                spawnLocationX = i * 0.16f;
+                spawnLocationX = i * (worldSprite.spriteW * pixel_scale);
                 spawnLocationY = roomHeight;
                 tiles[i][roomHeight].collisionID = -1;
                 break;
@@ -86,6 +85,7 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].id = 25;
                 tiles[i][roomHeight].collisionID = 10;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                setTileAnimation(tiles[i][roomHeight].specialTileID, 24, 25, 80.0);
                 break;
             case 'e':
                 tiles[i][roomHeight].id = 3;
@@ -141,8 +141,7 @@ void world::readRoomFile(const char *path)
         ++roomHeight;
     }
     // add boolean to check if spawn exists pls
-    spawnLocationY = -0.2f + (-static_cast<double>(roomHeight) + spawnLocationY) * 0.16f;
-    // spawnLocationY = (-static_cast<double>(roomHeight) + spawnLocationY) * 0.16f;
+    spawnLocationY = -0.2f + (-static_cast<double>(roomHeight) + spawnLocationY) * (worldSprite.spriteH * pixel_scale);
 
     file.close();
 
@@ -237,8 +236,8 @@ void world::readRoomFile(const char *path)
             collisionAddition:
                 int newystart = static_cast<int>(roomHeight) - collisionstarty + 1;
                 int newyend = static_cast<int>(roomHeight) - collisionendy + 1;
-                collision_boxes[collision_box_count] = aabb(collisionstartx * (worldSprite.spriteW * 0.02), newyend * (worldSprite.spriteH * 0.02),
-                                                            collisionendx * (worldSprite.spriteW * 0.02), newystart * (worldSprite.spriteH * 0.02));
+                collision_boxes[collision_box_count] = aabb(collisionstartx * (worldSprite.spriteW * pixel_scale), newyend * (worldSprite.spriteH * pixel_scale),
+                                                            collisionendx * (worldSprite.spriteW * pixel_scale), newystart * (worldSprite.spriteH * pixel_scale));
 
                 collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
                 collision_boxes[collision_box_count].collisionID = c;
@@ -278,9 +277,20 @@ void world::readRoomFile(const char *path)
                 continue;
 
             translations[index] = glm::mat4(1.0);
-            translations[index] = glm::translate(translations[index], glm::vec3(0.16 * x, 0.16 * (roomHeight - y), 0.0));
+            translations[index] = glm::translate(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale) * x, (worldSprite.spriteH * pixel_scale) * (roomHeight - y), 0.0));
             // rotations go here if you add them
-            translations[index] = glm::scale(translations[index], glm::vec3(0.16, 0.16, 0.0)); // mke the 0.16s be dynamic and not static numbers
+            translations[index] = glm::scale(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale), (worldSprite.spriteH * pixel_scale), 0.0));
+
+            for (int w = 0; w < tileAnimationCount; ++w)
+            {
+                if (tileAnimations[w]._sprite == nullptr)
+                    continue;
+
+                if (animationToIDMap[w] == tiles[x][y].specialTileID)
+                {
+                    tiles[x][y].id = tileAnimations[w].frame;
+                }
+            }
 
             textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
             textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;

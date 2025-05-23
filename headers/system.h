@@ -190,7 +190,7 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(std::string filepath, double x, double y, double w, double h, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
     void MoveTo(double _x, double _y, world *currentWorld);
 
@@ -337,7 +337,7 @@ enum validCollisionType
 
 struct game_system
 {
-    game_state state;
+    game_state state, nextState;
 
     character characters[character_limit];
     int characterCount = 0;

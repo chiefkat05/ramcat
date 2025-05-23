@@ -57,6 +57,7 @@ struct world
     tile tiles[width_limit][height_limit];
 
     animation tileAnimations[tile_animation_limit]; // unimplemented, do later pls
+    unsigned int tileAnimationCount = 0;
     int animationToIDMap[tile_animation_limit];
 
     object worldObject;
@@ -83,6 +84,45 @@ struct world
     void readRoomFile(const char *path);
     tile *getTile(unsigned int tileID);
     tile *getTileFromCollisionSpecialID(unsigned int collisionIndex);
+
+    void setTileAnimation(unsigned int specialTileID, unsigned int s = 0, unsigned int e = 1, double spd = 1.0)
+    {
+        tileAnimations[tileAnimationCount] = animation(&worldSprite, s, e, spd);
+        animationToIDMap[tileAnimationCount] = specialTileID;
+        ++tileAnimationCount;
+    }
+
+    void updateTileTextures()
+    {
+        glm::vec2 textureTranslations[roomHeight * roomWidth];
+        int index = 0;
+        for (int x = 0; x < roomWidth; ++x)
+        {
+            for (int y = 0; y < roomHeight; ++y)
+            {
+                if (tiles[x][y].id == -1)
+                    continue;
+
+                for (int w = 0; w < tileAnimationCount; ++w)
+                {
+                    if (tileAnimations[w]._sprite == nullptr)
+                        continue;
+
+                    if (animationToIDMap[w] == tiles[x][y].specialTileID)
+                    {
+                        tiles[x][y].id = tileAnimations[w].frame;
+                    }
+                }
+
+                textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
+                textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
+
+                ++index;
+            }
+        }
+
+        worldObject.setInstances(index, nullptr, textureTranslations);
+    }
 };
 
 #endif

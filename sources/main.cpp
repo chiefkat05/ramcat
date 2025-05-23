@@ -11,9 +11,7 @@
 //  sprite.saveFrames(id, x, y, spd)
 //  sprite.runFrames(id)
 
-// tiiiiiiile animaaaaaations
-
-// transitions? Maybe only for screens?
+// FIND OUT SOURCE OF RARE BUG THAT SHOOTS PLAYER TO THE NETHER REALM
 
 // fix strange but unimportant issue with the particles sometimes just sitting on (0, 0) or not moving
 // also fix incredibly broken particle system stuff
@@ -45,6 +43,7 @@
 #include "../headers/miniaudio.h"
 
 // #define COLLISION_DEBUG
+#define DEBUG_BACKGROUND_PIXEL_DIMENSIONS
 
 double texCoords[] = {
     0.0, 0.0,
@@ -66,6 +65,7 @@ double playerSpawnDist = 0.0;
 double lowestCamYLevel = 0.0;
 bool playerSpawned = false;
 bool playerFacingRight = true;
+double transitionTimer = 1.0;
 
 extern double windowAspectDivision;
 
@@ -395,12 +395,10 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller)
 {
-    pl = character("./img/char/knight.png", -120.0, -40.0, 0.32, 0.32, 4, 3, CH_PLAYER);
-    pl.setCollider(COLLIDER_SOLID, aabb(pl.visual.x, pl.visual.y, pl.visual.x + 0.16, pl.visual.y + 0.24));
-    pl.setCollider(COLLIDER_STRIKE, aabb(pl.visual.x - 0.08, pl.visual.y, pl.visual.x + 0.24, pl.visual.y + 0.16));
+    pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
+    pl.setCollider(COLLIDER_SOLID, aabb(pl.visual.x, pl.visual.y, pl.visual.x + pl.visual.trueW() * 0.5, pl.visual.y + pl.visual.trueH() * 0.75));
+    pl.setCollider(COLLIDER_STRIKE, aabb(pl.visual.x - 0.08, pl.visual.y, pl.visual.x + pl.visual.trueW(), pl.visual.y + pl.visual.trueH() * 0.5));
     pl.colliderOn(COLLIDER_SOLID);
-
-    pl.visual.Scale(0.32f, 0.32f, 1.0);
 
     if (glfwJoystickIsGamepad(playerGamepadCount + 1))
     {
@@ -606,8 +604,23 @@ sprite deCollision;
 sprite dePl;
 #endif
 // edit all guis here
-void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engine)
+void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engine, double &transition_timer)
 {
+    if (mainG.state != mainG.nextState && transition_timer > 0.0)
+    {
+        transition_timer -= 2.0 * delta_time;
+    }
+    if (transition_timer <= 0.0)
+    {
+        mainG.state = mainG.nextState;
+    }
+    if (mainG.state == mainG.nextState && transition_timer < 1.0)
+    {
+        transition_timer += 2.0 * delta_time;
+    }
+    if (transition_timer > 1.0)
+        transition_timer = 1.0;
+
     if (mainG.state == prevState)
         return;
 
@@ -629,10 +642,10 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 0.0);
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 9.0, 10.0, 1, 1, quitGame));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 9.0, 10.0, 1, 1, goMenuScreen, false, nullptr, &mainG));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 1, 1, goMenuScreen, false, nullptr, &mainG));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, &mainG, nullptr, CHARACTER_CREATION_SCREEN));
         mainG.level = 0;
         mainG.levelincreasing = false;
         break;
@@ -643,26 +656,26 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         mainCam.offsetX = 0.0;
         mainCam.offsetY = 0.0;
         mainCam.offsetZ = 0.0;
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 128.0, 64.0, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 9.0, 10.0, 1, 1, leaveMenuScreen));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, START_SCREEN));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 9.0, 10.0, 1, 1, quitGame));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu.png", 0.0, 0.0, 3, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 1, 1, leaveMenuScreen));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 1, 1, changeScene, false, nullptr, &mainG, nullptr, START_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/quit.png", 0.8f, -0.8f, 1, 1, quitGame));
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 0.0);
         mainG.initSound("./snd/fx/volume.wav", 6, &s_engine);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 64.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 51.2f, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 38.4f, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Settings", -0.8f, 0.75f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Controls", -0.8f, 0.55f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 1, 1));
         playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 10.0, 10.0, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, -1));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, nullptr, 1));
 
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Next Level", 0.0f, 0.0f, 40.0f, 0.0f, 1, 1, increaseLevel, false, nullptr, &mainG));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Next Level", 0.0f, 0.0f, 1, 1, increaseLevel, false, nullptr, &mainG));
         for (int i = 0; i < control_limit; ++i)
         {
-            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 51.2f, 0.0, 1, 1));
+            gui_data.elements.push_back(ui_element(UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 1, 1));
         }
         if (playerIDForControl >= playerCount)
             playerIDForControl = playerCount - 1;
@@ -677,38 +690,43 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             }
             if (mainG.characters[playerIDForControl].plControl->gamepad_id <= -1)
             {
-                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(mainG.characters[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
+                gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, KeyCodeToString(mainG.characters[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f,
                                                        1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &mainG, &floor, i));
                 gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0);
             }
             else
             {
-                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[mainG.characters[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f, 50.0, 1.0,
+                gui_data.elements.push_back(ui_element(UI_TEXT, gamepadInputStrings[mainG.characters[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f,
                                                        1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &mainG, &floor, i));
             }
         }
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 24.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 30.0, 3.0, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
+        gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(0, 1000);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 24.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 30.0, 3.0, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Music Volume", 0.2f, 0.6f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, nullptr, 0, &mainG.music_volume));
-        gui_data.mostRecentCreatedElement()->slider_values(0, 125);
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 24.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 30.0, 3.0, 1, 1, volumeChangeSoundPlayFunc,
-                                               false, nullptr, &mainG, nullptr, 0, &mainG.sound_volume));
+        gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(0, 125);
 
-        gui_data.elements.push_back(ui_element(UI_TEXT, "Camera FOV", 0.2f, 0.3f, 24.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.25f, 30.0, 3.0, 1, 1, nullFunc,
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Sound Volume", 0.2f, 0.45f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 1, 1, volumeChangeSoundPlayFunc,
+                                               false, nullptr, &mainG, nullptr, 0, &mainG.sound_volume));
+        gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
+        gui_data.mostRecentCreatedElement()->slider_values(0, 125);
+
+        gui_data.elements.push_back(ui_element(UI_TEXT, "Camera FOV", 0.2f, 0.3f, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_SLIDER, "./img/debug.png", 0.5f, 0.25f, 1, 1, nullFunc,
                                                false, nullptr, &mainG, nullptr, 0, &mainCam.default_fov));
+        gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(7000, 12000);
 
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.15f, -0.7f, 32.0, 0.0, 1, 1, fullScreenToggleFunc));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Particles", 0.2f, -0.8f, 32.0, 0.0, 1, 1, particleToggleFunc, false, nullptr, &mainG));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.15f, -0.7f, 1, 1, fullScreenToggleFunc));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE_TEXT, "Toggle Particles", 0.2f, -0.8f, 1, 1, particleToggleFunc, false, nullptr, &mainG));
 
         break;
     case CHARACTER_CREATION_SCREEN:
@@ -716,10 +734,10 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         {
             mainG.characters[i].visual.Scale(0.48f, 0.48f, 1.0); // fun
         }
-        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 128.0, 64.0, 1, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 16.0, 16.0, 1, 1, addPlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 16.0, 16.0, 1, 1, removePlayer, false, &p1, &mainG, &floor));
-        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 9.0, 10.0, 1, 1, changeScene, false, nullptr, &mainG, nullptr, WORLD_SCREEN));
+        gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/menu-char.png", 0.0, 0.0, 1, 1, nullFunc, true));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 1, 1, addPlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/del_player.png", 0.45f, 0.4f, 1, 1, removePlayer, false, &p1, &mainG, &floor));
+        gui_data.elements.push_back(ui_element(UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, &mainG, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
         for (int i = playerCount; i < mainG.characterCount; ++i)
@@ -757,7 +775,7 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
 
         for (int i = 0; i < playerCount; ++i)
         {
-            mainG.characters[i].visual.Scale(0.32f, 0.32f, 1.0);
+            mainG.characters[i].visual.Scale(mainG.characters[i].visual.trueW(), mainG.characters[i].visual.trueH(), 1.0);
         }
         mainCam.lockTo(&camCenterX, &lowestCamYLevel);
         mainG.initSound("./snd/mus/castle-1.mp3", 0, &s_engine);
@@ -771,58 +789,71 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         switch (mainG.level)
         {
         case 0:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6);
             break;
         case 1:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 6, 6);
             break;
         case 2:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 6, 6);
             break;
         case 3:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 4:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 5:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 6:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 7:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 8:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-3.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 9:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 10:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 11:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-4.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             break;
         case 16:
-            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 2000.0, 600.0, 3, 1, nullFunc, true));
+            gui_data.elements.push_back(ui_element(UI_IMAGE, "./img/bg/01-2.png", 0.0, 0.0, 1, 1, nullFunc, true));
+            gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
             worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 17:
-            mainG.state = START_SCREEN;
+            mainG.nextState = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
             worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
-        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * 0.16 - 1.84, 50.0, 1.0);
+        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * floor.worldSprite.w - 1.84, 50.0, 1.0);
 
 #ifdef COLLISION_DEBUG
         deCollision = sprite("./img/debug.png", 1, 1);
@@ -848,8 +879,8 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
         }
         break;
     case COFFEE_MUG_DEATH_STATE:
-        gui_data.elements.push_back(ui_element(UI_TEXT, "HOW COULD YOU :C", -0.2, 0.0, 32.0, 0.0, 1, 1));
-        gui_data.elements.push_back(ui_element(UI_TEXT, "(btw the little square where his hand should be is a coffee mug)", -0.6, -0.7, 20.0, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "HOW COULD YOU :C", -0.2, 0.0, 1, 1));
+        gui_data.elements.push_back(ui_element(UI_TEXT, "(btw the little square where his hand should be is a coffee mug)", -0.6, -0.7, 1, 1));
         break;
     default:
         break;
@@ -927,6 +958,10 @@ int main()
     textShaderProgram.use();
     textShaderProgram.setUniformMat4("projection", textProjection);
 
+    sprite transitionFade("./img/fade.png", 1, 1);
+    // transitionFade.Scale(128.0, 72.0, 0.0);
+    transitionFade.Scale(5.4, 4.0, 0.0);
+
     while (!glfwWindowShouldClose(window))
     {
         double past_time = current_time;
@@ -953,12 +988,14 @@ int main()
         if (game.state == WON_LEVEL_STATE && game.levelincreasing)
         {
             prevState = WON_LEVEL_STATE;
-            game.state = WORLD_SCREEN;
+            game.nextState = WORLD_SCREEN;
         }
 
-        menuData(game, game.characters[0], mainWorld, soundEngine);
+        menuData(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
 
-        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, true);
+        transitionFade.Put(mainCam.cameraPosition.x, mainCam.cameraPosition.y - transitionTimer * 4.0, 0.0);
+        transitionFade.Draw(shaderProgram, spriteRect);
+        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mainCam, mouseX, mouseY, delta_time, true);
 
         if (game.state == CHARACTER_CREATION_SCREEN && prevState == CHARACTER_CREATION_SCREEN)
         {
@@ -1086,7 +1123,7 @@ int main()
             double distanceCamX = ((xright - xleft) + 8.0) * 9.0;
             if (distanceCamX > mainCam.default_fov * 0.01)
             {
-                mainCam.fov = std::min(distanceCamX, 120.0);
+                mainCam.fov = std::min(distanceCamX, mainCam.max_fov);
             }
             camCenterX = (xleft + xright) * 0.5;
 
@@ -1195,7 +1232,7 @@ int main()
                 game.state = WON_LEVEL_STATE;
             }
         }
-        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mouseX, mouseY, delta_time, false);
+        gui_data.screenDraw(window, uiShaderProgram, textShaderProgram, spriteRect, spriteText, mainCam, mouseX, mouseY, delta_time, false);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -1290,11 +1327,11 @@ static game_state returnState;
 void goMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
     returnState = game.state;
-    game.state = MENU_SCREEN;
+    game.nextState = MENU_SCREEN;
 }
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv)
 {
-    game.state = returnState;
+    game.nextState = returnState;
 }
 void processInput(GLFWwindow *window)
 {
@@ -1363,12 +1400,12 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && game.state != MENU_SCREEN)
     {
         returnState = game.state;
-        game.state = MENU_SCREEN;
+        game.nextState = MENU_SCREEN;
         menuKeyHeld = true;
     }
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && !menuKeyHeld && game.state == MENU_SCREEN)
     {
-        game.state = returnState;
+        game.nextState = returnState;
         menuKeyHeld = true;
     }
 
@@ -1393,6 +1430,10 @@ void processInput(GLFWwindow *window)
             glfwSetWindowMonitor(window, NULL, 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
 
         mainCam.swappedFullscreen = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F4))
+    {
+        gui_data.quit = true;
     }
 
     if (!glfwGetKey(window, GLFW_KEY_TAB) && mainCam.swappedMouseCapture)

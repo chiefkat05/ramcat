@@ -40,6 +40,9 @@ struct sprite
     unsigned int framesX = 1, framesY = 1;
     unsigned int textureX = 0, textureY = 0;
     double textureWidth = 0, textureHeight = 0;
+
+    double trueW() { return spriteW * pixel_scale; }
+    double trueH() { return spriteH * pixel_scale; }
     // std::string path;
     // sf::Sprite rect;
     unsigned int sprite_texture;
@@ -69,7 +72,6 @@ struct animation
     double timer = 10.0;
     unsigned int frame = 0;
     bool finished = true;
-    double xScale = 1.0, yScale = 1.0;
 
     sprite *_sprite;
 
@@ -78,19 +80,15 @@ struct animation
         _sprite = nullptr;
     }
 
-    animation(sprite *sp, unsigned int s, unsigned int e = 1, double spd = 1.0) : _sprite(sp)
+    animation(sprite *sp, unsigned int s = 0, unsigned int e = 1, double spd = 1.0) : _sprite(sp)
     {
         start = s;
         end = e;
         speed = spd;
-    }
-    void setScale(double x, double y)
-    {
-        xScale = x;
-        yScale = y;
+        frame = s;
     }
 
-    void run(double delta_time, bool loop)
+    void run(double delta_time, bool loop, bool changeSprite = true, bool *updated = nullptr)
     {
         finished = false;
         if (timer <= 0.0)
@@ -102,11 +100,16 @@ struct animation
 
             if (loop)
             {
-                frame >= end ? frame = 0 : ++frame;
+                frame >= end ? frame = start : ++frame;
             }
             if (!loop)
             {
                 frame >= end ? frame = end : ++frame;
+            }
+
+            if (updated != nullptr)
+            {
+                *updated = true;
             }
         }
 
@@ -120,8 +123,11 @@ struct animation
         }
         // _sprite->textureX = frame % _sprite->framesX * _sprite->spriteW;
         // _sprite->textureY = frame / _sprite->framesX * _sprite->spriteH;
-        _sprite->textureX = frame % _sprite->framesX;
-        _sprite->textureY = frame / _sprite->framesX;
+        if (changeSprite)
+        {
+            _sprite->textureX = frame % _sprite->framesX;
+            _sprite->textureY = frame / _sprite->framesX;
+        }
         // _sprite->textureWidth = _sprite->spriteW * xScale;
         // _sprite->textureHeight = _sprite->spriteH * yScale;
         // _sprite->rect.setTextureRect(sf::IntRect(frame % _sprite->framesX * _sprite->spriteW, frame / _sprite->framesX * _sprite->spriteH,

@@ -37,7 +37,7 @@ extern bool mouseReleased;
 //     func_i = _func_i;
 //     value = _linkValue;
 // }
-ui_element::ui_element(ui_element_type t, const char *path, double x, double y, double w, double h, int frX, int frY,
+ui_element::ui_element(ui_element_type t, const char *path, double x, double y, int frX, int frY,
                        void func(character *, game_system *, world *, int), bool bg,
                        character *_func_p, game_system *_func_gs, world *_func_d,
                        int _func_i, int *_linkValue)
@@ -47,8 +47,8 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
     utype = t;
     trueX = x;
     trueY = y;
-    trueWidth = w;
-    trueHeight = h;
+    trueWidth = visual.spriteW;
+    trueHeight = visual.spriteH;
     posX = window_width / 2 + (x * (window_width / 2));
     posY = window_height / 2 - (y * (window_height / 2));
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
@@ -59,10 +59,10 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
     {
         visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, 0.0);
     }
-    width = w / pixel_divider * (window_height / 2);
-    height = h / pixel_divider * (window_height / 2);
-    visual.Scale(w / pixel_divider, h / pixel_divider, 1.0); // probably should be both the same division
-    function = func;
+    width = trueWidth / pixel_divider * (window_height / 2);
+    height = trueHeight / pixel_divider * (window_height / 2);
+    visual.Scale(trueWidth / pixel_divider, trueHeight / pixel_divider, 1.0);
+    function = func; // check how things are drawn and fix it to be stationary on cam
     func_p = _func_p;
     func_gs = _func_gs;
     func_d = _func_d;
@@ -70,8 +70,21 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
     value = _linkValue;
 }
 
+void ui_element::scale(double w, double h)
+{
+    trueWidth = w;
+    trueHeight = h;
+    width = trueWidth / pixel_divider * (window_height / 2);
+    height = trueHeight / pixel_divider * (window_height / 2);
+    visual.Scale(trueWidth / pixel_divider, trueHeight / pixel_divider, 1.0);
+}
+void ui_element::setScreenMode(ui_screen_mode new_screen_mode)
+{
+    screen_mode = new_screen_mode;
+}
+
 // get ui element animations set up
-void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double delta_time)
+void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera &mainCam, double delta_time)
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
 
@@ -85,11 +98,11 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, double
         width = trueWidth / pixel_divider * (current_win_height / 2);
         height = trueHeight / pixel_divider * (current_win_height / 2);
 
-        visual.Put(trueX * windowAspectDivision, trueY, 0.0);
+        visual.Put(mainCam.cameraPosition.x + trueX * windowAspectDivision, mainCam.cameraPosition.y + trueY, 0.0);
     }
     else
     {
-        visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, 0.0);
+        visual.Put(mainCam.cameraPosition.x + ((trueX + 1.0) * 0.5f) * window_width, mainCam.cameraPosition.y + ((trueY + 1.0) * 0.5f) * window_height, 0.0);
     }
     switch (utype)
     {
@@ -205,7 +218,7 @@ void ui_element::slider_values(int sM, int sL)
     }
 }
 
-void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, double mouseX, double mouseY, double delta_time, bool front)
+void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front)
 {
     win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
     win_ratio_y = static_cast<double>(current_win_height) / static_cast<double>(window_height);
@@ -218,7 +231,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
-        elements[i].update(window, mouseX, mouseY, delta_time);
+        elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
             glm::vec4 boundingbox = renderText(sprite_text_object, text_program, elements[i].visual.texture_path,
@@ -255,11 +268,7 @@ ui_element *gui::mostRecentCreatedElement()
 
 void changeScene(character *p, game_system *gs, world *w, int argv)
 {
-    gs->state = static_cast<game_state>(argv);
-}
-void optionsTab(character *p, game_system *gs, world *w, int argv)
-{
-    gs->state = MENU_SCREEN;
+    gs->nextState = static_cast<game_state>(argv);
 }
 void nullFunc(character *p, game_system *gs, world *w, int argv) {}
 
