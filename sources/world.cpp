@@ -95,6 +95,7 @@ void world::readRoomFile(const char *path)
                 tiles[i][roomHeight].id = 27;
                 tiles[i][roomHeight].collisionID = 8;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                setTileAnimation(tiles[i][roomHeight].specialTileID, 26, 27, 90.0);
                 break;
             case '2':
                 tiles[i][roomHeight].id = 1;

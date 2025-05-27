@@ -476,8 +476,7 @@ int main()
     textShaderProgram.setUniformMat4("projection", textProjection);
 
     sprite transitionFade("./img/fade.png", 1, 1);
-    // transitionFade.Scale(128.0, 72.0, 0.0);
-    transitionFade.Scale(5.4, 4.0, 0.0);
+    transitionFade.Scale(8.0, 4.0, 0.0);
 
     while (!glfwWindowShouldClose(window))
     {
