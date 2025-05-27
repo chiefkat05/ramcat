@@ -239,7 +239,12 @@ void world::readRoomFile(const char *path)
                 collision_boxes[collision_box_count] = aabb(collisionstartx * (worldSprite.spriteW * pixel_scale), newyend * (worldSprite.spriteH * pixel_scale),
                                                             collisionendx * (worldSprite.spriteW * pixel_scale), newystart * (worldSprite.spriteH * pixel_scale));
 
-                collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
+                // collision_boxes[collision_box_count].specialTileID = tiles[x][y].specialTileID;
+                if (tiles[x][y].specialTileID != -1)
+                {
+                    collision_boxes[collision_box_count].specialTileX = x;
+                    collision_boxes[collision_box_count].specialTileY = y;
+                }
                 collision_boxes[collision_box_count].collisionID = c;
 
                 ++collision_box_count;
@@ -267,19 +272,23 @@ void world::readRoomFile(const char *path)
 
     // instancing work
     glm::mat4 translations[roomHeight * roomWidth];
-    glm::vec2 textureTranslations[roomHeight * roomWidth];
+    glm::vec3 textureTranslations[roomHeight * roomWidth];
     int index = 0;
     for (int x = 0; x < roomWidth; ++x)
     {
         for (int y = 0; y < roomHeight; ++y)
         {
             if (tiles[x][y].id == -1)
+            {
+                textureTranslations[index].z = 0.0;
+                ++index;
                 continue;
+            }
 
             translations[index] = glm::mat4(1.0);
             translations[index] = glm::translate(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale) * x, (worldSprite.spriteH * pixel_scale) * (roomHeight - y), 0.0));
             // rotations go here if you add them
-            translations[index] = glm::scale(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale), (worldSprite.spriteH * pixel_scale), 0.0));
+            translations[index] = glm::scale(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale), (worldSprite.spriteH * pixel_scale), 1.0));
 
             for (int w = 0; w < tileAnimationCount; ++w)
             {
@@ -294,6 +303,7 @@ void world::readRoomFile(const char *path)
 
             textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
             textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
+            textureTranslations[index].z = 0.0;
 
             ++index;
         }
@@ -316,17 +326,17 @@ tile *world::getTile(unsigned int tileID)
     }
     return nullptr;
 }
-tile *world::getTileFromCollisionSpecialID(unsigned int collisionIndex)
-{
-    for (int x = 0; x < roomWidth; ++x)
-    {
-        for (int y = 0; y < roomHeight; ++y)
-        {
-            if (tiles[x][y].specialTileID == collision_boxes[collisionIndex].specialTileID)
-            {
-                return &tiles[x][y];
-            }
-        }
-    }
-    return nullptr;
-}
+// tile *world::getTileFromCollisionSpecialID(unsigned int collisionIndex)
+// {
+//     for (int x = 0; x < roomWidth; ++x)
+//     {
+//         for (int y = 0; y < roomHeight; ++y)
+//         {
+//             if (tiles[x][y].specialTileID == collision_boxes[collisionIndex].specialTileID)
+//             {
+//                 return &tiles[x][y];
+//             }
+//         }
+//     }
+//     return nullptr;
+// }

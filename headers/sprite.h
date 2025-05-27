@@ -24,11 +24,11 @@ struct object
     unsigned int VBO, VAO, EBO;
     unsigned int instanceCount = 0, instanceVBO, instanceTextureVBO;
     glm::mat4 *instanceArray;
-    glm::vec2 *instanceTextureArray;
+    glm::vec3 *instanceTextureArray;
     object_type obj_type;
     object();
     object(object_type _obj);
-    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec2 *textureInstanceMap = nullptr);
+    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec3 *textureInstanceMap = nullptr);
     void objectKill();
 };
 

@@ -4,6 +4,7 @@ std::default_random_engine numGen;
 
 particlesystem::particlesystem()
 {
+    visual = sprite();
     variables[PV_SPAWN_TIMER] = 0.0;
     variables[PV_LIFE_LOW] = 0.0;
     variables[PV_LIFE_HIGH] = 0.0;
@@ -14,7 +15,7 @@ particlesystem::particlesystem()
 
     particle_count = 0.0;
 }
-particlesystem::particlesystem(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+particlesystem::particlesystem(const char *path, object &visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
                                double sX, double sY, double sW, double sH)
 {
     variables[PV_SPAWN_TIMER] = 0.0;
@@ -30,6 +31,8 @@ particlesystem::particlesystem(const char *path, unsigned int fx, unsigned int f
         particle_count = _particle_count;
 
     visual = sprite(path, fx, fy);
+
+    visualObject = object(visualObj);
 }
 
 void particlesystem::spawn(double delta_time)
@@ -88,6 +91,8 @@ void particlesystem::update(double delta_time)
         }
     }
 
+    glm::mat4 transformArray[particles_alive];
+    glm::vec3 textureArray[particles_alive];
     for (int i = 0; i < particles_alive; ++i)
     {
         if (particles[i].life < 0.0)
@@ -99,7 +104,15 @@ void particlesystem::update(double delta_time)
 
         particles[i].Move(particles[i].velX * delta_time, particles[i].velY * delta_time);
         particles[i].life -= 10.0 * delta_time;
+
+        transformArray[i] = glm::mat4(1.0);
+        transformArray[i] = glm::translate(transformArray[i], glm::vec3(particles[i].x, particles[i].y, 0.0));
+        transformArray[i] = glm::scale(transformArray[i], glm::vec3(particles[i].w, particles[i].h, 1.0));
+
+        textureArray[i] = glm::vec3(static_cast<int>(particles[i].animationTime) % visual.framesX, static_cast<int>(particles[i].animationTime) / visual.framesX, 0.0);
     }
+
+    visualObject.setInstances(particles_alive, transformArray, textureArray);
 }
 void particlesystem::draw(shader &program, object &sprite_object, double delta_time)
 {

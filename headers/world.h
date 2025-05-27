@@ -14,15 +14,14 @@ const unsigned int tile_animation_limit = 24;
 
 struct tile
 {
-    unsigned int id = 0;
-    int collisionID = -1, specialTileID = -1;
+    int id = -1, collisionID = -1, specialTileID = -1, animationIndexID = -1;
     bool collisionTaken = false;
 
     void emptyTile()
     {
         id = -1;
         collisionID = -1;
-        specialTileID = -1;
+        // specialTileID = -1;
         collisionTaken = false;
     }
 };
@@ -56,7 +55,7 @@ struct world
     bool start = true, end = false, worldInitialized = false;
     tile tiles[width_limit][height_limit];
 
-    animation tileAnimations[tile_animation_limit]; // unimplemented, do later pls
+    animation tileAnimations[tile_animation_limit];
     unsigned int tileAnimationCount = 0;
     int animationToIDMap[tile_animation_limit];
 
@@ -83,25 +82,40 @@ struct world
 
     void readRoomFile(const char *path);
     tile *getTile(unsigned int tileID);
-    tile *getTileFromCollisionSpecialID(unsigned int collisionIndex);
+    // tile *getTileFromCollisionSpecialID(unsigned int collisionIndex);
 
     void setTileAnimation(unsigned int specialTileID, unsigned int s = 0, unsigned int e = 1, double spd = 1.0)
     {
         tileAnimations[tileAnimationCount] = animation(&worldSprite, s, e, spd);
         animationToIDMap[tileAnimationCount] = specialTileID;
+        tiles[specialTileID]->animationIndexID = tileAnimationCount;
         ++tileAnimationCount;
+    }
+    void removeTileAnimation(unsigned int tileAnimationIndex)
+    {
+        for (int i = tileAnimationIndex; i < tileAnimationCount - 1; ++i)
+        {
+            animationToIDMap[i] = animationToIDMap[i + 1];
+            tileAnimations[i] = tileAnimations[i + 1];
+            --tileAnimationCount;
+        }
     }
 
     void updateTileTextures()
     {
-        glm::vec2 textureTranslations[roomHeight * roomWidth];
+        glm::vec3 textureTranslations[roomHeight * roomWidth];
         int index = 0;
         for (int x = 0; x < roomWidth; ++x)
         {
             for (int y = 0; y < roomHeight; ++y)
             {
                 if (tiles[x][y].id == -1)
+                {
+                    textureTranslations[index].z = -1.0;
+                    ++index;
                     continue;
+                }
+                textureTranslations[index].z = 0.0;
 
                 for (int w = 0; w < tileAnimationCount; ++w)
                 {

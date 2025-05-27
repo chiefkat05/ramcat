@@ -61,6 +61,9 @@ double cube_vertices[] = {
 
 sprite::sprite()
 {
+    texture_path = "";
+    x = 0.0;
+    y = 0.0;
 }
 sprite::sprite(std::string path, unsigned int _fx, unsigned int _fy, bool text)
 {
@@ -267,7 +270,7 @@ object::object(object_type _obj)
         break;
     }
 }
-void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, glm::vec2 *textureInstanceMap)
+void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, glm::vec3 *textureInstanceMap)
 {
     instanceCount = _instanceCount;
 
@@ -302,11 +305,12 @@ void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, g
 
         glGenBuffers(1, &instanceVBO);
         glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * instanceCount, &instanceTextureArray[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * instanceCount, &instanceTextureArray[0], GL_STATIC_DRAW);
 
         glBindVertexArray(VAO);
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void *)0);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
+
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glVertexAttribDivisor(2, 1);
         glBindVertexArray(0);

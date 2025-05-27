@@ -67,7 +67,7 @@ enum PARTICLE_VARIABLE
 struct particlesystem
 {
     particle particles[particle_limit];
-    unsigned int particle_count, particles_alive = 0;
+    unsigned int particle_count = 0, particles_alive = 0;
     unsigned int totalParticlesSpawned = 0;
     unsigned int id;
 
@@ -75,9 +75,10 @@ struct particlesystem
     double *variable_pointers[pv_variable_limit];
 
     sprite visual;
+    object visualObject;
 
     particlesystem();
-    particlesystem(const char *path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+    particlesystem(const char *path, object &visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
                    double sX, double sY, double sW, double sH);
 
     void spawn(double delta_time);

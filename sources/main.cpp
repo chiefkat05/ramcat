@@ -6,15 +6,9 @@
 
 // TO-DO LIST
 
-// animation commands should be inside sprite class and have the following public functions:
-//  sprite.runFrames(x, y, spd)
-//  sprite.saveFrames(id, x, y, spd)
-//  sprite.runFrames(id)
-
 // FIND OUT SOURCE OF RARE BUG THAT SHOOTS PLAYER TO THE NETHER REALM
 
-// fix strange but unimportant issue with the particles sometimes just sitting on (0, 0) or not moving
-// also fix incredibly broken particle system stuff
+// figure out why player particle effects don't always spawn in, probably minor but just check with std::cout in the particle update thing to see which ones exist and if it gets deleted immediately or something
 
 // learn proper memory management and fix your terrible pointer code please
 
@@ -30,9 +24,13 @@
 // More efficient text rendering
 // I would like the text to actually match pixel-wise with the rest of the game but that's likely not possible without turning up the pixel-count
 
+// add threading where needed
+
 // pixel-perfect shader
 
-// clean this up and put all functions at the bottom so menuData and main can be easiest to access
+// eventually, better animation structure
+
+// clean this up and remove as much code as possible, especially variables and functions that should be in system.cpp or other files
 
 // Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
 // Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
@@ -44,12 +42,6 @@
 
 // #define COLLISION_DEBUG
 #define DEBUG_BACKGROUND_PIXEL_DIMENSIONS
-
-double texCoords[] = {
-    0.0, 0.0,
-    1.0, 0.0,
-    1.0, 1.0,
-    0.0, 1.0};
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -63,7 +55,6 @@ bool buttonHovered = false;
 int playerGamepadCount = -1, playerCount = 1;
 double playerSpawnDist = 0.0;
 double lowestCamYLevel = 0.0;
-bool playerSpawned = false;
 bool playerFacingRight = true;
 double transitionTimer = 1.0;
 
@@ -73,132 +64,12 @@ extern gui gui_data;
 
 camera mainCam(CAMERA_STATIONARY);
 
-void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor)
-{
-    p.velocityX = 0.0;
-
-    if (p.plControl->getInput(window, CONTROL_LEFT))
-    {
-        p.velocityX = -p.runSpeed;
-        p.visual.Rotate(0.0, 180.0, 0.0);
-        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
-            p.PlayAnimation(ANIM_WALK, delta_time, true);
-        p.walkingkeypressed = true;
-        playerFacingRight = false;
-    }
-    if (p.plControl->getInput(window, CONTROL_RIGHT))
-    {
-        p.velocityX = p.runSpeed;
-        p.visual.Rotate(0.0, 0.0, 0.0);
-        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
-            p.PlayAnimation(ANIM_WALK, delta_time, true);
-
-        p.walkingkeypressed = true;
-        playerFacingRight = true;
-    }
-    if (p.plControl->getInput(window, CONTROL_DOWN) && !p.onGround)
-    {
-        p.velocityY = 5.0 * -p.runSpeed;
-    }
-    if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
-    {
-        p.stepsoundplayed = false;
-    }
-    if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !p.stepsoundplayed)
-    {
-        game.playSound(3, 0.15, true);
-        p.stepsoundplayed = true;
-    }
-    if (!p.walkingkeypressed)
-    {
-        p.StopAnimation(ANIM_WALK);
-    }
-    if (p.onGround && !p.plControl->getInput(window, CONTROL_UP))
-    {
-        p.jumped = false;
-    }
-    if ((p.onGround || p.parrySuccess) && !p.jumped && p.plControl->getInput(window, CONTROL_UP))
-    {
-        p.velocityY = 1.8 * p.runSpeed;
-        p.jumped = true;
-        p.onGround = false;
-        p.parrySuccess = false;
-    }
-
-    if (p.parryTimer > 0)
-    {
-        p.parryTimer -= 60.0f * delta_time;
-    }
-    if (p.parryTimer <= 0 && p.parrySuccess)
-    {
-        p.parrySuccess = false;
-        p.velocityY = 1.0;
-    }
-    if (!p.plControl->getInput(window, CONTROL_SHIELD))
-    {
-        p.parryButtonPressed = false;
-    }
-
-    if (p.hp == 0 && p.parryTimer > (p.parryCooloff - p.parryWindow))
-    {
-        p.hp = p.maxhp;
-        p.parrySuccess = true;
-        p.jumped = false;
-    }
-
-    if (p.plControl->getInput(window, CONTROL_SHIELD) && !p.parryButtonPressed)
-    {
-        if (p.parryTimer <= 0)
-        {
-            p.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
-            p.parryTimer = p.parryCooloff;
-        }
-        p.parryButtonPressed = true;
-    }
-
-    if (p.strikeTimer >= 0.0)
-    {
-        if (p.strikeTimer > p.strikeCooloff - p.strikeWindow)
-        {
-            p.colliderOn(COLLIDER_STRIKE);
-            p.striking = true;
-        }
-        p.strikeTimer -= 60.0 * delta_time;
-    }
-    if (p.strikeTimer <= 0.0 && p.strikeButtonPressed) // seems strange keep an eye on this?
-    {
-        p.colliderOff(COLLIDER_STRIKE);
-        p.strikeButtonPressed = false;
-    }
-    if (p.plControl->getInput(window, CONTROL_SWORD) && !p.strikeButtonPressed)
-    {
-        p.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
-        p.strikeButtonPressed = true;
-        p.strikeTimer = p.strikeCooloff;
-    }
-}
+void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor);
 
 double current_time = 0.0;
 double previous_time = 0.0;
 
-void mouseUpdate(GLFWwindow *window)
-{
-    mouseClicked = false;
-    mouseReleased = false;
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) && !mousePressed)
-    {
-        mouseClicked = true;
-        mousePressed = true;
-    }
-
-    if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
-    {
-        if (mousePressed)
-            mouseReleased = true;
-        mouseClicked = false;
-        mousePressed = false;
-    }
-}
+void mouseUpdate(GLFWwindow *window);
 
 bool pauseKeyHeld = false, uiKeyHeld = false, showUI = true;
 player playerControllers[player_limit];
@@ -208,184 +79,7 @@ std::string controlsetstrings[] = {
 
 // special thanks to https://gist.github.com/0xD34DC0DE/910855d41786b962127ae401da2a3441
 // for the string arrays and convertion functions so I don't have to do this myself
-constexpr const char *const LUT44To96[]{"Comma",
-                                        "Minus",
-                                        "Period",
-                                        "Slash",
-                                        "Num0",
-                                        "Num1",
-                                        "Num2",
-                                        "Num3",
-                                        "Num4",
-                                        "Num5",
-                                        "Num6",
-                                        "Num7",
-                                        "Num8",
-                                        "Num9",
-                                        "Invalid",
-                                        "Semicolon",
-                                        "Invalid",
-                                        "Equal",
-                                        "Invalid",
-                                        "Invalid",
-                                        "Invalid",
-                                        "A",
-                                        "B",
-                                        "C",
-                                        "D",
-                                        "E",
-                                        "F",
-                                        "G",
-                                        "H",
-                                        "I",
-                                        "J",
-                                        "K",
-                                        "L",
-                                        "M",
-                                        "N",
-                                        "O",
-                                        "P",
-                                        "Q",
-                                        "R",
-                                        "S",
-                                        "T",
-                                        "U",
-                                        "V",
-                                        "W",
-                                        "X",
-                                        "Y",
-                                        "Z",
-                                        "LeftBracket",
-                                        "Backslash",
-                                        "RightBracket",
-                                        "Invalid",
-                                        "Invalid",
-                                        "GraveAccent"};
-
-constexpr const char *const LUT256To348[]{"Escape",
-                                          "Enter",
-                                          "Tab",
-                                          "Backspace",
-                                          "Insert",
-                                          "Delete",
-                                          "Right",
-                                          "Left",
-                                          "Down",
-                                          "Up",
-                                          "PageUp",
-                                          "PageDown",
-                                          "Home",
-                                          "End",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "CapsLock",
-                                          "ScrollLock",
-                                          "NumLock",
-                                          "PrintScreen",
-                                          "Pause",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "F1",
-                                          "F2",
-                                          "F3",
-                                          "F4",
-                                          "F5",
-                                          "F6",
-                                          "F7",
-                                          "F8",
-                                          "F9",
-                                          "F10",
-                                          "F11",
-                                          "F12",
-                                          "F13",
-                                          "F14",
-                                          "F15",
-                                          "F16",
-                                          "F17",
-                                          "F18",
-                                          "F19",
-                                          "F20",
-                                          "F21",
-                                          "F22",
-                                          "F23",
-                                          "F24",
-                                          "F25",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Keypad0",
-                                          "Keypad1",
-                                          "Keypad2",
-                                          "Keypad3",
-                                          "Keypad4",
-                                          "Keypad5",
-                                          "Keypad6",
-                                          "Keypad7",
-                                          "Keypad8",
-                                          "Keypad9",
-                                          "KeypadDecimal",
-                                          "KeypadDivide",
-                                          "KeypadMultiply",
-                                          "KeypadSubtract",
-                                          "KeypadAdd",
-                                          "KeypadEnter",
-                                          "KeypadEqual",
-                                          "Invalid",
-                                          "Invalid",
-                                          "Invalid",
-                                          "LeftShift",
-                                          "LeftControl",
-                                          "LeftAlt",
-                                          "LeftSuper",
-                                          "RightShift",
-                                          "RightControl",
-                                          "RightAlt",
-                                          "RightSuper",
-                                          "Menu"};
-
-constexpr const char *KeyCodeToString(int keycode) noexcept
-{
-    if (keycode == 32)
-    {
-        return "Space";
-    } // Common key, don't treat as an unlikely scenario
-
-    if (keycode >= 44 && keycode <= 96) [[likely]]
-    {
-        return LUT44To96[keycode - 44];
-    }
-
-    if (keycode >= 256 && keycode <= 348) [[likely]]
-    {
-        return LUT256To348[keycode - 256];
-    }
-
-    // Unlikely scenario where the keycode didn't fall inside one of the two lookup tables
-    switch (keycode)
-    {
-    case 39:
-        return "Apostrophe";
-    case 161:
-        return "World1";
-    case 162:
-        return "Wordl2";
-    default:
-        return "Unknown";
-    }
-}
+constexpr const char *KeyCodeToString(int keycode) noexcept;
 
 const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON_X", "PAD_BUTTON_Y", "PAD_BUTTON_LBUTTON",
                                      "PAD_BUTTON_RBUTTON", "PAD_BUTTON_BACK", "PAD_BUTTON_START", "PAD_BUTTON_HOME", "PAD_BUTTON_LSTICK",
@@ -393,208 +87,31 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
                                      "PAD_LSTICK_LEFT", "PAD_LSTICK_RIGHT", "PAD_LSTICK_UP", "PAD_LSTICK_DOWN", "PAD_RSTICK_LEFT", "PAD_RSTICK_RIGHT",
                                      "PAD_RSTICK_UP", "PAD_RSTICK_DOWN", "PAD_LTRIGGER", "PAD_RTRIGGER"};
 
-void playerInit(character &pl, game_system &game, player &controller)
-{
-    pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
-    pl.setCollider(COLLIDER_SOLID, aabb(pl.visual.x, pl.visual.y, pl.visual.x + pl.visual.trueW() * 0.5, pl.visual.y + pl.visual.trueH() * 0.75));
-    pl.setCollider(COLLIDER_STRIKE, aabb(pl.visual.x - 0.08, pl.visual.y, pl.visual.x + pl.visual.trueW(), pl.visual.y + pl.visual.trueH() * 0.5));
-    pl.colliderOn(COLLIDER_SOLID);
+void playerInit(character &pl, game_system &game, player &controller);
 
-    if (glfwJoystickIsGamepad(playerGamepadCount + 1))
-    {
-        ++playerGamepadCount;
-        controller.gamepad_id = playerGamepadCount;
-    }
-    pl.plControl = &controller;
-
-    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0);
-    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0);
-    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0);
-    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0);
-    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0);
-    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0);
-    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0);
-    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
-    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0);
-
-    game.Add(pl);
-}
-
-void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
-{
-    dg = world(tilePath.c_str(), fx, fy, OBJ_QUAD);
-    dg.readRoomFile(levelPath.c_str());
-}
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy);
 
 // feh
-void updateView(shader &_program)
-{
-    glm::mat4 view = glm::mat4(1.0);
-    glm::mat4 proj;
-
-    mainCam.cameraPosition += mainCam.cameraVelocity;
-    mainCam.update(0.2f);
-
-    _program.use();
-    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
-    _program.setUniformMat4("projection", proj);
-    _program.setUniformMat4("view", view);
-}
-void fullscreenChangeFunction(GLFWwindow *window)
-{
-    static bool fullscreenLast;
-    if (mainCam.fullscreen == fullscreenLast)
-        return;
-
-    if (mainCam.fullscreen)
-    {
-        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
-    }
-    if (!mainCam.fullscreen)
-        glfwSetWindowMonitor(window, NULL, 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
-
-    fullscreenLast = mainCam.fullscreen;
-}
-void addPlayer(character *ch, game_system *gs, world *wo, int x)
-{
-    if (playerCount >= player_limit)
-        return;
-
-    playerInit(gs->characters[playerCount], *gs, playerControllers[playerCount]);
-    gs->characters[playerCount].visual.Scale(0.48, 0.48, 1.0);
-    gs->characters[playerCount].visual.SetColor(0.083333334 * static_cast<double>(playerCount + 1),
-                                                0.083333334 * static_cast<double>(playerCount + 1),
-                                                0.083333334 * static_cast<double>(playerCount + 1), 1.0);
-    playerCount++;
-}
-void removePlayer(character *ch, game_system *gs, world *wo, int x)
-{
-    if (playerCount <= 1)
-        return;
-
-    playerCount--;
-    gs->Remove(playerCount);
-}
+void updateView(shader &_program);
+void fullscreenChangeFunction(GLFWwindow *window);
+void addPlayer(character *ch, game_system *gs, world *wo, int x);
+void removePlayer(character *ch, game_system *gs, world *wo, int x);
 
 controlset changingControl = control_limit;
 int uiElementForControlChangeIndex = 0;
 int playerIDForControl = 0;
 int watchGamepadID = -1;
-void changeControlFunc(character *ch, game_system *gs, world *wo, int x)
-{
-    changingControl = static_cast<controlset>(x);
-
-    if (ch->plControl == nullptr)
-        return;
-
-    watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
-}
-void volumeChangeSoundPlayFunc(character *ch, game_system *gs, world *wo, int x)
-{
-    gs->playSound(6, 0.0, true);
-}
+void changeControlFunc(character *ch, game_system *gs, world *wo, int x);
+void volumeChangeSoundPlayFunc(character *ch, game_system *gs, world *wo, int x);
 
 extern int gamepad_stick_sensitivity;
-int gamepadInputWatch()
-{
-    if (watchGamepadID <= -1)
-        return -1;
-
-    GLFWgamepadstate gState;
-
-    if (!glfwGetGamepadState(GLFW_JOYSTICK_1 + watchGamepadID, &gState))
-        return -1;
-
-    for (int i = 0; i < GLFW_GAMEPAD_BUTTON_LAST + 1; ++i)
-    {
-        if (gState.buttons[i])
-        {
-            return i;
-        }
-    }
-
-    double realSensitivity = gamepad_stick_sensitivity * 0.001f;
-    if (gState.axes[0] < -realSensitivity)
-    {
-        return PAD_LSTICK_LEFT;
-    }
-    if (gState.axes[0] > realSensitivity)
-    {
-        return PAD_LSTICK_RIGHT;
-    }
-    if (gState.axes[1] < -realSensitivity)
-    {
-        return PAD_LSTICK_UP;
-    }
-    if (gState.axes[1] > realSensitivity)
-    {
-        return PAD_LSTICK_DOWN;
-    }
-    if (gState.axes[2] < -realSensitivity)
-    {
-        return PAD_RSTICK_LEFT;
-    }
-    if (gState.axes[2] > realSensitivity)
-    {
-        return PAD_RSTICK_RIGHT;
-    }
-    if (gState.axes[3] < -realSensitivity)
-    {
-        return PAD_RSTICK_UP;
-    }
-    if (gState.axes[3] > realSensitivity)
-    {
-        return PAD_RSTICK_DOWN;
-    }
-    if (gState.axes[4] > realSensitivity)
-    {
-        return PAD_TRIGGER_L;
-    }
-    if (gState.axes[5] > realSensitivity)
-    {
-        return PAD_TRIGGER_R;
-    }
-    return -1;
-}
-void increaseLevel(character *ch, game_system *gs, world *wo, int x)
-{
-    if (gs == nullptr)
-        return;
-
-    gs->levelincreasing = true;
-}
-void incrementPlayerIDForControlFunc(character *ch, game_system *gs, world *wo, int x)
-{
-    playerIDForControl += x;
-    if (playerIDForControl < 0)
-    {
-        int cycleDifference = playerIDForControl;
-        playerIDForControl = playerCount;
-        playerIDForControl += cycleDifference;
-    }
-    if (playerIDForControl >= playerCount)
-    {
-        int cycleDifference = playerIDForControl - playerCount;
-        playerIDForControl = cycleDifference;
-    }
-}
-void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x)
-{
-    mainCam.fullscreen = !mainCam.fullscreen;
-}
-void particleToggleFunc(character *ch, game_system *gs, world *wo, int x)
-{
-    gs->particlesenabled = !gs->particlesenabled;
-    if (!gs->particlesenabled)
-    {
-        gs->killParticles();
-    }
-}
+int gamepadInputWatch();
+void increaseLevel(character *ch, game_system *gs, world *wo, int x);
+void incrementPlayerIDForControlFunc(character *ch, game_system *gs, world *wo, int x);
+void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x);
+void particleToggleFunc(character *ch, game_system *gs, world *wo, int x);
 void goMenuScreen(character *p, game_system *gs, world *w, int argv);
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv);
-
-character enemyList[4];
 
 int playerIDForControlStrElementIndex = -1;
 int prevState = -1;
@@ -603,8 +120,8 @@ double camCenterX = 0.0, camCenterY = 0.0;
 sprite deCollision;
 sprite dePl;
 #endif
-// edit all guis here
-void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engine, double &transition_timer)
+
+void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_engine, double &transition_timer)
 {
     if (mainG.state != mainG.nextState && transition_timer > 0.0)
     {
@@ -748,29 +265,29 @@ void menuData(game_system &mainG, character &p1, world &floor, ma_engine &s_engi
             mainG.Remove(i);
         }
 
-        mainG.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 3);
+        mainG.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 30);
 
-        if (mainG.particleByID(3) != nullptr)
+        if (mainG.particleByID(30) != nullptr)
         {
-            mainG.particleByID(3)->setVariable(PV_PUSHMIN_Y, -1.0);
-            mainG.particleByID(3)->setVariable(PV_PUSHMAX_Y, 1.0);
-            mainG.particleByID(3)->setVariable(PV_PUSHMIN_X, -1.0);
-            mainG.particleByID(3)->setVariable(PV_PUSHMAX_X, 1.0);
-            mainG.particleByID(3)->setVariable(PV_RED, 0.0);
-            mainG.particleByID(3)->setVariable(PV_GREEN, 0.0);
-            mainG.particleByID(3)->setVariable(PV_BLUE, 0.0);
-            mainG.particleByID(3)->setVariable(PV_ALPHA, 1.0);
-            mainG.particleByID(3)->setVariable(PV_WIDTH, 0.1);
-            mainG.particleByID(3)->setVariable(PV_HEIGHT, 0.1);
-            mainG.particleByID(3)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-            mainG.particleByID(3)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-            mainG.particleByID(3)->setVariable(PV_ANIM_START, 0.0);
-            mainG.particleByID(3)->setVariable(PV_ANIM_END, 4.0);
-            mainG.particleByID(3)->setVariable(PV_ANIM_SPEED, 8.0);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
-            mainG.particleByID(3)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
+            mainG.particleByID(30)->setVariable(PV_PUSHMIN_Y, -1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMAX_Y, 1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMIN_X, -1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMAX_X, 1.0);
+            mainG.particleByID(30)->setVariable(PV_RED, 0.0);
+            mainG.particleByID(30)->setVariable(PV_GREEN, 0.0);
+            mainG.particleByID(30)->setVariable(PV_BLUE, 0.0);
+            mainG.particleByID(30)->setVariable(PV_ALPHA, 1.0);
+            mainG.particleByID(30)->setVariable(PV_WIDTH, 0.1);
+            mainG.particleByID(30)->setVariable(PV_HEIGHT, 0.1);
+            mainG.particleByID(30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+            mainG.particleByID(30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+            mainG.particleByID(30)->setVariable(PV_ANIM_START, 0.0);
+            mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
+            mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
         }
 
         for (int i = 0; i < playerCount; ++i)
@@ -991,7 +508,7 @@ int main()
             game.nextState = WORLD_SCREEN;
         }
 
-        menuData(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
+        sceneInit(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
 
         transitionFade.Put(mainCam.cameraPosition.x, mainCam.cameraPosition.y - transitionTimer * 4.0, 0.0);
         transitionFade.Draw(shaderProgram, spriteRect);
@@ -1008,7 +525,7 @@ int main()
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            game.particleSet("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
+            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
             if (game.particleByID(52) != nullptr)
             {
                 game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
@@ -1019,6 +536,8 @@ int main()
                 game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
                 game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
                 game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
+                game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
+                game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
             }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
@@ -1199,7 +718,7 @@ int main()
                         game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
-                    game.particleSet("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
+                    game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
                     if (game.particleByID(i + 30) != nullptr)
                     {
                         game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
@@ -1457,4 +976,501 @@ void processInput(GLFWwindow *window)
     // pauseKeyHeld = false;
     // if (glfwGetKey(window, GLFW_KEY_SPACE))
     //     pauseKeyHeld = true;
+}
+
+void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor)
+{
+    p.velocityX = 0.0;
+
+    if (p.plControl->getInput(window, CONTROL_LEFT))
+    {
+        p.velocityX = -p.runSpeed;
+        p.visual.Rotate(0.0, 180.0, 0.0);
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
+            p.PlayAnimation(ANIM_WALK, delta_time, true);
+        p.walkingkeypressed = true;
+        playerFacingRight = false;
+    }
+    if (p.plControl->getInput(window, CONTROL_RIGHT))
+    {
+        p.velocityX = p.runSpeed;
+        p.visual.Rotate(0.0, 0.0, 0.0);
+        if (p.onGround && p.animations[ANIM_ABILITY_0].finished && p.animations[ANIM_ABILITY_1].finished)
+            p.PlayAnimation(ANIM_WALK, delta_time, true);
+
+        p.walkingkeypressed = true;
+        playerFacingRight = true;
+    }
+    if (p.plControl->getInput(window, CONTROL_DOWN) && !p.onGround)
+    {
+        p.velocityY = 5.0 * -p.runSpeed;
+    }
+    if (p.playingAnim != ANIM_WALK || p.animations[ANIM_WALK].frame != 1)
+    {
+        p.stepsoundplayed = false;
+    }
+    if (p.playingAnim == ANIM_WALK && p.animations[ANIM_WALK].frame == 1 && !p.stepsoundplayed)
+    {
+        game.playSound(3, 0.15, true);
+        p.stepsoundplayed = true;
+    }
+    if (!p.walkingkeypressed)
+    {
+        p.StopAnimation(ANIM_WALK);
+    }
+    if (p.onGround && !p.plControl->getInput(window, CONTROL_UP))
+    {
+        p.jumped = false;
+    }
+    if ((p.onGround || p.parrySuccess) && !p.jumped && p.plControl->getInput(window, CONTROL_UP))
+    {
+        p.velocityY = 1.8 * p.runSpeed;
+        p.jumped = true;
+        p.onGround = false;
+        p.parrySuccess = false;
+    }
+
+    if (p.parryTimer > 0)
+    {
+        p.parryTimer -= 60.0f * delta_time;
+    }
+    if (p.parryTimer <= 0 && p.parrySuccess)
+    {
+        p.parrySuccess = false;
+        p.velocityY = 1.0;
+    }
+    if (!p.plControl->getInput(window, CONTROL_SHIELD))
+    {
+        p.parryButtonPressed = false;
+    }
+
+    if (p.hp == 0 && p.parryTimer > (p.parryCooloff - p.parryWindow))
+    {
+        p.hp = p.maxhp;
+        p.parrySuccess = true;
+        p.jumped = false;
+    }
+
+    if (p.plControl->getInput(window, CONTROL_SHIELD) && !p.parryButtonPressed)
+    {
+        if (p.parryTimer <= 0)
+        {
+            p.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
+            p.parryTimer = p.parryCooloff;
+        }
+        p.parryButtonPressed = true;
+    }
+
+    if (p.strikeTimer >= 0.0)
+    {
+        if (p.strikeTimer > p.strikeCooloff - p.strikeWindow)
+        {
+            p.colliderOn(COLLIDER_STRIKE);
+            p.striking = true;
+        }
+        p.strikeTimer -= 60.0 * delta_time;
+    }
+    if (p.strikeTimer <= 0.0 && p.strikeButtonPressed) // seems strange keep an eye on this?
+    {
+        p.colliderOff(COLLIDER_STRIKE);
+        p.strikeButtonPressed = false;
+    }
+    if (p.plControl->getInput(window, CONTROL_SWORD) && !p.strikeButtonPressed)
+    {
+        p.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
+        p.strikeButtonPressed = true;
+        p.strikeTimer = p.strikeCooloff;
+    }
+}
+
+void mouseUpdate(GLFWwindow *window)
+{
+    mouseClicked = false;
+    mouseReleased = false;
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) && !mousePressed)
+    {
+        mouseClicked = true;
+        mousePressed = true;
+    }
+
+    if (!glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
+    {
+        if (mousePressed)
+            mouseReleased = true;
+        mouseClicked = false;
+        mousePressed = false;
+    }
+}
+
+void playerInit(character &pl, game_system &game, player &controller)
+{
+    pl = character("./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
+    pl.setCollider(COLLIDER_SOLID, aabb(pl.visual.x, pl.visual.y, pl.visual.x + pl.visual.trueW() * 0.5, pl.visual.y + pl.visual.trueH() * 0.75));
+    pl.setCollider(COLLIDER_STRIKE, aabb(pl.visual.x - 0.08, pl.visual.y, pl.visual.x + pl.visual.trueW(), pl.visual.y + pl.visual.trueH() * 0.5));
+    pl.colliderOn(COLLIDER_SOLID);
+
+    if (glfwJoystickIsGamepad(playerGamepadCount + 1))
+    {
+        ++playerGamepadCount;
+        controller.gamepad_id = playerGamepadCount;
+    }
+    pl.plControl = &controller;
+
+    pl.SetAnimation(ANIM_IDLE, 0, 0, 0.0);
+    pl.SetAnimation(ANIM_WALK, 0, 1, 100.0);
+    pl.SetAnimation(ANIM_HURT, 6, 10, 250.0);
+    pl.SetAnimation(ANIM_DEAD, 11, 11, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_2, 1, 1, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 100.0);
+    pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 100.0);
+    // pl.SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
+    // pl.SetAnimation(ANIM_ABILITY_1, 3, 3, 0.0);
+
+    game.Add(pl);
+}
+
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
+{
+    dg = world(tilePath.c_str(), fx, fy, OBJ_QUAD);
+    dg.readRoomFile(levelPath.c_str());
+}
+
+// feh
+void updateView(shader &_program)
+{
+    glm::mat4 view = glm::mat4(1.0);
+    glm::mat4 proj;
+
+    mainCam.cameraPosition += mainCam.cameraVelocity;
+    mainCam.update(0.2f);
+
+    _program.use();
+    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
+    _program.setUniformMat4("projection", proj);
+    _program.setUniformMat4("view", view);
+}
+void fullscreenChangeFunction(GLFWwindow *window)
+{
+    static bool fullscreenLast;
+    if (mainCam.fullscreen == fullscreenLast)
+        return;
+
+    if (mainCam.fullscreen)
+    {
+        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
+    }
+    if (!mainCam.fullscreen)
+        glfwSetWindowMonitor(window, NULL, 0.0, 0.0, window_width, window_height, GLFW_DONT_CARE);
+
+    fullscreenLast = mainCam.fullscreen;
+}
+void addPlayer(character *ch, game_system *gs, world *wo, int x)
+{
+    if (playerCount >= player_limit)
+        return;
+
+    playerInit(gs->characters[playerCount], *gs, playerControllers[playerCount]);
+    gs->characters[playerCount].visual.Scale(0.48, 0.48, 1.0);
+    gs->characters[playerCount].visual.SetColor(0.083333334 * static_cast<double>(playerCount + 1),
+                                                0.083333334 * static_cast<double>(playerCount + 1),
+                                                0.083333334 * static_cast<double>(playerCount + 1), 1.0);
+    playerCount++;
+}
+void removePlayer(character *ch, game_system *gs, world *wo, int x)
+{
+    if (playerCount <= 1)
+        return;
+
+    playerCount--;
+    gs->Remove(playerCount);
+}
+
+void changeControlFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    changingControl = static_cast<controlset>(x);
+
+    if (ch->plControl == nullptr)
+        return;
+
+    watchGamepadID = ch->plControl->gamepad_id; // will be -1 if no gamepad
+}
+void volumeChangeSoundPlayFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    gs->playSound(6, 0.0, true);
+}
+
+int gamepadInputWatch()
+{
+    if (watchGamepadID <= -1)
+        return -1;
+
+    GLFWgamepadstate gState;
+
+    if (!glfwGetGamepadState(GLFW_JOYSTICK_1 + watchGamepadID, &gState))
+        return -1;
+
+    for (int i = 0; i < GLFW_GAMEPAD_BUTTON_LAST + 1; ++i)
+    {
+        if (gState.buttons[i])
+        {
+            return i;
+        }
+    }
+
+    double realSensitivity = gamepad_stick_sensitivity * 0.001f;
+    if (gState.axes[0] < -realSensitivity)
+    {
+        return PAD_LSTICK_LEFT;
+    }
+    if (gState.axes[0] > realSensitivity)
+    {
+        return PAD_LSTICK_RIGHT;
+    }
+    if (gState.axes[1] < -realSensitivity)
+    {
+        return PAD_LSTICK_UP;
+    }
+    if (gState.axes[1] > realSensitivity)
+    {
+        return PAD_LSTICK_DOWN;
+    }
+    if (gState.axes[2] < -realSensitivity)
+    {
+        return PAD_RSTICK_LEFT;
+    }
+    if (gState.axes[2] > realSensitivity)
+    {
+        return PAD_RSTICK_RIGHT;
+    }
+    if (gState.axes[3] < -realSensitivity)
+    {
+        return PAD_RSTICK_UP;
+    }
+    if (gState.axes[3] > realSensitivity)
+    {
+        return PAD_RSTICK_DOWN;
+    }
+    if (gState.axes[4] > realSensitivity)
+    {
+        return PAD_TRIGGER_L;
+    }
+    if (gState.axes[5] > realSensitivity)
+    {
+        return PAD_TRIGGER_R;
+    }
+    return -1;
+}
+void increaseLevel(character *ch, game_system *gs, world *wo, int x)
+{
+    if (gs == nullptr)
+        return;
+
+    gs->levelincreasing = true;
+}
+void incrementPlayerIDForControlFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    playerIDForControl += x;
+    if (playerIDForControl < 0)
+    {
+        int cycleDifference = playerIDForControl;
+        playerIDForControl = playerCount;
+        playerIDForControl += cycleDifference;
+    }
+    if (playerIDForControl >= playerCount)
+    {
+        int cycleDifference = playerIDForControl - playerCount;
+        playerIDForControl = cycleDifference;
+    }
+}
+void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    mainCam.fullscreen = !mainCam.fullscreen;
+}
+void particleToggleFunc(character *ch, game_system *gs, world *wo, int x)
+{
+    gs->particlesenabled = !gs->particlesenabled;
+    if (!gs->particlesenabled)
+    {
+        gs->killParticles();
+    }
+}
+
+constexpr const char *const LUT44To96[]{"Comma",
+                                        "Minus",
+                                        "Period",
+                                        "Slash",
+                                        "Num0",
+                                        "Num1",
+                                        "Num2",
+                                        "Num3",
+                                        "Num4",
+                                        "Num5",
+                                        "Num6",
+                                        "Num7",
+                                        "Num8",
+                                        "Num9",
+                                        "Invalid",
+                                        "Semicolon",
+                                        "Invalid",
+                                        "Equal",
+                                        "Invalid",
+                                        "Invalid",
+                                        "Invalid",
+                                        "A",
+                                        "B",
+                                        "C",
+                                        "D",
+                                        "E",
+                                        "F",
+                                        "G",
+                                        "H",
+                                        "I",
+                                        "J",
+                                        "K",
+                                        "L",
+                                        "M",
+                                        "N",
+                                        "O",
+                                        "P",
+                                        "Q",
+                                        "R",
+                                        "S",
+                                        "T",
+                                        "U",
+                                        "V",
+                                        "W",
+                                        "X",
+                                        "Y",
+                                        "Z",
+                                        "LeftBracket",
+                                        "Backslash",
+                                        "RightBracket",
+                                        "Invalid",
+                                        "Invalid",
+                                        "GraveAccent"};
+
+constexpr const char *const LUT256To348[]{"Escape",
+                                          "Enter",
+                                          "Tab",
+                                          "Backspace",
+                                          "Insert",
+                                          "Delete",
+                                          "Right",
+                                          "Left",
+                                          "Down",
+                                          "Up",
+                                          "PageUp",
+                                          "PageDown",
+                                          "Home",
+                                          "End",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "CapsLock",
+                                          "ScrollLock",
+                                          "NumLock",
+                                          "PrintScreen",
+                                          "Pause",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "F1",
+                                          "F2",
+                                          "F3",
+                                          "F4",
+                                          "F5",
+                                          "F6",
+                                          "F7",
+                                          "F8",
+                                          "F9",
+                                          "F10",
+                                          "F11",
+                                          "F12",
+                                          "F13",
+                                          "F14",
+                                          "F15",
+                                          "F16",
+                                          "F17",
+                                          "F18",
+                                          "F19",
+                                          "F20",
+                                          "F21",
+                                          "F22",
+                                          "F23",
+                                          "F24",
+                                          "F25",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Keypad0",
+                                          "Keypad1",
+                                          "Keypad2",
+                                          "Keypad3",
+                                          "Keypad4",
+                                          "Keypad5",
+                                          "Keypad6",
+                                          "Keypad7",
+                                          "Keypad8",
+                                          "Keypad9",
+                                          "KeypadDecimal",
+                                          "KeypadDivide",
+                                          "KeypadMultiply",
+                                          "KeypadSubtract",
+                                          "KeypadAdd",
+                                          "KeypadEnter",
+                                          "KeypadEqual",
+                                          "Invalid",
+                                          "Invalid",
+                                          "Invalid",
+                                          "LeftShift",
+                                          "LeftControl",
+                                          "LeftAlt",
+                                          "LeftSuper",
+                                          "RightShift",
+                                          "RightControl",
+                                          "RightAlt",
+                                          "RightSuper",
+                                          "Menu"};
+
+constexpr const char *KeyCodeToString(int keycode) noexcept
+{
+    if (keycode == 32)
+    {
+        return "Space";
+    } // Common key, don't treat as an unlikely scenario
+
+    if (keycode >= 44 && keycode <= 96) [[likely]]
+    {
+        return LUT44To96[keycode - 44];
+    }
+
+    if (keycode >= 256 && keycode <= 348) [[likely]]
+    {
+        return LUT256To348[keycode - 256];
+    }
+
+    // Unlikely scenario where the keycode didn't fall inside one of the two lookup tables
+    switch (keycode)
+    {
+    case 39:
+        return "Apostrophe";
+    case 161:
+        return "World1";
+    case 162:
+        return "Wordl2";
+    default:
+        return "Unknown";
+    }
 }

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
+#include <thread>
 #include "collision.h"
 #include "world.h"
 #include "effects.h"
@@ -364,17 +365,18 @@ struct game_system
     void Remove(int index);
     void ClearEnemies();
 
-    void particleSet(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                     double sX, double sY, double sW, double sH, unsigned int uniqueID)
+    void setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+                      double sX, double sY, double sW, double sH, unsigned int uniqueID)
     {
         if (particlesystemcount >= particle_system_limit || !particlesenabled)
             return;
+
+        particles[particlesystemcount].totalParticlesSpawned = 0;
 
         for (int i = 0; i < particlesystemcount; ++i)
         {
             if (uniqueID == particles[i].id)
             {
-                particles[i].totalParticlesSpawned = 0;
                 return;
             }
         }
@@ -412,9 +414,20 @@ struct game_system
     }
     void removeParticles(unsigned int index)
     {
+        particles[index] = particlesystem();
+        for (int i = 0; i < pv_variable_limit; ++i)
+        {
+            particles[index].variable_pointers[i] = nullptr;
+        }
+
         for (int i = index; i < particlesystemcount - 1; ++i)
         {
             particles[i] = particles[i + 1];
+        }
+        particles[particlesystemcount] = particlesystem();
+        for (int i = 0; i < pv_variable_limit; ++i)
+        {
+            particles[particlesystemcount].variable_pointers[i] = nullptr;
         }
         --particlesystemcount;
     }

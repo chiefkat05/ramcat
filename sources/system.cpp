@@ -437,22 +437,22 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             case 8:
                 if (collision)
                 {
-                    tile *fishTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID); // this function's broke
-                    if (fishTile == nullptr)
+                    // tile *fishTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID); // this function's broke
+                    if (floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].specialTileID == -1)
                         break;
 
-                    fishTile->id = -1;
-                    fishTile->collisionID = -1;
+                    floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].id = -1;
+                    floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].collisionID = -1;
                     floor.collision_boxes[j].collisionID = -1;
                     ++fishCollected;
                 }
                 break;
             case 9:
-                if (collision) // something wrong here put std::cout to see if it goes through
+                if (collision)
                 {
-                    tile *checkpointTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
-                    checkpointTile->id = 2;
-                    checkpointTile->collisionID = -1;
+                    // tile *checkpointTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
+                    floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].id = 2;
+                    floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].collisionID = -1;
                     floor.collision_boxes[j].collisionID = -1;
 
                     floor.spawnLocationX = floor.collision_boxes[j].min_x * floor.worldSprite.trueW();
@@ -462,18 +462,20 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             case 10:
                 if (collision)
                 {
-                    tile *coinTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
-                    coinTile->emptyTile();
+                    // tile *coinTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
+                    // floor.animationToIDMap[floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].animationIndexID] = -1;
+                    floor.removeTileAnimation(floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].animationIndexID);
+                    floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].emptyTile();
                     floor.collision_boxes[j].collisionID = -1;
-                    characters[i].runSpeed *= 1.001;
+                    // characters[i].runSpeed *= 1.001; // find better mechanic pls
                 }
                 break;
             case 11:
             {
-                tile *gulkTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
+                // tile *gulkTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
 
-                gulkTile->id = -1;
-                gulkTile->collisionID = -1;
+                floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].id = -1;
+                floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
 
                 Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
@@ -488,9 +490,9 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             break;
             case 12:
             {
-                tile *npcTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
-                npcTile->id = -1;
-                npcTile->collisionID = -1;
+                // tile *npcTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
+                floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].id = -1;
+                floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY].collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
                 Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
                               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY));
@@ -550,6 +552,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
 
         if (particles[i].particles_alive <= 0)
         {
+            std::cout << i << ", " << particles[i].visual.texture_path << ", test " << particles[i].totalParticlesSpawned << " / " << particles[i].particle_count << " hmm\n";
             removeParticles(i);
         }
     }
