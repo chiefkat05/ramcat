@@ -1,0 +1,17 @@
+-- opengl
+license here
+
+-- glfw
+license here
+
+-- glm
+license here
+
+-- stb public libraries
+MIT license
+
+-- glad
+license here
+
+-- miniaudio
+license here
