@@ -74,11 +74,11 @@ struct world
     unsigned int collision_box_count = 0;
 
     world();
-    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj);
+    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj, shader *program);
 
     // void changeScreenViewPosition(glview &view, double newX, double newY);
 
-    void draw(GLFWwindow *win, shader &program);
+    void draw();
 
     void readRoomFile(const char *path);
     tile *getTile(unsigned int tileID);

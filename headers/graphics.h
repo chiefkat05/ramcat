@@ -13,7 +13,7 @@
 
 std::string readFileToString(std::string path);
 
-const double pixel_scale = 0.02;
+const double pixel_scale = 0.015;
 
 class shader
 {
@@ -21,6 +21,7 @@ public:
     unsigned int ID;
 
     void use();
+    shader();
     shader(const char *vPath, const char *fPath);
 
     void setUniformVec4(const char *name, double x, double y, double z, double w);

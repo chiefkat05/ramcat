@@ -26,6 +26,7 @@ void shader::use()
 {
     glUseProgram(ID);
 }
+shader::shader() {}
 shader::shader(const char *vPath, const char *fPath)
 {
     int success;

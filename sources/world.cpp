@@ -6,10 +6,11 @@ world::world()
 {
     worldInitialized = false;
 }
-world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj)
+world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj, shader *program)
 {
+    worldObject = object(obj);
     tileSetPath = _tileSetPath;
-    worldSprite = sprite(tileSetPath, _fx, _fy);
+    worldSprite = sprite(program, &worldObject, tileSetPath, _fx, _fy);
     worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {
@@ -20,13 +21,11 @@ world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, objec
     }
     // the pointer to the ui_element's visual object is incorrect inside the element's update function
     // what does this mean
-
-    worldObject = object(obj);
 }
 
-void world::draw(GLFWwindow *win, shader &program)
+void world::draw()
 {
-    worldSprite.Draw(program, worldObject);
+    worldSprite.Draw();
 }
 
 void world::readRoomFile(const char *path)
@@ -72,7 +71,7 @@ void world::readRoomFile(const char *path)
             case 's':
                 tiles[i][roomHeight].id = 2;
 
-                spawnLocationX = i * (worldSprite.spriteW * pixel_scale);
+                spawnLocationX = i * worldSprite.trueW();
                 spawnLocationY = roomHeight;
                 tiles[i][roomHeight].collisionID = -1;
                 break;

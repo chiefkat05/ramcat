@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 out vec4 FragColor;
 in vec2 tex_position;
 in float skipDraw;
@@ -10,12 +10,12 @@ uniform vec4 color;
 
 void main()
 {
-    if (skipDraw == -1.0)
+    if (skipDraw == -1.0 || color.a <= 0.1)
         discard;
 
     vec4 textureOutput = texture(tex, (tex_position + tex_offset) * tex_scale);
     if (textureOutput.w < 0.1)
         discard;
-    textureOutput = textureOutput * color;
+    textureOutput *= color;
     FragColor = textureOutput;
 } 

@@ -48,9 +48,9 @@ struct ui_element
     ui_element_type utype;
     animation anim;
 
-    ui_element(ui_element_type t, const char *path, double x, double y, int frX, int frY,
+    ui_element(game_system *game, ui_element_type t, const char *path, double x, double y, int frX, int frY,
                void func(character *, game_system *, world *, int) = nullFunc, bool bg = false,
-               character *_func_p = nullptr, game_system *_func_gs = nullptr, world *_func_d = nullptr,
+               character *_func_p = nullptr, world *_func_d = nullptr,
                int _func_i = 0, int *_linkValue = nullptr);
     void slider_values(int sM, int sL);
     void scale(double w, double h);
@@ -225,7 +225,7 @@ struct gui
     std::vector<ui_element> elements;
     bool quit = false;
 
-    void screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front);
+    void screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front);
     ui_element *mostRecentCreatedElement();
 };
 

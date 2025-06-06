@@ -35,11 +35,13 @@ struct object
 struct sprite
 {
     double x = 0.0, y = 0.0, z = 0.0, w = 1.0, h = 1.0, d = 1.0, rx = 0.0, ry = 0.0, rz = 0.0;
+    double xOffset = 0.0, yOffset = 0.0, zOffset = 0.0; // for special cases like player sprite flipping
     double colr = 1.0, colg = 1.0, colb = 1.0, cola = 1.0;
     unsigned int spriteW = 0, spriteH = 0;
     unsigned int framesX = 1, framesY = 1;
     unsigned int textureX = 0, textureY = 0;
     double textureWidth = 0, textureHeight = 0;
+    bool inTransparencyList = false;
 
     double trueW() { return spriteW * pixel_scale; }
     double trueH() { return spriteH * pixel_scale; }
@@ -50,8 +52,11 @@ struct sprite
     // object_type obj_type;
     std::string texture_path;
 
+    shader *shaderP = nullptr;
+    object *objectP = nullptr;
+
     sprite();
-    sprite(std::string path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
+    sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
 
     void textureInit();
 
@@ -61,7 +66,7 @@ struct sprite
     void Rotate(double _rx, double _ry, double _rz);
     void SetColor(double _r, double _g, double _b, double _a);
 
-    void Draw(shader &program, object &sprite_object, bool wireframe = false);
+    void Draw(bool wireframe = false);
 };
 
 struct animation

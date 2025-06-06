@@ -37,11 +37,13 @@ extern bool mouseReleased;
 //     func_i = _func_i;
 //     value = _linkValue;
 // }
-ui_element::ui_element(ui_element_type t, const char *path, double x, double y, int frX, int frY,
+ui_element::ui_element(game_system *game, ui_element_type t, const char *path, double x, double y, int frX, int frY,
                        void func(character *, game_system *, world *, int), bool bg,
-                       character *_func_p, game_system *_func_gs, world *_func_d,
+                       character *_func_p, world *_func_d,
                        int _func_i, int *_linkValue)
-    : visual(path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
+    : visual(game->shaders[GAME_SHADER_GUI], game->objects[GAME_OBJECT_DEFAULT],
+             path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)),
+      anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 {
     background = bg;
     utype = t;
@@ -62,9 +64,9 @@ ui_element::ui_element(ui_element_type t, const char *path, double x, double y, 
     width = trueWidth / pixel_divider * (window_height / 2);
     height = trueHeight / pixel_divider * (window_height / 2);
     visual.Scale(trueWidth / pixel_divider, trueHeight / pixel_divider, 1.0);
-    function = func; // check how things are drawn and fix it to be stationary on cam
+    function = func;
     func_p = _func_p;
-    func_gs = _func_gs;
+    func_gs = game;
     func_d = _func_d;
     func_i = _func_i;
     value = _linkValue;
@@ -107,8 +109,8 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
     switch (utype)
     {
     case UI_CLICKABLE:
-        if (mouseX < posX - width * 0.5f || mouseX > posX + width * 0.5f ||
-            mouseY < posY - height * 0.5f || mouseY > posY + height * 0.5f)
+        if (mouseX < posX || mouseX > posX + width ||
+            mouseY < posY - height || mouseY > posY)
         {
             if (visual.colr < 1.0)
             {
@@ -218,7 +220,7 @@ void ui_element::slider_values(int sM, int sL)
     }
 }
 
-void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, object &sprite_object, object &sprite_text_object, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front)
+void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front)
 {
     win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
     win_ratio_y = static_cast<double>(current_win_height) / static_cast<double>(window_height);
@@ -234,7 +236,7 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
         elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            glm::vec4 boundingbox = renderText(sprite_text_object, text_program, elements[i].visual.texture_path,
+            glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
                                                elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
                                                glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
 
@@ -253,11 +255,11 @@ void gui::screenDraw(GLFWwindow *window, shader &program, shader &text_program, 
                 double holdPosition = elements[i].visual.x;
                 elements[i].visual.x = elements[i].sliderPos;
                 elements[i].visual.w *= 0.1f;
-                elements[i].visual.Draw(program, sprite_object);
+                elements[i].visual.Draw();
                 elements[i].visual.x = holdPosition;
                 elements[i].visual.w *= 10.0;
             }
-            elements[i].visual.Draw(program, sprite_object);
+            elements[i].visual.Draw();
         }
     }
 }

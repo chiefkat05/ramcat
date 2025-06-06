@@ -72,14 +72,13 @@ struct particlesystem
     unsigned int id;
 
     double variables[pv_variable_limit] = {0.0};
-    double *variable_pointers[pv_variable_limit];
+    double *variable_pointers[pv_variable_limit] = {nullptr};
 
     sprite visual;
     object visualObject;
 
     particlesystem();
-    particlesystem(const char *path, object &visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                   double sX, double sY, double sW, double sH);
+    particlesystem(const char *path, shader *visualShader, object_type visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count);
 
     void spawn(double delta_time);
 
@@ -90,7 +89,7 @@ struct particlesystem
     void linkVariable(PARTICLE_VARIABLE pv, double *value);
 
     void update(double delta_time);
-    void draw(shader &program, object &sprite_object, double delta_time);
+    void draw(double delta_time);
 
     void kill();
 };
