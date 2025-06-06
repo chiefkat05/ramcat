@@ -90,7 +90,7 @@ void playerInit(character &pl, game_system &game, player &controller);
 void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy);
 
 // feh
-void updateView(shader &_program);
+void updateView(shader &_program, bool orthographic = false);
 void fullscreenChangeFunction(GLFWwindow *window);
 void addPlayer(character *ch, game_system *gs, world *wo, int x);
 void removePlayer(character *ch, game_system *gs, world *wo, int x);
@@ -247,7 +247,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     case CHARACTER_CREATION_SCREEN:
         for (int i = 0; i < playerCount; ++i)
         {
-            mainG.characters[i].visual.Scale(0.48f, 0.48f, 1.0); // fun
+            mainG.characters[i].visual.Scale(0.48f, 0.48f, 1.0);
         }
         gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/menu-char.png", -1.0, -1.0, 4, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/add_player.png", 0.2f, 0.4f, 1, 1, addPlayer, false, &p1, &floor));
@@ -306,7 +306,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         case 0:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6); // idk nothing showing up on world
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6);
             break;
         case 1:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
@@ -381,7 +381,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             if (mainG.characters[i].plControl == nullptr)
                 continue;
 
-            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist * 2.0, 0.0); // change back
+            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
             playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
@@ -432,11 +432,18 @@ int main()
         return 0;
     }
 
+    // I don't understand this makes no sense why does it not work with 2 shaders (default and text)
+    // I have looked all over the code and nothing indicates that so many shaders should be needed
+    // figure this out please holy sardines I am fed up with this nonsense
     game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
+    game.shaders[GAME_SHADER_PARTICLE] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
     game.shaders[GAME_SHADER_GUI] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
+    game.shaders[GAME_SHADER_TILEMAP] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
     game.shaders[GAME_SHADER_TEXT] = new shader("./shaders/text.vertex", "./shaders/text.fragment");
 
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
+    game.objects[GAME_OBJECT_PARTICLE] = new object(OBJ_QUAD);
+    game.objects[GAME_OBJECT_TILEMAP] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD);
 
     double current_time = 0;
@@ -479,15 +486,21 @@ int main()
         glClearColor(0.1f, 0.1f, 0.2f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        mainCam.cameraPosition += mainCam.cameraVelocity;
+        mainCam.update(0.2f);
         updateView(*game.shaders[GAME_SHADER_DEFAULT]);
+        updateView(*game.shaders[GAME_SHADER_TILEMAP]);
+        updateView(*game.shaders[GAME_SHADER_GUI]);
+        updateView(*game.shaders[GAME_SHADER_PARTICLE]);
 
-        game.shaders[GAME_SHADER_GUI]->use();
-        glm::mat4 view = glm::mat4(1.0);
-        glm::mat4 proj = glm::mat4(1.0);
-        view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-        proj = glm::perspective(glm::radians(mainCam.ui_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
-        game.shaders[GAME_SHADER_GUI]->setUniformMat4("projection", proj);
-        game.shaders[GAME_SHADER_GUI]->setUniformMat4("view", view);
+        // game.shaders[GAME_SHADER_GUI]->use();
+        // glm::mat4 view = glm::mat4(1.0);
+        // glm::mat4 proj = glm::mat4(1.0);
+        // view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+        // // proj = glm::perspective(glm::radians(mainCam.ui_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
+        // proj = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height), -1.0, 1.0);
+        // game.shaders[GAME_SHADER_GUI]->setUniformMat4("projection", proj);
+        // game.shaders[GAME_SHADER_GUI]->setUniformMat4("view", view);
 
         if (game.state == WON_LEVEL_STATE && game.levelincreasing)
         {
@@ -497,9 +510,9 @@ int main()
 
         sceneInit(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
 
-        // transitionFade.Put(mainCam.cameraPosition.x - 3.0, -1.0 + mainCam.cameraPosition.y - transitionTimer * 4.0, 0.0);
-        transitionFade.Put(-2.0, -2.0, 0.0);
-        transitionFade.SetColor(1.0, 1.0, 1.0, 0.0);
+        transitionFade.Put(mainCam.cameraPosition.x - 3.0, -1.0 + mainCam.cameraPosition.y - transitionTimer * 4.0, 0.0);
+        // transitionFade.Put(-2.0, -2.0 - transitionTimer * 4.0, 0.0);
+        transitionFade.SetColor(1.0, 1.0, 1.0, 1.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
 
@@ -514,20 +527,20 @@ int main()
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
-            if (game.particleByID(52) != nullptr)
-            {
-                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
-                game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
-                game.particleByID(52)->setVariable(PV_RED, 1.0);
-                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
-                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
-                game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
-                game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
-                game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
-                game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
-                game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
-            }
+            // game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
+            // if (game.particleByID(52) != nullptr)
+            // {
+            //     game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
+            //     game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
+            //     game.particleByID(52)->setVariable(PV_RED, 1.0);
+            //     game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+            //     game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+            //     game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
+            //     game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
+            //     game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
+            // }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
@@ -679,16 +692,13 @@ int main()
             dePl.Put(game.characters[0].colliders[0].min_x, game.characters[0].colliders[0].min_y, 0.0);
             dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
             if (!dePl.empty)
-                dePl.Draw(); // debug pls get rid of this later
+                dePl.Draw();
 #endif
 
-            // mainWorld.draw();
+            mainWorld.draw();
 
             for (int i = 0; i < game.characterCount; ++i)
             {
-                // if (game.characters[i] == nullptr)
-                //     continue;
-
                 game.characters[i].visual.Draw();
 
                 if (game.characters[i].plControl == nullptr)
@@ -708,29 +718,29 @@ int main()
                         game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
-                    game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
-                    if (game.particleByID(i + 30) != nullptr)
-                    {
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
-                        game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
-                        game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
-                        game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
-                        game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
-                        game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-                        game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
-                    }
+                    // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
+                    // if (game.particleByID(i + 30) != nullptr)
+                    // {
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
+                    //     game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
+                    //     game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
+                    //     game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
+                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
+                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
+                    // }
                     // player animation here???
                     game.characters[i].hp = game.characters[i].maxhp;
                 }
@@ -778,8 +788,6 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     case CAMERA_STATIONARY:
         break;
     case CAMERA_2D_FOLLOW:
-        // pixel perfect calculations
-
         if (mainCam.firstMouse)
         {
             mainCam.lastMouseX = xpos;
@@ -1139,24 +1147,29 @@ void playerInit(character &pl, game_system &game, player &controller)
 
 void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    dg = world(tilePath.c_str(), fx, fy, OBJ_QUAD, game.shaders[GAME_SHADER_DEFAULT]); // figure out what's wront with the world scene MAYBE IN SCENEINIT() (formerly menuinit)
-    dg.readRoomFile(levelPath.c_str());
+    dg = world(tilePath.c_str(), fx, fy, game.objects[GAME_OBJECT_TILEMAP], game.shaders[GAME_SHADER_TILEMAP]);
+    dg.readRoomFile(levelPath.c_str(), *game.objects[GAME_OBJECT_TILEMAP]);
 }
 
 // feh
-void updateView(shader &_program)
+void updateView(shader &_program, bool orthographic)
 {
     glm::mat4 view = glm::mat4(1.0);
     glm::mat4 proj;
 
-    mainCam.cameraPosition += mainCam.cameraVelocity;
-    mainCam.update(0.2f);
-
     _program.use();
-    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-    proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
+    if (!orthographic)
+    {
+        view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+        proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
+    }
+    if (orthographic)
+        proj = glm::ortho(0.0, 1280.0, 0.0, 720.0, -1.0, 1.0);
+
     _program.setUniformMat4("projection", proj);
-    _program.setUniformMat4("view", view);
+
+    if (!orthographic)
+        _program.setUniformMat4("view", view);
 }
 void fullscreenChangeFunction(GLFWwindow *window)
 {

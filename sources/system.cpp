@@ -332,7 +332,7 @@ void game_system::update(world &floor, double delta_time)
     }
     if (floorTilesNeedUpdate)
     {
-        floor.updateTileTextures();
+        floor.updateTileTextures(*objects[GAME_OBJECT_TILEMAP]);
     }
 
     for (int i = 0; i < characterCount; ++i)

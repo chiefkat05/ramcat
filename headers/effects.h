@@ -75,10 +75,9 @@ struct particlesystem
     double *variable_pointers[pv_variable_limit] = {nullptr};
 
     sprite visual;
-    object visualObject;
 
     particlesystem();
-    particlesystem(const char *path, shader *visualShader, object_type visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count);
+    particlesystem(const char *path, shader *visualShader, object *visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count);
 
     void spawn(double delta_time);
 

@@ -6,11 +6,10 @@ world::world()
 {
     worldInitialized = false;
 }
-world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj, shader *program)
+world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object *worldObject, shader *program)
 {
-    worldObject = object(obj);
     tileSetPath = _tileSetPath;
-    worldSprite = sprite(program, &worldObject, tileSetPath, _fx, _fy);
+    worldSprite = sprite(program, worldObject, tileSetPath, _fx, _fy);
     worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {
@@ -28,7 +27,7 @@ void world::draw()
     worldSprite.Draw();
 }
 
-void world::readRoomFile(const char *path)
+void world::readRoomFile(const char *path, object &worldObject)
 {
     std::ifstream file(path);
 

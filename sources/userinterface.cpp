@@ -41,7 +41,7 @@ ui_element::ui_element(game_system *game, ui_element_type t, const char *path, d
                        void func(character *, game_system *, world *, int), bool bg,
                        character *_func_p, world *_func_d,
                        int _func_i, int *_linkValue)
-    : visual(game->shaders[GAME_SHADER_GUI], game->objects[GAME_OBJECT_DEFAULT],
+    : visual(game->shaders[GAME_SHADER_DEFAULT], game->objects[GAME_OBJECT_DEFAULT],
              path, frX, frY, (t == UI_TEXT || t == UI_CLICKABLE_TEXT)),
       anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 {

@@ -59,7 +59,6 @@ struct world
     unsigned int tileAnimationCount = 0;
     int animationToIDMap[tile_animation_limit];
 
-    object worldObject;
     sprite worldSprite;
 
     unsigned int roomWidth = 0, roomHeight = 0;
@@ -74,13 +73,13 @@ struct world
     unsigned int collision_box_count = 0;
 
     world();
-    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object_type obj, shader *program);
+    world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object *worldObject, shader *program);
 
     // void changeScreenViewPosition(glview &view, double newX, double newY);
 
     void draw();
 
-    void readRoomFile(const char *path);
+    void readRoomFile(const char *path, object &worldObject);
     tile *getTile(unsigned int tileID);
     // tile *getTileFromCollisionSpecialID(unsigned int collisionIndex);
 
@@ -101,7 +100,7 @@ struct world
         }
     }
 
-    void updateTileTextures()
+    void updateTileTextures(object &worldObject)
     {
         glm::vec3 textureTranslations[roomHeight * roomWidth];
         int index = 0;

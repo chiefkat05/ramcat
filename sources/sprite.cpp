@@ -190,23 +190,16 @@ void sprite::Draw(bool wireframe)
     // if (cola == 0.0)
     //     return;
 
-    if (!inTransparencyList && cola < 1.0 && cola > 0.0)
-    {
-        transparentSpriteList.push_back(this);
-        inTransparencyList = true;
-        return;
-    }
+    // if (!inTransparencyList && cola < 1.0 && cola > 0.0)
+    // {
+    //     transparentSpriteList.push_back(this);
+    //     inTransparencyList = true;
+    //     return;
+    // }
 
     shaderP->use();
     if (objectP->obj_type != OBJ_TEXT)
     {
-        // // model math to convert center-width-height box to the collision-appropriate corner-width-height specification
-        // glm::vec3 new_pivot = glm::vec3(x, y, z);
-        // glm::vec3 new_scale = glm::vec3(w, h, d);
-        // // new_pivot = glm::vec3(x + w / 2, y + h / 2, z + d / 2);
-        // // new_pivot.y = 0.0;
-        // // new_scale = glm::vec3(w, h, d);
-
         // pixel perfect snapping
         glm::vec3 new_pivot(x + xOffset, y + yOffset, z + zOffset);
         glm::vec3 pixel_position;
