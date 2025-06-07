@@ -963,14 +963,6 @@ void processInput(GLFWwindow *window)
 
         mainCam.swappedMouseCapture = true;
     }
-
-    // if (!pauseKeyHeld && glfwGetKey(window, GLFW_KEY_SPACE))
-    // {
-    //     game.paused = !game.paused;
-    // }
-    // pauseKeyHeld = false;
-    // if (glfwGetKey(window, GLFW_KEY_SPACE))
-    //     pauseKeyHeld = true;
 }
 
 void playerControl(game_system &game, character &p, GLFWwindow *window, world *floor)
