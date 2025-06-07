@@ -6,7 +6,7 @@
 
 // TO-DO LIST
 
-// doing: Alpha OIT here we go
+// doing: Alpha OIT here we go // oh HECK no we're doing ordered transparency and not wasting another grey hair on this nonsense.
 
 // text rendering
 
