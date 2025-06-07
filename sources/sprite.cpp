@@ -238,10 +238,8 @@ void sprite::Draw(bool wireframe)
         shaderP->setUniformVec2("tex_offset", textureX, textureY);
         shaderP->setUniformVec2("tex_scale", textureWidth, textureHeight);
         shaderP->setUniformVec4("color", colr, colg, colb, cola);
-        if (objectP->instanceCount >= 1)
-        {
-            shaderP->setUniformBool("instanced", true);
-        }
+
+        shaderP->setUniformBool("instanced", (objectP->instanceCount >= 1));
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, sprite_texture);

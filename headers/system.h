@@ -349,9 +349,6 @@ enum game_objectlist
 enum game_shaderlist
 {
     GAME_SHADER_DEFAULT,
-    GAME_SHADER_PARTICLE,
-    GAME_SHADER_GUI,
-    GAME_SHADER_TILEMAP,
     GAME_SHADER_TEXT,
     shader_limit
 };
@@ -418,7 +415,7 @@ struct game_system
             }
         }
 
-        particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_PARTICLE], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
+        particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
 
         // particles[particlesystemcount].visual.texture_path = path;
         // particles[particlesystemcount].visual.framesX = fx;

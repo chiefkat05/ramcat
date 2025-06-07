@@ -263,30 +263,30 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             mainG.Remove(i);
         }
 
-        // mainG.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 30);
+        mainG.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 30);
 
-        // if (mainG.particleByID(30) != nullptr)
-        // {
-        //     mainG.particleByID(30)->setVariable(PV_PUSHMIN_Y, -1.0);
-        //     mainG.particleByID(30)->setVariable(PV_PUSHMAX_Y, 1.0);
-        //     mainG.particleByID(30)->setVariable(PV_PUSHMIN_X, -1.0);
-        //     mainG.particleByID(30)->setVariable(PV_PUSHMAX_X, 1.0);
-        //     mainG.particleByID(30)->setVariable(PV_RED, 0.0);
-        //     mainG.particleByID(30)->setVariable(PV_GREEN, 0.0);
-        //     mainG.particleByID(30)->setVariable(PV_BLUE, 0.0);
-        //     mainG.particleByID(30)->setVariable(PV_ALPHA, 1.0);
-        //     mainG.particleByID(30)->setVariable(PV_WIDTH, 0.1);
-        //     mainG.particleByID(30)->setVariable(PV_HEIGHT, 0.1);
-        //     mainG.particleByID(30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-        //     mainG.particleByID(30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-        //     mainG.particleByID(30)->setVariable(PV_ANIM_START, 0.0);
-        //     mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
-        //     mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
-        // }
+        if (mainG.particleByID(30) != nullptr)
+        {
+            mainG.particleByID(30)->setVariable(PV_PUSHMIN_Y, -1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMAX_Y, 1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMIN_X, -1.0);
+            mainG.particleByID(30)->setVariable(PV_PUSHMAX_X, 1.0);
+            mainG.particleByID(30)->setVariable(PV_RED, 0.0);
+            mainG.particleByID(30)->setVariable(PV_GREEN, 0.0);
+            mainG.particleByID(30)->setVariable(PV_BLUE, 0.0);
+            mainG.particleByID(30)->setVariable(PV_ALPHA, 1.0);
+            mainG.particleByID(30)->setVariable(PV_WIDTH, 0.1);
+            mainG.particleByID(30)->setVariable(PV_HEIGHT, 0.1);
+            mainG.particleByID(30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+            mainG.particleByID(30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+            mainG.particleByID(30)->setVariable(PV_ANIM_START, 0.0);
+            mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
+            mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
+            mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
+        }
 
         for (int i = 0; i < playerCount; ++i)
         {
@@ -432,19 +432,13 @@ int main()
         return 0;
     }
 
-    // I don't understand this makes no sense why does it not work with 2 shaders (default and text)
-    // I have looked all over the code and nothing indicates that so many shaders should be needed
-    // figure this out please holy sardines I am fed up with this nonsense
     game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
-    game.shaders[GAME_SHADER_PARTICLE] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
-    game.shaders[GAME_SHADER_GUI] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
-    game.shaders[GAME_SHADER_TILEMAP] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
     game.shaders[GAME_SHADER_TEXT] = new shader("./shaders/text.vertex", "./shaders/text.fragment");
 
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_PARTICLE] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TILEMAP] = new object(OBJ_QUAD);
-    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD);
+    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD); // for now just move on to transparency and text :)
 
     double current_time = 0;
 
@@ -489,18 +483,6 @@ int main()
         mainCam.cameraPosition += mainCam.cameraVelocity;
         mainCam.update(0.2f);
         updateView(*game.shaders[GAME_SHADER_DEFAULT]);
-        updateView(*game.shaders[GAME_SHADER_TILEMAP]);
-        updateView(*game.shaders[GAME_SHADER_GUI]);
-        updateView(*game.shaders[GAME_SHADER_PARTICLE]);
-
-        // game.shaders[GAME_SHADER_GUI]->use();
-        // glm::mat4 view = glm::mat4(1.0);
-        // glm::mat4 proj = glm::mat4(1.0);
-        // view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
-        // // proj = glm::perspective(glm::radians(mainCam.ui_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
-        // proj = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height), -1.0, 1.0);
-        // game.shaders[GAME_SHADER_GUI]->setUniformMat4("projection", proj);
-        // game.shaders[GAME_SHADER_GUI]->setUniformMat4("view", view);
 
         if (game.state == WON_LEVEL_STATE && game.levelincreasing)
         {
@@ -527,20 +509,20 @@ int main()
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            // game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
-            // if (game.particleByID(52) != nullptr)
-            // {
-            //     game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
-            //     game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
-            //     game.particleByID(52)->setVariable(PV_RED, 1.0);
-            //     game.particleByID(52)->setVariable(PV_GREEN, 1.0);
-            //     game.particleByID(52)->setVariable(PV_BLUE, 1.0);
-            //     game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
-            //     game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
-            //     game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
-            //     game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
-            //     game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
-            // }
+            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
+            if (game.particleByID(52) != nullptr)
+            {
+                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
+                game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
+                game.particleByID(52)->setVariable(PV_RED, 1.0);
+                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+                game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
+                game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
+                game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
+                game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
+                game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
+            }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
@@ -718,29 +700,29 @@ int main()
                         game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
-                    // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
-                    // if (game.particleByID(i + 30) != nullptr)
-                    // {
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
-                    //     game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
-                    //     game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
-                    //     game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
-                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
-                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
-                    // }
+                    game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
+                    if (game.particleByID(i + 30) != nullptr)
+                    {
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
+                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
+                        game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
+                        game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
+                        game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
+                        game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
+                        game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
+                        game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+                        game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
+                        game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
+                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
+                    }
                     // player animation here???
                     game.characters[i].hp = game.characters[i].maxhp;
                 }
@@ -1147,7 +1129,7 @@ void playerInit(character &pl, game_system &game, player &controller)
 
 void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    dg = world(tilePath.c_str(), fx, fy, game.objects[GAME_OBJECT_TILEMAP], game.shaders[GAME_SHADER_TILEMAP]);
+    dg = world(tilePath.c_str(), fx, fy, game.objects[GAME_OBJECT_TILEMAP], game.shaders[GAME_SHADER_DEFAULT]);
     dg.readRoomFile(levelPath.c_str(), *game.objects[GAME_OBJECT_TILEMAP]);
 }
 
