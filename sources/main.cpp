@@ -6,7 +6,7 @@
 
 // TO-DO LIST
 
-// doing: Alpha OIT here we go
+// doing: Alpha OIT here we go // oh HECK no we're doing ordered transparency and not wasting another second of life on this nonsense
 
 // text rendering
 
@@ -438,7 +438,7 @@ int main()
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_PARTICLE] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TILEMAP] = new object(OBJ_QUAD);
-    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD); // for now just move on to transparency and text :)
+    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD);
 
     double current_time = 0;
 
