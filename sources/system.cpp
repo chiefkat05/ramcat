@@ -67,10 +67,9 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     id = _id;
     hp = maxhp;
 }
-// COLLISION BOXES SHOULD BE HANDLED IN WHATEVER FUNCTION IS CALLING CHARACTER CREATION
-character::character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(shader *program, object *sprite_object, std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
-    visual = sprite(filepath.c_str(), fx, fy);
+    visual = sprite(program, sprite_object, filepath.c_str(), fx, fy);
     visual.Put(x, y, 0.0);
     visual.Scale(visual.trueW(), visual.trueH(), 0.1);
     id = _id;
@@ -123,9 +122,12 @@ void character::updatePosition(double delta_time)
     {
         return;
     }
-    visual.Move(velocityX * delta_time, velocityY * delta_time, 0.0);
-    putCollider(COLLIDER_SOLID, visual.x, visual.y - 0.08);
-    putCollider(COLLIDER_STRIKE, visual.x - 0.08, visual.y);
+    visual.Move(velocityX * pixel_scale * delta_time, velocityY * pixel_scale * delta_time, 0.0);
+    for (int i = 0; i < character_collider_limit; ++i)
+    {
+        putCollider(static_cast<COLLIDER_BOX_IDS>(i), visual.x + colliders[i].xOffsetFromParent, visual.y + colliders[i].yOffsetFromParent);
+    }
+
     if (onGround && velocityY < 0.0)
     {
         velocityY = 0.0;
@@ -295,7 +297,30 @@ validCollisionType getCollisionType(unsigned int idA, unsigned int idB)
 
     return VCT_INVALID;
 }
-void game_system::update(world &floor, shader &particle_program, object &particle_sprite, double delta_time)
+void game_system::particle_update(double delta_time)
+{
+    if (!particlesenabled)
+        return;
+
+    for (int i = 0; i < particlesystemcount; ++i)
+    {
+        if (particles[i].totalParticlesSpawned < particles[i].particle_count)
+        {
+            particles[i].spawn(delta_time);
+        }
+        particles[i].update(delta_time);
+        if (particles[i].particles_alive > 0)
+        {
+            particles[i].draw(delta_time);
+        }
+
+        if (particles[i].particles_alive <= 0)
+        {
+            removeParticles(i);
+        }
+    }
+}
+void game_system::update(world &floor, double delta_time)
 {
     bool floorTilesNeedUpdate = false;
     for (int i = 0; i < floor.tileAnimationCount; ++i)
@@ -307,7 +332,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
     }
     if (floorTilesNeedUpdate)
     {
-        floor.updateTileTextures();
+        floor.updateTileTextures(*objects[GAME_OBJECT_TILEMAP]);
     }
 
     for (int i = 0; i < characterCount; ++i)
@@ -316,7 +341,7 @@ void game_system::update(world &floor, shader &particle_program, object &particl
 
         if (!characters[i].onGround)
         {
-            characters[i].velocityY -= 10.0 * delta_time;
+            characters[i].velocityY -= 2000.0 * delta_time;
         }
 
         for (int j = 0; j < characterCount; ++j)
@@ -368,7 +393,8 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             // and
             // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
 
-            double firstCollisionHitTest = characters[i].colliders[COLLIDER_SOLID].response(characters[i].velocityX * delta_time, characters[i].velocityY * delta_time, 0.0, 0.0,
+            double firstCollisionHitTest = characters[i].colliders[COLLIDER_SOLID].response(characters[i].velocityX * pixel_scale * delta_time,
+                                                                                            characters[i].velocityY * pixel_scale * delta_time, 0.0, 0.0,
                                                                                             floor.collision_boxes[j], xNormal, yNormal, characters[i].visual.x,
                                                                                             characters[i].visual.y, collision, distanceToClosestSide);
 
@@ -451,8 +477,8 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                     thisSpecialTile->collisionID = -1;
                     floor.collision_boxes[j].collisionID = -1;
 
-                    floor.spawnLocationX = floor.collision_boxes[j].min_x * floor.worldSprite.trueW();
-                    floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].min_y) * floor.worldSprite.trueW();
+                    floor.spawnLocationX = floor.collision_boxes[j].specialTileX * floor.worldSprite.trueW();
+                    floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].specialTileY) * floor.worldSprite.trueW();
                 }
                 break;
             case 10:
@@ -469,12 +495,11 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 thisSpecialTile->collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
 
-                Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
-                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                                                                                characters[characterCount - 1].visual.y,
-                                                                                characters[characterCount - 1].visual.x + 0.16,
-                                                                                characters[characterCount - 1].visual.y + 0.24));
+                // Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                //               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
+                Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                              floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
+                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
                 characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
                 characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
             }
@@ -485,12 +510,11 @@ void game_system::update(world &floor, shader &particle_program, object &particl
                 thisSpecialTile->id = -1;
                 thisSpecialTile->collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
-                Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
                               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY));
-                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x,
-                                                                                characters[characterCount - 1].visual.y,
-                                                                                characters[characterCount - 1].visual.x + 0.16,
-                                                                                characters[characterCount - 1].visual.y + 0.24));
+                // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+                //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
+                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
                 characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
                 characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
             }
@@ -524,27 +548,6 @@ void game_system::update(world &floor, shader &particle_program, object &particl
             }
         }
         characters[i].updatePosition(delta_time);
-    }
-
-    if (!particlesenabled)
-        return;
-
-    for (int i = 0; i < particlesystemcount; ++i)
-    {
-        if (particles[i].totalParticlesSpawned < particles[i].particle_count)
-        {
-            particles[i].spawn(delta_time);
-        }
-        particles[i].update(delta_time);
-        if (particles[i].particles_alive > 0)
-        {
-            particles[i].draw(particle_program, particle_sprite, delta_time);
-        }
-
-        if (particles[i].particles_alive <= 0)
-        {
-            removeParticles(i);
-        }
     }
 }
 

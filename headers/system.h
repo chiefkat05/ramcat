@@ -159,9 +159,12 @@ struct character
     sprite visual;
 
     aabb colliders[character_collider_limit];
-    void setCollider(COLLIDER_BOX_IDS id, aabb newBox)
+    void setCollider(COLLIDER_BOX_IDS id, aabb newBox, double offsetX, double offsetY)
     {
         colliders[id] = newBox;
+
+        colliders[id].xOffsetFromParent = offsetX;
+        colliders[id].yOffsetFromParent = offsetY;
     }
     void putCollider(COLLIDER_BOX_IDS id, double x, double y)
     {
@@ -182,7 +185,7 @@ struct character
 
     IDENTIFICATION id = CH_NULL;
     int hp = 4, maxhp = 4;
-    double runSpeed = 1.7f;
+    double runSpeed = 170.0f;
 
     bool animationFinished = true, animationLooping = false;
     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
@@ -191,7 +194,7 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(shader *program, object *sprite_object, std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
     void MoveTo(double _x, double _y, world *currentWorld);
 
@@ -335,10 +338,27 @@ enum validCollisionType
     VCT_STRIKE_SOLID,
     VCT_SOLID_STRIKE
 };
+enum game_objectlist
+{
+    GAME_OBJECT_DEFAULT,
+    GAME_OBJECT_PARTICLE,
+    GAME_OBJECT_TILEMAP,
+    GAME_OBJECT_TEXT,
+    object_limit
+};
+enum game_shaderlist
+{
+    GAME_SHADER_DEFAULT,
+    GAME_SHADER_TEXT,
+    shader_limit
+};
 
 struct game_system
 {
     game_state state, nextState;
+
+    object *objects[object_limit];
+    shader *shaders[shader_limit];
 
     character characters[character_limit];
     int characterCount = 0;
@@ -358,6 +378,20 @@ struct game_system
 
     int music_volume = 100, sound_volume = 100;
     int fishCollected = 0, fishNeeded = 5;
+
+    game_system() {}
+    ~game_system()
+    {
+        // delete pointers inside arrays here?
+        for (int i = 0; i < object_limit; ++i)
+        {
+            delete objects[i];
+        }
+        for (int i = 0; i < shader_limit; ++i)
+        {
+            delete shaders[i];
+        }
+    }
 
     void Add(character e);
     // void Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH);
@@ -381,12 +415,14 @@ struct game_system
             }
         }
 
-        particles[particlesystemcount].visual.texture_path = path;
-        particles[particlesystemcount].visual.framesX = fx;
-        particles[particlesystemcount].visual.framesY = fy;
-        particles[particlesystemcount].visual.textureInit();
+        particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
 
-        particles[particlesystemcount].particle_count = _particle_count;
+        // particles[particlesystemcount].visual.texture_path = path;
+        // particles[particlesystemcount].visual.framesX = fx;
+        // particles[particlesystemcount].visual.framesY = fy;
+        // particles[particlesystemcount].visual.textureInit();
+
+        // particles[particlesystemcount].particle_count = _particle_count;
         if (_particle_count >= particle_limit)
             particles[particlesystemcount].particle_count = particle_limit;
         particles[particlesystemcount].variables[PV_LIFE_LOW] = _life_lower;
@@ -440,7 +476,8 @@ struct game_system
     void stopSound(unsigned int id);
     // void uninitMusic();
 
-    void update(world &floor, shader &particle_program, object &particle_sprite, double delta_time);
+    void particle_update(double delta_time);
+    void update(world &floor, double delta_time);
     void handleCollisionSpecifics(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
     {
         switch (charA.id)

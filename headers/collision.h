@@ -6,6 +6,7 @@
 struct aabb
 {
     double min_x, min_y, max_x, max_y;
+    double xOffsetFromParent = 0.0, yOffsetFromParent = 0.0;
     int collisionID = -1;
     int specialTileX = 0;
     int specialTileY = 0;
@@ -22,6 +23,15 @@ struct aabb
     double response(double xV, double yV, double xV2, double yV2, aabb test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision, double &distanceToSide);
     // double response(double xV, double yV, double xV2, double yV2, aabb test, double &tfirst, double &tlast, double &xNormal, double &yNormal,
     // double &xPos, double &yPos, bool &insideCollision);
+
+    constexpr double centerX()
+    {
+        return (min_x + max_x) * 0.5;
+    }
+    constexpr double centerY()
+    {
+        return (min_y + max_y) * 0.5;
+    }
 };
 
 #endif

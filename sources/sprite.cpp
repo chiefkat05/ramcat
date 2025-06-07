@@ -2,12 +2,20 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../stb/stb_image.h"
+#include <vector>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/norm.hpp>
 
+// double quad_vertices[] = {
+//     -0.5f, -0.5f, 0.0, 0.0, 1.0,
+//     0.5f, -0.5f, 0.0, 1.0, 1.0,
+//     0.5f, 0.5f, 0.0, 1.0, 0.0,
+//     -0.5f, 0.5f, 0.0, 0.0, 0.0};
 double quad_vertices[] = {
-    -0.5f, -0.5f, 0.0, 0.0, 1.0,
-    0.5f, -0.5f, 0.0, 1.0, 1.0,
-    0.5f, 0.5f, 0.0, 1.0, 0.0,
-    -0.5f, 0.5f, 0.0, 0.0, 0.0};
+    0.0, 0.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 1.0, 1.0,
+    1.0, 1.0, 0.0, 1.0, 0.0,
+    0.0, 1.0, 0.0, 0.0, 0.0};
 unsigned int quad_indices[] = {
     0, 1, 2,
     0, 3, 2};
@@ -65,8 +73,11 @@ sprite::sprite()
     x = 0.0;
     y = 0.0;
 }
-sprite::sprite(std::string path, unsigned int _fx, unsigned int _fy, bool text)
+sprite::sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx, unsigned int _fy, bool text)
 {
+    shaderP = program;
+    objectP = sprite_object;
+
     textureWidth = 1.0;
     textureHeight = 1.0;
 
@@ -155,23 +166,80 @@ void sprite::SetColor(double _r, double _g, double _b, double _a)
     cola = _a;
 }
 
-void sprite::Draw(shader &program, object &sprite_object, bool wireframe)
+std::vector<sprite *> transparentSpriteList;
+// std::map<float, sprite *> transparentSpriteList;
+
+void drawTransparentSprites(camera &cam)
 {
-    program.use();
-    if (sprite_object.obj_type != OBJ_TEXT)
+    sprite *tempArray[transparentSpriteList.size()];
+    std::map<float, sprite *> drawOrderMap;
+    for (sprite *sp : transparentSpriteList)
     {
+        float length = glm::length2(cam.cameraPosition - glm::dvec3(sp->x, sp->y, sp->z));
+        drawOrderMap[length] = sp;
+    }
+
+    for (std::map<float, sprite *>::reverse_iterator iter = drawOrderMap.rbegin(); iter != drawOrderMap.rend(); ++iter)
+    {
+        iter->second->Draw();
+    }
+}
+
+void sprite::Draw(bool wireframe)
+{
+    // if (cola == 0.0)
+    //     return;
+
+    // if (!inTransparencyList && cola < 1.0 && cola > 0.0)
+    // {
+    //     transparentSpriteList.push_back(this);
+    //     inTransparencyList = true;
+    //     return;
+    // }
+
+    shaderP->use();
+    if (objectP->obj_type != OBJ_TEXT)
+    {
+        // pixel perfect snapping
+        glm::vec3 new_pivot(x + xOffset, y + yOffset, z + zOffset);
+        glm::vec3 pixel_position;
+
+        double inverted_pixel_scale = 1.0 / pixel_scale;
+        if (pixel_scale < 1.0)
+        {
+            pixel_position.x = std::round(new_pivot.x * inverted_pixel_scale) / inverted_pixel_scale;
+            pixel_position.y = std::round(new_pivot.y * inverted_pixel_scale) / inverted_pixel_scale;
+            pixel_position.z = std::round(new_pivot.z * inverted_pixel_scale) / inverted_pixel_scale;
+        }
+
+        double anti_jitter_epsilon = 0.01;
+        if (std::abs(pixel_position.x - (x + xOffset)) < anti_jitter_epsilon)
+        {
+            pixel_position.x = (x + xOffset);
+        }
+        if (std::abs(pixel_position.y - (y + yOffset)) < anti_jitter_epsilon)
+        {
+            pixel_position.y = (y + yOffset);
+        }
+        if (std::abs(pixel_position.z - (z + zOffset)) < anti_jitter_epsilon)
+        {
+            pixel_position.z = (z + zOffset);
+        }
+
         glm::mat4 model = glm::mat4(1.0);
         // why is there a glm::dvec3 but no option to translate using it??? searching web shows up nothing relevant
-        model = glm::translate(model, glm::vec3(x, y, z));
+        model = glm::translate(model, pixel_position);
         model = glm::rotate(model, glm::radians(static_cast<float>(rx)), glm::vec3(1.0, 0.0, 0.0));
         model = glm::rotate(model, glm::radians(static_cast<float>(ry)), glm::vec3(0.0, 1.0, 0.0));
         model = glm::rotate(model, glm::radians(static_cast<float>(rz)), glm::vec3(0.0, 0.0, 1.0));
         model = glm::scale(model, glm::vec3(w, h, d));
-        program.setUniformInt("tex", 0);
-        program.setUniformMat4("model", model);
-        program.setUniformVec2("tex_offset", textureX, textureY);
-        program.setUniformVec2("tex_scale", textureWidth, textureHeight);
-        program.setUniformVec4("color", colr, colg, colb, cola);
+        shaderP->setUniformInt("tex", 0);
+        shaderP->setUniformMat4("model", model);
+        shaderP->setUniformVec2("tex_offset", textureX, textureY);
+        shaderP->setUniformVec2("tex_scale", textureWidth, textureHeight);
+        shaderP->setUniformVec4("color", colr, colg, colb, cola);
+
+        shaderP->setUniformBool("instanced", (objectP->instanceCount >= 1));
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, sprite_texture);
@@ -181,28 +249,28 @@ void sprite::Draw(shader &program, object &sprite_object, bool wireframe)
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
-    switch (sprite_object.obj_type)
+    switch (objectP->obj_type)
     {
     case OBJ_QUAD:
-        glBindVertexArray(sprite_object.VAO);
-        glBindBuffer(1, sprite_object.EBO);
-        if (sprite_object.instanceCount == 0)
+        glBindVertexArray(objectP->VAO);
+        glBindBuffer(1, objectP->EBO);
+        if (objectP->instanceCount == 0)
         {
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         }
         else
         {
-            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, sprite_object.instanceCount);
+            glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, objectP->instanceCount);
         }
         break;
     case OBJ_CUBE:
-        glBindVertexArray(sprite_object.VAO);
+        glBindVertexArray(objectP->VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         break;
     case OBJ_NULL:
         break;
     case OBJ_TEXT:
-        renderText(sprite_object, program, texture_path, x, y, w, glm::vec4(colr, colg, colb, cola));
+        renderText(*objectP, *shaderP, texture_path, x, y, w, glm::vec4(colr, colg, colb, cola));
         break;
     default:
         break;

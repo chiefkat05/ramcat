@@ -15,24 +15,15 @@ particlesystem::particlesystem()
 
     particle_count = 0.0;
 }
-particlesystem::particlesystem(const char *path, object &visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                               double sX, double sY, double sW, double sH)
+particlesystem::particlesystem(const char *path, shader *visualShader, object *visualObj, unsigned int fx, unsigned int fy, unsigned int _particle_count)
 {
     variables[PV_SPAWN_TIMER] = 0.0;
-    variables[PV_LIFE_LOW] = _life_lower;
-    variables[PV_LIFE_HIGH] = _life_upper;
-    variables[PV_SPAWN_X] = sX;
-    variables[PV_SPAWN_Y] = sY;
-    variables[PV_SPAWN_W] = sW;
-    variables[PV_SPAWN_H] = sH;
 
     particle_count = particle_limit;
     if (_particle_count < particle_limit)
         particle_count = _particle_count;
 
-    visual = sprite(path, fx, fy);
-
-    visualObject = object(visualObj);
+    visual = sprite(visualShader, visualObj, path, fx, fy);
 }
 
 void particlesystem::spawn(double delta_time)
@@ -112,9 +103,9 @@ void particlesystem::update(double delta_time)
         textureArray[i] = glm::vec3(static_cast<int>(particles[i].animationTime) % visual.framesX, static_cast<int>(particles[i].animationTime) / visual.framesX, 0.0);
     }
 
-    visualObject.setInstances(particles_alive, transformArray, textureArray);
+    visual.objectP->setInstances(particles_alive, transformArray, textureArray);
 }
-void particlesystem::draw(shader &program, object &sprite_object, double delta_time)
+void particlesystem::draw(double delta_time)
 {
     for (int i = 0; i < particle_count; ++i)
     {
@@ -160,7 +151,7 @@ void particlesystem::draw(shader &program, object &sprite_object, double delta_t
         visual.textureX = static_cast<int>(particles[i].animationTime) % visual.framesX;
         visual.textureY = static_cast<int>(particles[i].animationTime) / visual.framesX;
 
-        visual.Draw(program, sprite_object);
+        visual.Draw();
     }
 }
 
