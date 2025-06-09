@@ -194,7 +194,7 @@ struct character
 
     character();
     character(sprite &v, IDENTIFICATION _id);
-    character(shader *program, object *sprite_object, std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
+    character(shader *program, object *sprite_object, std::string filepath, double x, double y, double z, unsigned int fx, unsigned int fy, IDENTIFICATION _id);
 
     void MoveTo(double _x, double _y, world *currentWorld);
 

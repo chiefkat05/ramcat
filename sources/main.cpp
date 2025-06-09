@@ -6,13 +6,11 @@
 
 // TO-DO LIST
 
-// doing: Alpha OIT here we go // oh HECK no we're doing ordered transparency and not wasting another grey hair on this nonsense.
-
 // text rendering
 
-// lighting ( maybe lighting using attributes? )
+// make color attribute for instancing (rgba)
 
-// alpha
+// lighting ( maybe lighting using attributes? )
 
 // quadtree
 
@@ -87,7 +85,7 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller);
 
-void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy);
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, glm::vec4 tileColors[tile_color_limit], unsigned int fx, unsigned int fy);
 
 // feh
 void updateView(shader &_program, bool orthographic = false);
@@ -123,7 +121,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
 {
     if (mainG.state != mainG.nextState && transition_timer > 0.0)
     {
-        transition_timer -= 2.0 * delta_time;
+        transition_timer -= 6.0 * delta_time;
     }
     if (transition_timer <= 0.0)
     {
@@ -131,13 +129,15 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     }
     if (mainG.state == mainG.nextState && transition_timer < 1.0)
     {
-        transition_timer += 2.0 * delta_time;
+        transition_timer += 6.0 * delta_time;
     }
     if (transition_timer > 1.0)
         transition_timer = 1.0;
 
     if (mainG.state == prevState)
         return;
+
+    resetTransparentSprites();
 
     gui_data.elements.clear();
     mainCam.fov = mainCam.default_fov * 0.01;
@@ -147,8 +147,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     switch (mainG.state)
     {
     case START_SCREEN:
-        p1.visual.Put(0.0, 0.0, 0.0);
-        mainCam.setBoundary(0.0, -0.0, -1.0, 0.0, 0.0, 1.0);
+        mainCam.setBoundary(0.0, -0.0, -100.0, 0.0, 0.0, 100.0);
         mainCam.lockTo(nullptr, nullptr, nullptr);
         mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
         mainCam.offsetX = 0.0;
@@ -165,7 +164,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
-        mainCam.setBoundary(0.0, -0.0, -1.0, 0.0, 0.0, 1.0);
+        mainCam.setBoundary(0.0, -0.0, -100.0, 0.0, 0.0, 100.0);
         mainCam.lockTo(nullptr, nullptr, nullptr);
         mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
         mainCam.offsetX = 0.0;
@@ -306,22 +305,25 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         case 0:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6);
+            floor.setColorList(0, 0.0, 0.0, 0.0, 0.0);
+            floor.setColorList(1, 1.0, 0.2, 1.0, 0.4);
+            std::cout << floor.tileColors[1].a << " set in sceneinit\n";
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", floor.tileColors, 6, 6);
             break;
         case 1:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", floor.tileColors, 6, 6);
             break;
         case 2:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", floor.tileColors, 6, 6);
             break;
         case 3:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", floor.tileColors, 6, 6);
             break;
         case 4:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
@@ -358,17 +360,17 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         case 16:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", floor.tileColors, 6, 6);
             break;
         case 17:
             mainG.nextState = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", floor.tileColors, 1, 1);
             break;
         }
-        mainCam.setBoundary(1.9f, -0.0, -50.0, floor.roomWidth * floor.worldSprite.w - 1.84, 50.0, 1.0);
+        mainCam.setBoundary(1.9f, -0.0, -100.0, floor.roomWidth * floor.worldSprite.w - 1.84, 100.0, 1.0);
 
 #ifdef COLLISION_DEBUG
         deCollision = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1);
@@ -381,7 +383,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             if (mainG.characters[i].plControl == nullptr)
                 continue;
 
-            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, 0.0);
+            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, mainG.characters[i].visual.z);
             playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
         }
         lowestCamYLevel = p1.visual.y;
@@ -432,7 +434,7 @@ int main()
         return 0;
     }
 
-    game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/map.vertex", "./shaders/default.fragment");
+    game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/default.vertex", "./shaders/default.fragment");
     game.shaders[GAME_SHADER_TEXT] = new shader("./shaders/text.vertex", "./shaders/text.fragment");
 
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
@@ -447,7 +449,7 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     world mainWorld; // lmao
-    mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 1.0);
+    mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 20.0);
     playerInit(game.characters[0], game, playerControllers[0]);
     game.characters[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);
     prevState = WIN_SCREEN;
@@ -482,7 +484,7 @@ int main()
 
         mainCam.cameraPosition += mainCam.cameraVelocity;
         mainCam.update(0.2f);
-        updateView(*game.shaders[GAME_SHADER_DEFAULT]);
+        updateView(*game.shaders[GAME_SHADER_DEFAULT], true);
 
         if (game.state == WON_LEVEL_STATE && game.levelincreasing)
         {
@@ -492,9 +494,8 @@ int main()
 
         sceneInit(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
 
-        transitionFade.Put(mainCam.cameraPosition.x - 3.0, -1.0 + mainCam.cameraPosition.y - transitionTimer * 4.0, 0.0);
-        // transitionFade.Put(-2.0, -2.0 - transitionTimer * 4.0, 0.0);
-        transitionFade.SetColor(1.0, 1.0, 1.0, 1.0);
+        transitionFade.Put(mainCam.cameraPosition.x - 2.0, mainCam.cameraPosition.y - 1.0, 15.0);
+        transitionFade.SetColor(1.0, 1.0, 1.0, 2.0 - transitionTimer * 2.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
 
@@ -502,7 +503,7 @@ int main()
         {
             for (int i = 0; i < playerCount; ++i)
             {
-                game.characters[i].visual.Put(-1.4f + i * 0.22f, 0.0, 0.0);
+                game.characters[i].visual.Put(-1.4f + i * 0.22f, 0.0, game.characters[i].visual.z);
                 game.characters[i].visual.Draw();
             }
             renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
@@ -692,11 +693,11 @@ int main()
                 {
                     if (i == 0)
                     {
-                        game.characters[i].visual.Put(mainWorld.spawnLocationX, -mainWorld.spawnLocationY, 0.0);
+                        game.characters[i].visual.Put(mainWorld.spawnLocationX, -mainWorld.spawnLocationY, game.characters[i].visual.z);
                     }
                     else
                     {
-                        game.characters[i].visual.Put(game.characters[0].visual.x, game.characters[0].visual.y, 0.0);
+                        game.characters[i].visual.Put(game.characters[0].visual.x, game.characters[0].visual.y, game.characters[i].visual.z);
                         game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
@@ -734,6 +735,8 @@ int main()
             }
         }
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, false);
+
+        drawTransparentSprites(mainCam);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -1093,7 +1096,7 @@ void mouseUpdate(GLFWwindow *window)
 
 void playerInit(character &pl, game_system &game, player &controller)
 {
-    pl = character(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/char/knight.png", -120.0, -40.0, 4, 3, CH_PLAYER);
+    pl = character(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/char/knight.png", -120.0, -40.0, 0.0, 4, 3, CH_PLAYER);
     pl.setCollider(COLLIDER_SOLID, aabb(0.0, 0.0, pl.visual.trueW() * 0.5, pl.visual.trueH() * 0.75), pl.visual.trueW() * 0.25, 0.0);
     pl.setCollider(COLLIDER_STRIKE,
                    aabb(pl.visual.x - pl.visual.trueW() * 0.5, pl.visual.y, pl.visual.x + pl.visual.trueW(), pl.visual.y + pl.visual.trueH() * 0.5), 0.0, 0.0);
@@ -1119,9 +1122,18 @@ void playerInit(character &pl, game_system &game, player &controller)
     game.Add(pl);
 }
 
-void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, glm::vec4 tileColors[tile_color_limit], unsigned int fx, unsigned int fy)
 {
+    glm::vec4 hold[tile_color_limit];
+    for (int i = 0; i < tile_color_limit; ++i)
+    {
+        hold[i] = tileColors[i];
+    }
     dg = world(tilePath.c_str(), fx, fy, game.objects[GAME_OBJECT_TILEMAP], game.shaders[GAME_SHADER_DEFAULT]);
+    for (int i = 0; i < tile_color_limit; ++i)
+    {
+        dg.tileColors[i] = hold[i];
+    }
     dg.readRoomFile(levelPath.c_str(), *game.objects[GAME_OBJECT_TILEMAP]);
 }
 
@@ -1132,18 +1144,19 @@ void updateView(shader &_program, bool orthographic)
     glm::mat4 proj;
 
     _program.use();
+    view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
+
     if (!orthographic)
     {
-        view = glm::lookAt(mainCam.cameraPosition, mainCam.cameraPosition + mainCam.cameraFront, mainCam.cameraUp);
         proj = glm::perspective(glm::radians(mainCam.current_fov), static_cast<double>(window_width) / static_cast<double>(window_height), 0.01, 200.0);
     }
     if (orthographic)
-        proj = glm::ortho(0.0, 1280.0, 0.0, 720.0, -1.0, 1.0);
+    {
+        proj = glm::ortho(-windowAspectDivision, windowAspectDivision, -1.0, 1.0, -1000.0, 1000.0);
+    }
 
     _program.setUniformMat4("projection", proj);
-
-    if (!orthographic)
-        _program.setUniformMat4("view", view);
+    _program.setUniformMat4("view", view);
 }
 void fullscreenChangeFunction(GLFWwindow *window)
 {

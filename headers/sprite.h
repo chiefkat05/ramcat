@@ -8,8 +8,6 @@
 #include FT_FREETYPE_H
 #include <freetype/freetype.h>
 
-const unsigned int instance_limit = 256;
-
 enum object_type
 {
     OBJ_QUAD,
@@ -24,11 +22,12 @@ struct object
     unsigned int VBO, VAO, EBO;
     unsigned int instanceCount = 0, instanceVBO, instanceTextureVBO;
     glm::mat4 *instanceArray;
-    glm::vec3 *instanceTextureArray;
+    glm::vec2 *instanceTextureArray;
+    glm::vec4 *instanceColorArray;
     object_type obj_type;
     object();
     object(object_type _obj);
-    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec3 *textureInstanceMap = nullptr);
+    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec2 *textureInstanceMap = nullptr, glm::vec4 *colorInstanceMap = nullptr);
     void objectKill();
 };
 
@@ -67,6 +66,7 @@ struct sprite
     void SetColor(double _r, double _g, double _b, double _a);
 
     void Draw(bool wireframe = false);
+    void trueDraw(bool wireframe);
 };
 
 struct animation
@@ -151,5 +151,8 @@ int loadFont(const char *path);
 glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color);
 
 // void clearAllTextures();
+
+void drawTransparentSprites(camera &cam);
+void resetTransparentSprites();
 
 #endif

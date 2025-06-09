@@ -6,6 +6,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
+const unsigned int transparent_sprite_limit = 256;
+
 // double quad_vertices[] = {
 //     -0.5f, -0.5f, 0.0, 0.0, 1.0,
 //     0.5f, -0.5f, 0.0, 1.0, 1.0,
@@ -166,37 +168,104 @@ void sprite::SetColor(double _r, double _g, double _b, double _a)
     cola = _a;
 }
 
-std::vector<sprite *> transparentSpriteList;
-// std::map<float, sprite *> transparentSpriteList;
+sprite *transparentSpriteList[transparent_sprite_limit];
+unsigned int transparentSpriteCount = 0;
+
+void resetTransparentSprites()
+{
+    for (int i = 0; i < transparent_sprite_limit; ++i)
+    {
+        if (transparentSpriteList[i] == nullptr)
+            continue;
+
+        transparentSpriteList[i]->inTransparencyList = false;
+        transparentSpriteList[i] = nullptr;
+    }
+    transparentSpriteCount = 0;
+}
 
 void drawTransparentSprites(camera &cam)
 {
-    sprite *tempArray[transparentSpriteList.size()];
-    std::map<float, sprite *> drawOrderMap;
-    for (sprite *sp : transparentSpriteList)
+    if (transparentSpriteCount == 0)
+        return;
+
+    std::map<double, sprite *> drawOrderMap;
+    for (int i = 0; i < transparentSpriteCount; ++i)
     {
-        float length = glm::length2(cam.cameraPosition - glm::dvec3(sp->x, sp->y, sp->z));
-        drawOrderMap[length] = sp;
+        if (transparentSpriteList[i] == nullptr)
+        {
+            std::cout << "\n\twarning: sprite doesn't exist??\n";
+            continue;
+        }
+
+        double length = glm::length2(cam.cameraPosition - glm::dvec3(transparentSpriteList[i]->x, transparentSpriteList[i]->y, transparentSpriteList[i]->z));
+        drawOrderMap[length] = transparentSpriteList[i];
     }
 
-    for (std::map<float, sprite *>::reverse_iterator iter = drawOrderMap.rbegin(); iter != drawOrderMap.rend(); ++iter)
+    for (std::map<double, sprite *>::iterator iter = drawOrderMap.begin(); iter != drawOrderMap.end(); ++iter)
     {
-        iter->second->Draw();
+        iter->second->trueDraw(false);
     }
 }
 
 void sprite::Draw(bool wireframe)
 {
-    // if (cola == 0.0)
-    //     return;
+    if (cola == 0.0)
+        return;
 
-    // if (!inTransparencyList && cola < 1.0 && cola > 0.0)
-    // {
-    //     transparentSpriteList.push_back(this);
-    //     inTransparencyList = true;
-    //     return;
-    // }
+    bool thisSpriteTransparent = false;
 
+    if (cola < 1.0)
+    {
+        thisSpriteTransparent = true;
+    }
+    if (objectP->instanceCount > 1 && objectP->instanceColorArray != nullptr)
+    {
+        for (int i = 0; i < objectP->instanceCount; ++i)
+        {
+            if (objectP->instanceColorArray[i].w < 1.0 && objectP->instanceColorArray[i].w > 0.0)
+            {
+                thisSpriteTransparent = true;
+            }
+        }
+    }
+
+    if (!inTransparencyList && thisSpriteTransparent && !wireframe)
+    {
+        if (transparentSpriteCount >= transparent_sprite_limit)
+        {
+            std::cout << "\n\tToo many transparent sprites! Try increasing the limit or taking out some transparent objects\n";
+        }
+        transparentSpriteList[transparentSpriteCount] = this;
+        inTransparencyList = true;
+        ++transparentSpriteCount;
+        return;
+    }
+    if (inTransparencyList && !thisSpriteTransparent)
+    {
+        int index = -1;
+        for (int i = 0; i < transparentSpriteCount; ++i)
+        {
+            if (this == transparentSpriteList[i])
+            {
+                index = i;
+                break;
+            }
+        }
+        for (int i = index; i < transparentSpriteCount - 1; ++i)
+        {
+            transparentSpriteList[i] = transparentSpriteList[i + 1];
+        }
+        inTransparencyList = false;
+        --transparentSpriteCount;
+    }
+    if (thisSpriteTransparent)
+        return;
+
+    trueDraw(wireframe);
+}
+void sprite::trueDraw(bool wireframe)
+{
     shaderP->use();
     if (objectP->obj_type != OBJ_TEXT)
     {
@@ -338,7 +407,7 @@ object::object(object_type _obj)
         break;
     }
 }
-void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, glm::vec3 *textureInstanceMap)
+void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, glm::vec2 *textureInstanceMap, glm::vec4 *colorInstanceMap)
 {
     instanceCount = _instanceCount;
 
@@ -373,14 +442,30 @@ void object::setInstances(unsigned int _instanceCount, glm::mat4 *instanceMap, g
 
         glGenBuffers(1, &instanceVBO);
         glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * instanceCount, &instanceTextureArray[0], GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * instanceCount, &instanceTextureArray[0], GL_STATIC_DRAW);
 
         glBindVertexArray(VAO);
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void *)0);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void *)0);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glVertexAttribDivisor(2, 1);
+        glBindVertexArray(0);
+    }
+    if (instanceCount > 1 && colorInstanceMap != nullptr)
+    {
+        instanceColorArray = colorInstanceMap;
+
+        glGenBuffers(1, &instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec4) * instanceCount, &instanceColorArray[0], GL_STATIC_DRAW);
+
+        glBindVertexArray(VAO);
+        glEnableVertexAttribArray(7);
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::vec4), (void *)0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glVertexAttribDivisor(7, 1);
         glBindVertexArray(0);
     }
 }

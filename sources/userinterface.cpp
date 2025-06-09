@@ -46,6 +46,14 @@ ui_element::ui_element(game_system *game, ui_element_type t, const char *path, d
       anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
 {
     background = bg;
+    if (bg)
+    {
+        visual.z = -10.0;
+    }
+    else
+    {
+        visual.z = 10.0;
+    }
     utype = t;
     trueX = x;
     trueY = y;
@@ -55,11 +63,11 @@ ui_element::ui_element(game_system *game, ui_element_type t, const char *path, d
     posY = window_height / 2 - (y * (window_height / 2));
     if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
     {
-        visual.Put(x * windowAspectDivision, y, 0.0);
+        visual.Put(x * windowAspectDivision, y, visual.z);
     }
     else
     {
-        visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, 0.0);
+        visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, visual.z);
     }
     width = trueWidth / pixel_divider * (window_height / 2);
     height = trueHeight / pixel_divider * (window_height / 2);
@@ -100,11 +108,11 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
         width = trueWidth / pixel_divider * (current_win_height / 2);
         height = trueHeight / pixel_divider * (current_win_height / 2);
 
-        visual.Put(mainCam.cameraPosition.x + trueX * windowAspectDivision, mainCam.cameraPosition.y + trueY, 0.0);
+        visual.Put(mainCam.cameraPosition.x + trueX * windowAspectDivision, mainCam.cameraPosition.y + trueY, visual.z);
     }
     else
     {
-        visual.Put(mainCam.cameraPosition.x + ((trueX + 1.0) * 0.5f) * window_width, mainCam.cameraPosition.y + ((trueY + 1.0) * 0.5f) * window_height, 0.0);
+        visual.Put(mainCam.cameraPosition.x + ((trueX + 1.0) * 0.5f) * window_width, mainCam.cameraPosition.y + ((trueY + 1.0) * 0.5f) * window_height, visual.z);
     }
     switch (utype)
     {

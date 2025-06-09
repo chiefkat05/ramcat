@@ -67,10 +67,10 @@ character::character(sprite &v, IDENTIFICATION _id) : visual(v)
     id = _id;
     hp = maxhp;
 }
-character::character(shader *program, object *sprite_object, std::string filepath, double x, double y, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
+character::character(shader *program, object *sprite_object, std::string filepath, double x, double y, double z, unsigned int fx, unsigned int fy, IDENTIFICATION _id)
 {
     visual = sprite(program, sprite_object, filepath.c_str(), fx, fy);
-    visual.Put(x, y, 0.0);
+    visual.Put(x, y, z);
     visual.Scale(visual.trueW(), visual.trueH(), 0.1);
     id = _id;
     hp = maxhp;
@@ -334,6 +334,10 @@ void game_system::update(world &floor, double delta_time)
     {
         floor.updateTileTextures(*objects[GAME_OBJECT_TILEMAP]);
     }
+    if (floor.tileColorsNeedUpdate)
+    {
+        floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
+    }
 
     for (int i = 0; i < characterCount; ++i)
     {
@@ -436,7 +440,6 @@ void game_system::update(world &floor, double delta_time)
                 {
                     characters[i].visual.x = firstCollisionHitTest;
                     characters[i].velocityX = 0.0;
-                    characters[i].onGround = true;
                 }
                 break;
             case 5:
@@ -444,7 +447,6 @@ void game_system::update(world &floor, double delta_time)
                 {
                     characters[i].visual.y = firstCollisionHitTest;
                     characters[i].velocityY = 0.0;
-                    characters[i].onGround = true;
                 }
                 break;
             case 6:
@@ -452,7 +454,6 @@ void game_system::update(world &floor, double delta_time)
                 {
                     characters[i].visual.x = firstCollisionHitTest;
                     characters[i].velocityX = 0.0;
-                    characters[i].onGround = true;
                 }
                 break;
             case 7:
@@ -468,6 +469,8 @@ void game_system::update(world &floor, double delta_time)
                     thisSpecialTile->emptyTile();
                     floor.collision_boxes[j].collisionID = -1;
                     ++fishCollected;
+                    thisSpecialTile->colorIndexID = 0;
+                    floor.tileColorsNeedUpdate = true;
                 }
                 break;
             case 9:
@@ -487,6 +490,8 @@ void game_system::update(world &floor, double delta_time)
                     floor.removeTileAnimation(thisSpecialTile->animationIndexID);
                     thisSpecialTile->emptyTile();
                     floor.collision_boxes[j].collisionID = -1;
+                    thisSpecialTile->colorIndexID = 0;
+                    floor.tileColorsNeedUpdate = true;
                 }
                 break;
             case 11:
@@ -498,7 +503,7 @@ void game_system::update(world &floor, double delta_time)
                 // Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
                 //               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
                 Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                              floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
+                              floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 0.5, 4, 1, CH_GULK));
                 characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
                 characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
                 characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
@@ -511,7 +516,7 @@ void game_system::update(world &floor, double delta_time)
                 thisSpecialTile->collisionID = -1;
                 floor.collision_boxes[j].collisionID = -1;
                 Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY));
+                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 0.5, 5, 1, CH_COFFEEMUGGUY));
                 // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
                 //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
                 characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);

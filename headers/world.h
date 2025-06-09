@@ -11,17 +11,17 @@ const unsigned int height_limit = 128;
 const unsigned int collision_box_limit = 128;
 const unsigned int collision_id_limit = 24;
 const unsigned int tile_animation_limit = 24;
+const unsigned int tile_color_limit = 12;
 
 struct tile
 {
-    int id = -1, collisionID = -1, specialTileID = -1, animationIndexID = -1;
+    int id = -1, collisionID = -1, specialTileID = -1, animationIndexID = -1, colorIndexID = -1;
     bool collisionTaken = false;
 
     void emptyTile()
     {
         id = -1;
         collisionID = -1;
-        // specialTileID = -1;
         collisionTaken = false;
     }
 };
@@ -53,11 +53,19 @@ enum specialTiles
 struct world
 {
     bool start = true, end = false, worldInitialized = false;
+    bool tileColorsNeedUpdate = false;
     tile tiles[width_limit][height_limit];
 
     animation tileAnimations[tile_animation_limit];
     unsigned int tileAnimationCount = 0;
     int animationToIDMap[tile_animation_limit];
+
+    glm::vec4 tileColors[tile_color_limit] = {glm::vec4(1.0)};
+    // sets first color to default value if unspecified variables
+    void setColorList(int color_index = 0, double r = 1.0, double g = 1.0, double b = 1.0, double a = 1.0)
+    {
+        tileColors[color_index] = glm::vec4(r, g, b, a);
+    }
 
     sprite worldSprite;
 
@@ -102,20 +110,12 @@ struct world
 
     void updateTileTextures(object &worldObject)
     {
-        glm::vec3 textureTranslations[roomHeight * roomWidth];
+        glm::vec2 textureTranslations[roomHeight * roomWidth];
         int index = 0;
         for (int x = 0; x < roomWidth; ++x)
         {
             for (int y = 0; y < roomHeight; ++y)
             {
-                if (tiles[x][y].id == -1)
-                {
-                    textureTranslations[index].z = -1.0;
-                    ++index;
-                    continue;
-                }
-                textureTranslations[index].z = 0.0;
-
                 for (int w = 0; w < tileAnimationCount; ++w)
                 {
                     if (tileAnimations[w]._sprite == nullptr)
@@ -135,6 +135,30 @@ struct world
         }
 
         worldObject.setInstances(index, nullptr, textureTranslations);
+    }
+    void updateTileColors(object &worldObject)
+    {
+        glm::vec4 colors[roomHeight * roomWidth];
+        int index = 0;
+        for (int x = 0; x < roomWidth; ++x)
+        {
+            for (int y = 0; y < roomHeight; ++y)
+            {
+                if (tiles[x][y].colorIndexID == -1)
+                {
+                    colors[index] = glm::vec4(1.0);
+                }
+                if (tiles[x][y].colorIndexID > -1)
+                {
+                    colors[index] = tileColors[tiles[x][y].colorIndexID];
+                }
+
+                ++index;
+            }
+        }
+
+        worldObject.setInstances(index, nullptr, nullptr, colors);
+        tileColorsNeedUpdate = false;
     }
 };
 

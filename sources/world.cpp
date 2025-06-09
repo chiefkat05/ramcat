@@ -10,6 +10,7 @@ world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, objec
 {
     tileSetPath = _tileSetPath;
     worldSprite = sprite(program, worldObject, tileSetPath, _fx, _fy);
+    worldSprite.z = 5.0;
     worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {
@@ -129,6 +130,11 @@ void world::readRoomFile(const char *path, object &worldObject)
                 tiles[i][roomHeight].id = 5;
                 tiles[i][roomHeight].collisionID = 12;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
+                break;
+            case 'w':
+                tiles[i][roomHeight].id = 0;
+                tiles[i][roomHeight].collisionID = -1;
+                tiles[i][roomHeight].colorIndexID = 1;
                 break;
             default:
                 tiles[i][roomHeight].id = -1;
@@ -269,20 +275,24 @@ void world::readRoomFile(const char *path, object &worldObject)
         }
     }
 
+    // for (int i = 0; i < tile_color_limit; ++i)
+    // {
+    //     std::cout << i << ", " << tileColors[i].x << ", " << tileColors[i].y << ", " << tileColors[i].z << ", " << tileColors[i].w << " what\n";
+    // }
+
     // instancing work
     glm::mat4 translations[roomHeight * roomWidth];
-    glm::vec3 textureTranslations[roomHeight * roomWidth];
+    glm::vec2 textureTranslations[roomHeight * roomWidth];
+    glm::vec4 colors[roomHeight * roomWidth];
     int index = 0;
     for (int x = 0; x < roomWidth; ++x)
     {
         for (int y = 0; y < roomHeight; ++y)
         {
-            if (tiles[x][y].id == -1)
-            {
-                textureTranslations[index].z = 0.0;
-                ++index;
-                continue;
-            }
+            if (tiles[x][y].colorIndexID == -1)
+                colors[index] = glm::vec4(1.0, 1.0, 1.0, 1.0);
+            if (tiles[x][y].colorIndexID > -1)
+                colors[index] = tileColors[tiles[x][y].colorIndexID];
 
             translations[index] = glm::mat4(1.0);
             translations[index] = glm::translate(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale) * x, (worldSprite.spriteH * pixel_scale) * (roomHeight - y), 0.0));
@@ -302,13 +312,12 @@ void world::readRoomFile(const char *path, object &worldObject)
 
             textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
             textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
-            textureTranslations[index].z = 0.0;
 
             ++index;
         }
     }
 
-    worldObject.setInstances(index, translations, textureTranslations);
+    worldObject.setInstances(index, translations, textureTranslations, colors);
 }
 
 tile *world::getTile(unsigned int tileID)

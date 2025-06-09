@@ -1,7 +1,9 @@
 #version 460 core
+
 out vec4 FragColor;
 in vec2 tex_position;
-in float skipDraw;
+in float instancedOut;
+in vec4 colorOffset;
 
 uniform sampler2D tex;
 uniform vec2 tex_offset;
@@ -10,12 +12,22 @@ uniform vec4 color;
 
 void main()
 {
-    if (skipDraw == -1.0 || color.a <= 0.1)
+    if (color.a == 0.0)
+        discard;
+    if (instancedOut == 1.0 && colorOffset.w == 0.0)
         discard;
 
     vec4 textureOutput = texture(tex, (tex_position + tex_offset) * tex_scale);
-    if (textureOutput.w < 0.1)
+    if (textureOutput.w == 0.0)
         discard;
-    textureOutput *= color;
+
+    if (instancedOut == 1.0)
+    {
+        textureOutput *= color * colorOffset;
+    }
+    if (instancedOut == 0.0)
+    {
+        textureOutput *= color;
+    }
     FragColor = textureOutput;
 } 

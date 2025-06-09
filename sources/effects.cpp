@@ -83,7 +83,7 @@ void particlesystem::update(double delta_time)
     }
 
     glm::mat4 transformArray[particles_alive];
-    glm::vec3 textureArray[particles_alive];
+    glm::vec2 textureArray[particles_alive];
     for (int i = 0; i < particles_alive; ++i)
     {
         if (particles[i].life < 0.0)
@@ -100,7 +100,7 @@ void particlesystem::update(double delta_time)
         transformArray[i] = glm::translate(transformArray[i], glm::vec3(particles[i].x, particles[i].y, 0.0));
         transformArray[i] = glm::scale(transformArray[i], glm::vec3(particles[i].w, particles[i].h, 1.0));
 
-        textureArray[i] = glm::vec3(static_cast<int>(particles[i].animationTime) % visual.framesX, static_cast<int>(particles[i].animationTime) / visual.framesX, 0.0);
+        textureArray[i] = glm::vec2(static_cast<int>(particles[i].animationTime) % visual.framesX, static_cast<int>(particles[i].animationTime) / visual.framesX);
     }
 
     visual.objectP->setInstances(particles_alive, transformArray, textureArray);
