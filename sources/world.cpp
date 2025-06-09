@@ -9,7 +9,7 @@ world::world()
 world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, object *worldObject, shader *program)
 {
     tileSetPath = _tileSetPath;
-    worldSprite = sprite(program, worldObject, tileSetPath, _fx, _fy);
+    worldSprite = sprite(program, worldObject, tileSetPath, _fx, _fy, false, true);
     worldSprite.z = 5.0;
     worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
@@ -130,11 +130,6 @@ void world::readRoomFile(const char *path, object &worldObject)
                 tiles[i][roomHeight].id = 5;
                 tiles[i][roomHeight].collisionID = 12;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
-                break;
-            case 'w':
-                tiles[i][roomHeight].id = 0;
-                tiles[i][roomHeight].collisionID = -1;
-                tiles[i][roomHeight].colorIndexID = 1;
                 break;
             default:
                 tiles[i][roomHeight].id = -1;

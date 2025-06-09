@@ -40,7 +40,7 @@ struct sprite
     unsigned int framesX = 1, framesY = 1;
     unsigned int textureX = 0, textureY = 0;
     double textureWidth = 0, textureHeight = 0;
-    bool inTransparencyList = false;
+    bool inTransparencyList = false, textureIncludesTransparency = false;
 
     double trueW() { return spriteW * pixel_scale; }
     double trueH() { return spriteH * pixel_scale; }
@@ -55,7 +55,7 @@ struct sprite
     object *objectP = nullptr;
 
     sprite();
-    sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false);
+    sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx = 1, unsigned int _fy = 1, bool text = false, bool transparentTexture = false);
 
     void textureInit();
 

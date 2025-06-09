@@ -75,7 +75,7 @@ sprite::sprite()
     x = 0.0;
     y = 0.0;
 }
-sprite::sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx, unsigned int _fy, bool text)
+sprite::sprite(shader *program, object *sprite_object, std::string path, unsigned int _fx, unsigned int _fy, bool text, bool transparentTexture)
 {
     shaderP = program;
     objectP = sprite_object;
@@ -84,6 +84,7 @@ sprite::sprite(shader *program, object *sprite_object, std::string path, unsigne
     textureHeight = 1.0;
 
     texture_path = path;
+    textureIncludesTransparency = transparentTexture;
 
     framesX = 1;
     framesY = 1;
@@ -215,7 +216,7 @@ void sprite::Draw(bool wireframe)
 
     bool thisSpriteTransparent = false;
 
-    if (cola < 1.0)
+    if (cola < 1.0 || textureIncludesTransparency)
     {
         thisSpriteTransparent = true;
     }
