@@ -6,6 +6,8 @@
 
 // TO-DO LIST
 
+// figure out why windows build doesn't work (probably some variable somewhere that isn't defined)
+
 // text rendering
 
 // make color attribute for instancing (rgba)
@@ -137,7 +139,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     if (mainG.state == prevState)
         return;
 
-    resetTransparentSprites();
+    // resetTransparentSprites();
 
     gui_data.elements.clear();
     mainCam.fov = mainCam.default_fov * 0.01;
@@ -736,7 +738,7 @@ int main()
         }
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, false);
 
-        drawTransparentSprites(mainCam);
+        // drawTransparentSprites(mainCam);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

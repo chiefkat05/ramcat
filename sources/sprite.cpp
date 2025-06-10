@@ -169,45 +169,45 @@ void sprite::SetColor(double _r, double _g, double _b, double _a)
     cola = _a;
 }
 
-sprite *transparentSpriteList[transparent_sprite_limit];
-unsigned int transparentSpriteCount = 0;
+// sprite *transparentSpriteList[transparent_sprite_limit] = {nullptr};
+// unsigned int transparentSpriteCount = 0;
 
-void resetTransparentSprites()
-{
-    for (int i = 0; i < transparent_sprite_limit; ++i)
-    {
-        if (transparentSpriteList[i] == nullptr)
-            continue;
+// void resetTransparentSprites()
+// {
+//     for (int i = 0; i < transparent_sprite_limit; ++i)
+//     {
+//         if (transparentSpriteList[i] == nullptr)
+//             continue;
 
-        transparentSpriteList[i]->inTransparencyList = false;
-        transparentSpriteList[i] = nullptr;
-    }
-    transparentSpriteCount = 0;
-}
+//         transparentSpriteList[i]->inTransparencyList = false;
+//         transparentSpriteList[i] = nullptr;
+//     }
+//     transparentSpriteCount = 0;
+// }
 
-void drawTransparentSprites(camera &cam)
-{
-    if (transparentSpriteCount == 0)
-        return;
+// void drawTransparentSprites(camera &cam)
+// {
+//     if (transparentSpriteCount == 0)
+//         return;
 
-    std::map<double, sprite *> drawOrderMap;
-    for (int i = 0; i < transparentSpriteCount; ++i)
-    {
-        if (transparentSpriteList[i] == nullptr)
-        {
-            std::cout << "\n\twarning: sprite doesn't exist??\n";
-            continue;
-        }
+//     std::map<double, sprite *> drawOrderMap;
+//     for (int i = 0; i < transparentSpriteCount; ++i)
+//     {
+//         if (transparentSpriteList[i] == nullptr)
+//         {
+//             std::cout << "\n\twarning: sprite doesn't exist??\n";
+//             continue;
+//         }
 
-        double length = glm::length2(cam.cameraPosition - glm::dvec3(transparentSpriteList[i]->x, transparentSpriteList[i]->y, transparentSpriteList[i]->z));
-        drawOrderMap[length] = transparentSpriteList[i];
-    }
+//         double length = glm::length2(cam.cameraPosition - glm::dvec3(transparentSpriteList[i]->x, transparentSpriteList[i]->y, transparentSpriteList[i]->z));
+//         drawOrderMap[length] = transparentSpriteList[i];
+//     }
 
-    for (std::map<double, sprite *>::iterator iter = drawOrderMap.begin(); iter != drawOrderMap.end(); ++iter)
-    {
-        iter->second->trueDraw(false);
-    }
-}
+//     for (std::map<double, sprite *>::iterator iter = drawOrderMap.begin(); iter != drawOrderMap.end(); ++iter)
+//     {
+//         iter->second->trueDraw(false);
+//     }
+// }
 
 void sprite::Draw(bool wireframe)
 {
@@ -231,35 +231,35 @@ void sprite::Draw(bool wireframe)
         }
     }
 
-    if (!inTransparencyList && thisSpriteTransparent && !wireframe)
-    {
-        if (transparentSpriteCount >= transparent_sprite_limit)
-        {
-            std::cout << "\n\tToo many transparent sprites! Try increasing the limit or taking out some transparent objects\n";
-        }
-        transparentSpriteList[transparentSpriteCount] = this;
-        inTransparencyList = true;
-        ++transparentSpriteCount;
-        return;
-    }
-    if (inTransparencyList && !thisSpriteTransparent)
-    {
-        int index = -1;
-        for (int i = 0; i < transparentSpriteCount; ++i)
-        {
-            if (this == transparentSpriteList[i])
-            {
-                index = i;
-                break;
-            }
-        }
-        for (int i = index; i < transparentSpriteCount - 1; ++i)
-        {
-            transparentSpriteList[i] = transparentSpriteList[i + 1];
-        }
-        inTransparencyList = false;
-        --transparentSpriteCount;
-    }
+    // if (!inTransparencyList && thisSpriteTransparent && !wireframe)
+    // {
+    //     if (transparentSpriteCount >= transparent_sprite_limit)
+    //     {
+    //         std::cout << "\n\tToo many transparent sprites! Try increasing the limit or taking out some transparent objects\n";
+    //     }
+    //     transparentSpriteList[transparentSpriteCount] = this;
+    //     inTransparencyList = true;
+    //     ++transparentSpriteCount;
+    //     return;
+    // }
+    // if (inTransparencyList && !thisSpriteTransparent)
+    // {
+    //     int index = -1;
+    //     for (int i = 0; i < transparentSpriteCount; ++i)
+    //     {
+    //         if (this == transparentSpriteList[i])
+    //         {
+    //             index = i;
+    //             break;
+    //         }
+    //     }
+    //     for (int i = index; i < transparentSpriteCount - 1; ++i)
+    //     {
+    //         transparentSpriteList[i] = transparentSpriteList[i + 1];
+    //     }
+    //     inTransparencyList = false;
+    //     --transparentSpriteCount;
+    // }
     if (thisSpriteTransparent)
         return;
 
