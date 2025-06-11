@@ -34,6 +34,8 @@ const unsigned int player_limit = 12;
 const int quadtree_leaf_capacity = 4;
 const int quadtree_node_limit = 12;
 
+const unsigned int light_limit = 24; // don't forget to change in fragment shader if you change this
+
 struct character;
 
 enum IDENTIFICATION

@@ -10,7 +10,7 @@ world::world(const char *_tileSetPath, unsigned int _fx, unsigned int _fy, objec
 {
     tileSetPath = _tileSetPath;
     worldSprite = sprite(program, worldObject, tileSetPath, _fx, _fy, false, true);
-    worldSprite.z = 5.0;
+    worldSprite.z = 1.0;
     worldInitialized = true;
     for (unsigned int x = 0; x < width_limit; ++x)
     {

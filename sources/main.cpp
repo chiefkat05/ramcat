@@ -433,7 +433,7 @@ int main()
         return 0;
     }
 
-    game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/default.vertex", "./shaders/default.fragment");
+    game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/lighting.vertex", "./shaders/lighting.fragment");
     game.shaders[GAME_SHADER_TEXT] = new shader("./shaders/text.vertex", "./shaders/text.fragment");
 
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
@@ -445,6 +445,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_FRAMEBUFFER_SRGB);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     world mainWorld; // lmao
@@ -493,7 +494,7 @@ int main()
 
         sceneInit(game, game.characters[0], mainWorld, soundEngine, transitionTimer);
 
-        transitionFade.Put(mainCam.cameraPosition.x - 2.0, mainCam.cameraPosition.y - 1.0, 15.0);
+        transitionFade.Put(mainCam.cameraPosition.x - 2.0, mainCam.cameraPosition.y - 1.0, 5.0);
         transitionFade.SetColor(1.0, 1.0, 1.0, 2.0 - transitionTimer * 2.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
@@ -697,9 +698,9 @@ int main()
                     else
                     {
                         game.characters[i].visual.Put(game.characters[0].visual.x, game.characters[0].visual.y, game.characters[i].visual.z);
-                        game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
+                    game.characters[i].velocityY = 1.0f;
                     // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
                     // if (game.particleByID(i + 30) != nullptr)
                     // {
@@ -1149,6 +1150,7 @@ void updateView(shader &_program, bool orthographic)
 
     _program.setUniformMat4("projection", proj);
     _program.setUniformMat4("view", view);
+    _program.setUniformVec3("camera_pos", mainCam.cameraPosition.x, mainCam.cameraPosition.y, mainCam.cameraPosition.z);
 }
 void fullscreenChangeFunction(GLFWwindow *window)
 {

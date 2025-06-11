@@ -108,3 +108,8 @@ void shader::setUniformMat4(const char *name, glm::mat4 matrix)
     unsigned int transLoc = glGetUniformLocation(ID, name);
     glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(matrix));
 }
+void shader::setUniformMat3(const char *name, glm::mat3 matrix)
+{
+    unsigned int transLoc = glGetUniformLocation(ID, name);
+    glUniformMatrix3fv(transLoc, 1, GL_FALSE, glm::value_ptr(matrix));
+}

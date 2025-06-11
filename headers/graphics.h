@@ -31,6 +31,7 @@ public:
     void setUniformInt(const char *name, int x);
     void setUniformBool(const char *name, bool x);
     void setUniformMat4(const char *name, glm::mat4 matrix);
+    void setUniformMat3(const char *name, glm::mat3 matrix);
 };
 
 enum simple_camera_types

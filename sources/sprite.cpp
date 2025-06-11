@@ -14,10 +14,10 @@ const unsigned int transparent_sprite_limit = 256;
 //     0.5f, 0.5f, 0.0, 1.0, 0.0,
 //     -0.5f, 0.5f, 0.0, 0.0, 0.0};
 double quad_vertices[] = {
-    0.0, 0.0, 0.0, 0.0, 1.0,
-    1.0, 0.0, 0.0, 1.0, 1.0,
-    1.0, 1.0, 0.0, 1.0, 0.0,
-    0.0, 1.0, 0.0, 0.0, 0.0};
+    0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+    1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+    1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+    0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
 unsigned int quad_indices[] = {
     0, 1, 2,
     0, 3, 2};
@@ -305,6 +305,8 @@ void sprite::trueDraw(bool wireframe)
         model = glm::scale(model, glm::vec3(w, h, d));
         shaderP->setUniformInt("tex", 0);
         shaderP->setUniformMat4("model", model);
+        glm::mat3 normal_model = glm::transpose(glm::inverse(model));
+        shaderP->setUniformMat3("normal_model", normal_model);
         shaderP->setUniformVec2("tex_offset", textureX, textureY);
         shaderP->setUniformVec2("tex_scale", textureWidth, textureHeight);
         shaderP->setUniformVec4("color", colr, colg, colb, cola);
@@ -371,9 +373,11 @@ object::object(object_type _obj)
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_indices), quad_indices, GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)0);
+        glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 8 * sizeof(double), (void *)0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 5 * sizeof(double), (void *)(3 * sizeof(double)));
+        glVertexAttribPointer(1, 2, GL_DOUBLE, GL_FALSE, 8 * sizeof(double), (void *)(3 * sizeof(double)));
+        glEnableVertexAttribArray(8);
+        glVertexAttribPointer(8, 3, GL_DOUBLE, GL_FALSE, 8 * sizeof(double), (void *)(5 * sizeof(double)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         break;

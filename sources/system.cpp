@@ -339,6 +339,10 @@ void game_system::update(world &floor, double delta_time)
         floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
     }
 
+    // lighting test
+    shaders[GAME_SHADER_DEFAULT]->setUniformVec3("light_pos", characters[0].visual.x + characters[0].visual.w * 0.5,
+                                                 characters[0].visual.y + characters[0].visual.h * 0.5, 2.1);
+
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i].Update(delta_time);
@@ -481,7 +485,9 @@ void game_system::update(world &floor, double delta_time)
                     floor.collision_boxes[j].collisionID = -1;
 
                     floor.spawnLocationX = floor.collision_boxes[j].specialTileX * floor.worldSprite.trueW();
-                    floor.spawnLocationY = -0.2f + (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].specialTileY) * floor.worldSprite.trueW();
+                    floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].specialTileY) * floor.worldSprite.trueW();
+                    // floor.spawnLocationX = floor.collision_boxes[j].centerX();
+                    // floor.spawnLocationY = floor.collision_boxes[j].centerY();
                 }
                 break;
             case 10:
