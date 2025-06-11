@@ -87,7 +87,7 @@ const char *gamepadInputStrings[] = {"PAD_BUTTON_A", "PAD_BUTTON_B", "PAD_BUTTON
 
 void playerInit(character &pl, game_system &game, player &controller);
 
-void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, glm::vec4 tileColors[tile_color_limit], unsigned int fx, unsigned int fy);
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy);
 
 // feh
 void updateView(shader &_program, bool orthographic = false);
@@ -139,7 +139,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     if (mainG.state == prevState)
         return;
 
-    // resetTransparentSprites();
+    resetTransparentSprites();
 
     gui_data.elements.clear();
     mainCam.fov = mainCam.default_fov * 0.01;
@@ -264,30 +264,30 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             mainG.Remove(i);
         }
 
-        mainG.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 30);
+        // mainG.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, 30);
 
-        if (mainG.particleByID(30) != nullptr)
-        {
-            mainG.particleByID(30)->setVariable(PV_PUSHMIN_Y, -1.0);
-            mainG.particleByID(30)->setVariable(PV_PUSHMAX_Y, 1.0);
-            mainG.particleByID(30)->setVariable(PV_PUSHMIN_X, -1.0);
-            mainG.particleByID(30)->setVariable(PV_PUSHMAX_X, 1.0);
-            mainG.particleByID(30)->setVariable(PV_RED, 0.0);
-            mainG.particleByID(30)->setVariable(PV_GREEN, 0.0);
-            mainG.particleByID(30)->setVariable(PV_BLUE, 0.0);
-            mainG.particleByID(30)->setVariable(PV_ALPHA, 1.0);
-            mainG.particleByID(30)->setVariable(PV_WIDTH, 0.1);
-            mainG.particleByID(30)->setVariable(PV_HEIGHT, 0.1);
-            mainG.particleByID(30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-            mainG.particleByID(30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-            mainG.particleByID(30)->setVariable(PV_ANIM_START, 0.0);
-            mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
-            mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
-            mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
-            mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
-            mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
-            mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
-        }
+        // if (mainG.particleByID(30) != nullptr)
+        // {
+        //     mainG.particleByID(30)->setVariable(PV_PUSHMIN_Y, -1.0);
+        //     mainG.particleByID(30)->setVariable(PV_PUSHMAX_Y, 1.0);
+        //     mainG.particleByID(30)->setVariable(PV_PUSHMIN_X, -1.0);
+        //     mainG.particleByID(30)->setVariable(PV_PUSHMAX_X, 1.0);
+        //     mainG.particleByID(30)->setVariable(PV_RED, 0.0);
+        //     mainG.particleByID(30)->setVariable(PV_GREEN, 0.0);
+        //     mainG.particleByID(30)->setVariable(PV_BLUE, 0.0);
+        //     mainG.particleByID(30)->setVariable(PV_ALPHA, 1.0);
+        //     mainG.particleByID(30)->setVariable(PV_WIDTH, 0.1);
+        //     mainG.particleByID(30)->setVariable(PV_HEIGHT, 0.1);
+        //     mainG.particleByID(30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+        //     mainG.particleByID(30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+        //     mainG.particleByID(30)->setVariable(PV_ANIM_START, 0.0);
+        //     mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
+        //     mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
+        // }
 
         for (int i = 0; i < playerCount; ++i)
         {
@@ -307,25 +307,22 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         case 0:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            floor.setColorList(0, 0.0, 0.0, 0.0, 0.0);
-            floor.setColorList(1, 1.0, 0.2, 1.0, 0.4);
-            std::cout << floor.tileColors[1].a << " set in sceneinit\n";
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", floor.tileColors, 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 6, 6);
             break;
         case 1:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", floor.tileColors, 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/02.lvl", 6, 6);
             break;
         case 2:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", floor.tileColors, 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/03.lvl", 6, 6);
             break;
         case 3:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", floor.tileColors, 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 4:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
@@ -362,14 +359,14 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         case 16:
             gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/bg/01-2.png", -1.0, -1.0, 1, 1, nullFunc, true));
             gui_data.mostRecentCreatedElement()->scale(128.0, 72.0);
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", floor.tileColors, 6, 6);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/04.lvl", 6, 6);
             break;
         case 17:
             mainG.nextState = START_SCREEN;
             return;
         default:
             std::cout << ":megamind: no level?\n";
-            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", floor.tileColors, 1, 1);
+            worldInit(mainG, floor, "./img/tiles.png", "./levels/01.lvl", 1, 1);
             break;
         }
         mainCam.setBoundary(1.9f, -0.0, -100.0, floor.roomWidth * floor.worldSprite.w - 1.84, 100.0, 1.0);
@@ -512,20 +509,20 @@ int main()
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
-            if (game.particleByID(52) != nullptr)
-            {
-                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
-                game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
-                game.particleByID(52)->setVariable(PV_RED, 1.0);
-                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
-                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
-                game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
-                game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
-                game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
-                game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
-                game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
-            }
+            // game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
+            // if (game.particleByID(52) != nullptr)
+            // {
+            //     game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
+            //     game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
+            //     game.particleByID(52)->setVariable(PV_RED, 1.0);
+            //     game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+            //     game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+            //     game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
+            //     game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
+            //     game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
+            // }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
@@ -703,29 +700,29 @@ int main()
                         game.characters[i].velocityY = 1.0f;
                         game.characters[i].velocityX = -1.0f;
                     }
-                    game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
-                    if (game.particleByID(i + 30) != nullptr)
-                    {
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
-                        game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
-                        game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
-                        game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
-                        game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
-                        game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
-                        game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
-                        game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-                        game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
-                        game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
-                        game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
-                    }
+                    // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
+                    // if (game.particleByID(i + 30) != nullptr)
+                    // {
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
+                    //     game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
+                    //     game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
+                    //     game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
+                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
+                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
+                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
+                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
+                    // }
                     // player animation here???
                     game.characters[i].hp = game.characters[i].maxhp;
                 }
@@ -738,7 +735,7 @@ int main()
         }
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, false);
 
-        // drawTransparentSprites(mainCam);
+        drawTransparentSprites(mainCam);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -1124,18 +1121,11 @@ void playerInit(character &pl, game_system &game, player &controller)
     game.Add(pl);
 }
 
-void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, glm::vec4 tileColors[tile_color_limit], unsigned int fx, unsigned int fy)
+void worldInit(game_system &game, world &dg, std::string tilePath, std::string levelPath, unsigned int fx, unsigned int fy)
 {
-    glm::vec4 hold[tile_color_limit];
-    for (int i = 0; i < tile_color_limit; ++i)
-    {
-        hold[i] = tileColors[i];
-    }
     dg = world(tilePath.c_str(), fx, fy, game.objects[GAME_OBJECT_TILEMAP], game.shaders[GAME_SHADER_DEFAULT]);
-    for (int i = 0; i < tile_color_limit; ++i)
-    {
-        dg.tileColors[i] = hold[i];
-    }
+    dg.setColorList(0, 0.0, 0.0, 0.0, 0.0);
+    dg.setColorList(1, 1.0, 0.2, 1.0, 0.4);
     dg.readRoomFile(levelPath.c_str(), *game.objects[GAME_OBJECT_TILEMAP]);
 }
 

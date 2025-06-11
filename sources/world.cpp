@@ -270,43 +270,43 @@ void world::readRoomFile(const char *path, object &worldObject)
     }
 
     // // instancing work
-    // glm::mat4 translations[roomHeight * roomWidth];
-    // glm::vec2 textureTranslations[roomHeight * roomWidth];
-    // glm::vec4 colors[roomHeight * roomWidth];
-    // int index = 0;
-    // for (int x = 0; x < roomWidth; ++x)
-    // {
-    //     for (int y = 0; y < roomHeight; ++y)
-    //     {
-    //         if (tiles[x][y].colorIndexID == -1)
-    //             colors[index] = glm::vec4(1.0, 1.0, 1.0, 1.0);
-    //         if (tiles[x][y].colorIndexID > -1)
-    //             colors[index] = tileColors[tiles[x][y].colorIndexID];
+    glm::mat4 translations[roomHeight * roomWidth];
+    glm::vec2 textureTranslations[roomHeight * roomWidth];
+    glm::vec4 colors[roomHeight * roomWidth];
+    int index = 0;
+    for (int x = 0; x < roomWidth; ++x)
+    {
+        for (int y = 0; y < roomHeight; ++y)
+        {
+            if (tiles[x][y].colorIndexID == -1)
+                colors[index] = glm::vec4(1.0, 1.0, 1.0, 1.0);
+            if (tiles[x][y].colorIndexID > -1)
+                colors[index] = tileColors[tiles[x][y].colorIndexID];
 
-    //         translations[index] = glm::mat4(1.0);
-    //         translations[index] = glm::translate(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale) * x, (worldSprite.spriteH * pixel_scale) * (roomHeight - y), 0.0));
-    //         // rotations go here if you add them
-    //         translations[index] = glm::scale(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale), (worldSprite.spriteH * pixel_scale), 1.0));
+            translations[index] = glm::mat4(1.0);
+            translations[index] = glm::translate(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale) * x, (worldSprite.spriteH * pixel_scale) * (roomHeight - y), 0.0));
+            // rotations go here if you add them
+            translations[index] = glm::scale(translations[index], glm::vec3((worldSprite.spriteW * pixel_scale), (worldSprite.spriteH * pixel_scale), 1.0));
 
-    //         for (int w = 0; w < tileAnimationCount; ++w)
-    //         {
-    //             if (tileAnimations[w]._sprite == nullptr)
-    //                 continue;
+            for (int w = 0; w < tileAnimationCount; ++w)
+            {
+                if (tileAnimations[w]._sprite == nullptr)
+                    continue;
 
-    //             if (animationToIDMap[w] == tiles[x][y].specialTileID)
-    //             {
-    //                 tiles[x][y].id = tileAnimations[w].frame;
-    //             }
-    //         }
+                if (animationToIDMap[w] == tiles[x][y].specialTileID)
+                {
+                    tiles[x][y].id = tileAnimations[w].frame;
+                }
+            }
 
-    //         textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
-    //         textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
+            textureTranslations[index].x = tiles[x][y].id % worldSprite.framesX;
+            textureTranslations[index].y = tiles[x][y].id / worldSprite.framesX;
 
-    //         ++index;
-    //     }
-    // }
+            ++index;
+        }
+    }
 
-    // worldObject.setInstances(index, translations, textureTranslations, colors);
+    worldObject.setInstances(index, translations, textureTranslations, colors);
 }
 
 tile *world::getTile(unsigned int tileID)
