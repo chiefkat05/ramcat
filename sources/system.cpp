@@ -340,8 +340,13 @@ void game_system::update(world &floor, double delta_time)
     }
 
     // lighting test
-    shaders[GAME_SHADER_DEFAULT]->setUniformVec3("light_pos", characters[0].visual.x + characters[0].visual.w * 0.5,
-                                                 characters[0].visual.y + characters[0].visual.h * 0.5, 2.1);
+    for (int i = 0; i < light_count; ++i)
+    {
+        std::string uniformName = "light_position[" + std::to_string(i) + "]";
+        shaders[GAME_SHADER_DEFAULT]->setUniformVec3(uniformName.c_str(), light_list[i].x,
+                                                     light_list[i].y, light_list[i].z);
+    }
+    shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
 
     for (int i = 0; i < characterCount; ++i)
     {

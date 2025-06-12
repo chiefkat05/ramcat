@@ -381,6 +381,36 @@ struct game_system
     int music_volume = 100, sound_volume = 100;
     int fishCollected = 0, fishNeeded = 5;
 
+    glm::vec3 light_list[light_limit];
+    unsigned int light_count = 0;
+
+    void addLight(glm::vec3 pos)
+    {
+        light_list[light_count] = pos;
+        ++light_count;
+    }
+    void removeLight(glm::vec3 pos)
+    {
+        int index = -1;
+        for (int i = 0; i < light_count; ++i)
+        {
+            if (pos == light_list[i])
+            {
+                index = i;
+            }
+        }
+        if (index == -1)
+        {
+            std::cout << "\n\twarning: light doesn't exist at position " << pos.x << ", " << pos.y << ", " << pos.z << "\n";
+            return;
+        }
+
+        for (int i = index; i < light_count - 1; ++i)
+        {
+            light_list[i] = light_list[i + 1];
+        }
+    }
+
     game_system() {}
     ~game_system()
     {

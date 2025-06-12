@@ -470,6 +470,10 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
+    game.addLight(glm::vec3(0.0, 0.0, 2.0));
+    game.addLight(glm::vec3(4.0, 0.0, 2.0));
+    game.addLight(glm::vec3(8.0, 0.0, 2.0));
+
     while (!glfwWindowShouldClose(window))
     {
         double past_time = current_time;
