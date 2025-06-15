@@ -18,7 +18,7 @@ const uint ltype_point = 1;
 const uint ltype_spot = 2;
 struct light
 {
-    uint ltype;
+    int ltype;
     vec3 position;
     vec3 direction;
 
@@ -62,25 +62,29 @@ void main()
         {
             light_dir = normalize(-lights[i].direction);
             diff = max(dot(norm, light_dir), 0.0);
-            inResult += diff;
+            inResult += diff * lights[i].diffuse;
 
             view_dir = normalize(camera_pos - fragPos);
             reflect_dir = reflect(-light_dir, norm);
             halfway_dir = normalize(light_dir + view_dir);
             float spec = pow(max(dot(normals, halfway_dir), 0.0), 128);
-            inResult += spec;
+            inResult += spec * lights[i].specular;
         }
         if (lights[i].ltype == 1)
         {
             light_dir = normalize(lights[i].position - fragPos);
             diff = max(dot(norm, light_dir), 0.0);
-            inResult += diff;
+            inResult += diff * lights[i].diffuse;
             
             view_dir = normalize(camera_pos - fragPos);
             reflect_dir = reflect(-light_dir, norm);
             halfway_dir = normalize(light_dir + view_dir);
             float spec = pow(max(dot(normals, halfway_dir), 0.0), 128);
-            inResult += spec;
+            inResult += spec * lights[i].specular;
+        }
+        if (lights[i].ltype == 2)
+        {
+
         }
 
         finalResult += inResult * lights[i].color;

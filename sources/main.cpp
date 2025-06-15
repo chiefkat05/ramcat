@@ -470,10 +470,8 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
-    game.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, -2.0, -1.0), glm::vec3(0.3, 0.7, 0.7), MATERIAL_DEFAULT));
-    game.addLight(light(LIGHT_POINT, glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.0), glm::vec3(1.0, 0.0, 0.0), MATERIAL_DEFAULT));
-    // game.addLight(glm::vec3(4.0, 0.0, 2.0));
-    // game.addLight(glm::vec3(8.0, 0.0, 2.0));
+    game.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(1.0), MATERIAL_DEFAULT_2D));
+    // game.addLight(light(LIGHT_POINT, glm::vec3(0.0, 1.0, 2.5), glm::vec3(0.0), glm::vec3(4.0, 0.0, 0.0), MATERIAL_DEFAULT));
 
     while (!glfwWindowShouldClose(window))
     {
@@ -503,9 +501,6 @@ int main()
         transitionFade.SetColor(1.0, 1.0, 1.0, 2.0 - transitionTimer * 2.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
-
-        // light testing
-        game.light_list[0].direction = glm::vec3(0.0, 0.0, std::sin(glfwGetTime()));
 
         if (game.state == CHARACTER_CREATION_SCREEN && prevState == CHARACTER_CREATION_SCREEN)
         {
