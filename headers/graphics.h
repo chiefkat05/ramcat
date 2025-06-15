@@ -26,6 +26,7 @@ public:
 
     void setUniformVec4(const char *name, double x, double y, double z, double w);
     void setUniformVec3(const char *name, double x, double y, double z);
+    void setUniformVec3(const char *name, glm::vec3 v);
     void setUniformVec2(const char *name, double x, double y);
     void setUniformDouble(const char *name, double x);
     void setUniformInt(const char *name, int x);

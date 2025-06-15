@@ -187,7 +187,7 @@ struct character
 
     IDENTIFICATION id = CH_NULL;
     int hp = 4, maxhp = 4;
-    double runSpeed = 170.0f;
+    double runSpeed = 120.0f;
 
     bool animationFinished = true, animationLooping = false;
     ANIMATION_MAPPINGS playingAnim = ANIM_IDLE;
@@ -381,27 +381,27 @@ struct game_system
     int music_volume = 100, sound_volume = 100;
     int fishCollected = 0, fishNeeded = 5;
 
-    glm::vec3 light_list[light_limit];
+    light light_list[light_limit];
     unsigned int light_count = 0;
 
-    void addLight(glm::vec3 pos)
+    void addLight(light l)
     {
-        light_list[light_count] = pos;
+        light_list[light_count] = l;
         ++light_count;
     }
-    void removeLight(glm::vec3 pos)
+    void removeLight(light l)
     {
         int index = -1;
         for (int i = 0; i < light_count; ++i)
         {
-            if (pos == light_list[i])
+            if (l.position == light_list[i].position)
             {
                 index = i;
             }
         }
         if (index == -1)
         {
-            std::cout << "\n\twarning: light doesn't exist at position " << pos.x << ", " << pos.y << ", " << pos.z << "\n";
+            std::cout << "\n\twarning: light doesn't exist at position " << l.position.x << ", " << l.position.y << ", " << l.position.z << "\n";
             return;
         }
 
@@ -509,6 +509,7 @@ struct game_system
     // void uninitMusic();
 
     void particle_update(double delta_time);
+    void light_update();
     void update(world &floor, double delta_time);
     void handleCollisionSpecifics(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
     {

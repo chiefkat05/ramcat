@@ -93,4 +93,56 @@ struct particlesystem
     void kill();
 };
 
+enum light_type
+{
+    LIGHT_DIRECTIONAL,
+    LIGHT_POINT,
+    LIGHT_SPOT
+};
+enum light_material
+{
+    MATERIAL_DEFAULT,
+    MATERIAL_DEFAULT_2D
+};
+struct light
+{
+    light_type ltype = LIGHT_DIRECTIONAL;
+    glm::vec3 position = glm::vec3(0.0);
+    glm::vec3 direction = glm::vec3(0.0);
+
+    glm::vec3 color = glm::vec3(0.0);
+
+    float ambient = 0.0;
+    float diffuse = 0.0;
+    float specular = 0.0;
+
+    void setMaterialValues(light_material mat)
+    {
+        switch (mat)
+        {
+        case MATERIAL_DEFAULT:
+            ambient = 0.1;
+            diffuse = 0.5;
+            specular = 1.0;
+            break;
+        case MATERIAL_DEFAULT_2D:
+            ambient = 1.0;
+            diffuse = 0.1;
+            specular = 0.2;
+            break;
+        default:
+            ambient = 0.1;
+            diffuse = 0.5;
+            specular = 1.0;
+            break;
+        }
+    }
+
+    light() {}
+    light(light_type l, glm::vec3 p, glm::vec3 d, glm::vec3 c, light_material m) : ltype(l), position(p), direction(d), color(c)
+    {
+        setMaterialValues(m);
+    }
+};
+
 #endif

@@ -87,6 +87,10 @@ void shader::setUniformVec3(const char *name, double x, double y, double z)
 {
     glUniform3f(glGetUniformLocation(ID, name), x, y, z);
 }
+void shader::setUniformVec3(const char *name, glm::vec3 v)
+{
+    glUniform3f(glGetUniformLocation(ID, name), v.x, v.y, v.z);
+}
 void shader::setUniformVec2(const char *name, double x, double y)
 {
     glUniform2f(glGetUniformLocation(ID, name), x, y);

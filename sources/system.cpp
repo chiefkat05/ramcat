@@ -320,6 +320,23 @@ void game_system::particle_update(double delta_time)
         }
     }
 }
+
+void game_system::light_update()
+{
+    // lighting test
+    for (int i = 0; i < light_count; ++i)
+    {
+        std::string uniformName = "lights[" + std::to_string(i) + "]";
+        shaders[GAME_SHADER_DEFAULT]->setUniformInt(std::string(uniformName + ".ltype").c_str(), light_list[i].ltype);
+        shaders[GAME_SHADER_DEFAULT]->setUniformVec3(std::string(uniformName + ".position").c_str(), light_list[i].position);
+        shaders[GAME_SHADER_DEFAULT]->setUniformVec3(std::string(uniformName + ".direction").c_str(), light_list[i].direction);
+        shaders[GAME_SHADER_DEFAULT]->setUniformVec3(std::string(uniformName + ".color").c_str(), light_list[i].color);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".ambient").c_str(), light_list[i].ambient);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".diffuse").c_str(), light_list[i].diffuse);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".specular").c_str(), light_list[i].specular);
+    }
+    shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
+}
 void game_system::update(world &floor, double delta_time)
 {
     bool floorTilesNeedUpdate = false;
@@ -339,22 +356,13 @@ void game_system::update(world &floor, double delta_time)
         floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
     }
 
-    // lighting test
-    for (int i = 0; i < light_count; ++i)
-    {
-        std::string uniformName = "light_position[" + std::to_string(i) + "]";
-        shaders[GAME_SHADER_DEFAULT]->setUniformVec3(uniformName.c_str(), light_list[i].x,
-                                                     light_list[i].y, light_list[i].z);
-    }
-    shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
-
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i].Update(delta_time);
 
         if (!characters[i].onGround)
         {
-            characters[i].velocityY -= 2000.0 * delta_time;
+            characters[i].velocityY -= 1000.0 * delta_time;
         }
 
         for (int j = 0; j < characterCount; ++j)
