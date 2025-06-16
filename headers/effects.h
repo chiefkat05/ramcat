@@ -112,9 +112,13 @@ struct light
 
     glm::vec3 color = glm::vec3(0.0);
 
-    float ambient = 0.0;
-    float diffuse = 0.0;
-    float specular = 0.0;
+    double ambient = 0.0;
+    double diffuse = 0.0;
+    double specular = 0.0;
+
+    double falloff_constant = 0.0;
+    double falloff_linear = 0.0;
+    double falloff_quadtratic = 0.0;
 
     void setMaterialValues(light_material mat)
     {
@@ -134,6 +138,10 @@ struct light
             ambient = 0.1;
             diffuse = 0.5;
             specular = 1.0;
+
+            falloff_constant = 1.0;
+            falloff_linear = 0.09;
+            falloff_quadtratic = 0.032;
             break;
         }
     }
