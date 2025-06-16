@@ -48,7 +48,7 @@ ui_element::ui_element(game_system *game, ui_element_type t, const char *path, d
     background = bg;
     if (bg)
     {
-        visual.z = -2.0;
+        visual.z = -10.0;
     }
     else
     {

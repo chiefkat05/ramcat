@@ -326,6 +326,7 @@ void game_system::light_update()
     // lighting test
     for (int i = 0; i < light_count; ++i)
     {
+        light_list[i].update_values();
         std::string uniformName = "lights[" + std::to_string(i) + "]";
         shaders[GAME_SHADER_DEFAULT]->setUniformInt(std::string(uniformName + ".ltype").c_str(), light_list[i].ltype);
         shaders[GAME_SHADER_DEFAULT]->setUniformVec3(std::string(uniformName + ".position").c_str(), light_list[i].position);
@@ -334,6 +335,11 @@ void game_system::light_update()
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".ambient").c_str(), light_list[i].ambient);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".diffuse").c_str(), light_list[i].diffuse);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".specular").c_str(), light_list[i].specular);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_constant").c_str(), light_list[i].falloff_constant);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_linear").c_str(), light_list[i].falloff_linear);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_quadratic").c_str(), light_list[i].falloff_quadtratic);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_scale").c_str(), light_list[i].falloff_scale);
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".cutoff").c_str(), light_list[i].cutoff);
     }
     shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
 }

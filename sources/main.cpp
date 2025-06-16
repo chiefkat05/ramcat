@@ -6,6 +6,8 @@
 
 // TO-DO LIST
 
+// collisions still funky jumping into corner of block makes you slide inside block, running into wall sometimes keep you stuck on wall etc.
+
 // figure out why windows build doesn't work (probably some variable somewhere that isn't defined)
 
 // text rendering
@@ -139,6 +141,8 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
     if (mainG.state == prevState)
         return;
 
+    mainG.clearLights();
+
     resetTransparentSprites();
 
     gui_data.elements.clear();
@@ -155,6 +159,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         mainCam.offsetX = 0.0;
         mainCam.offsetY = 0.0;
         mainCam.offsetZ = 0.0;
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0), 1.0, 0.0, MATERIAL_DEFAULT_2D));
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 0.0);
@@ -172,6 +177,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         mainCam.offsetX = 0.0;
         mainCam.offsetY = 0.0;
         mainCam.offsetZ = 0.0;
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0), 1.0, 0.0, MATERIAL_DEFAULT_2D));
         gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/menu.png", -1.0, -1.0, 3, 1, nullFunc, true));
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/back.png", 0.8f, -0.2f, 1, 1, leaveMenuScreen));
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/home.png", 0.8f, -0.5f, 1, 1, changeScene, false, nullptr, nullptr, START_SCREEN));
@@ -246,6 +252,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
 
         break;
     case CHARACTER_CREATION_SCREEN:
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0), 1.0, 0.0, MATERIAL_DEFAULT_2D));
         for (int i = 0; i < playerCount; ++i)
         {
             mainG.characters[i].visual.Scale(0.48f, 0.48f, 1.0);
@@ -302,6 +309,12 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             mainG.levelincreasing = false;
             mainG.level++;
         }
+
+        // TEST
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(0.01), 1.0, 0.0, MATERIAL_DEFAULT_2D));
+        mainG.addLight(light(LIGHT_SPOT, glm::vec3(0.0, 0.0, 2.5), glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.5, 0.5, 0.5), 1.0, glm::radians(50.0), MATERIAL_DEFAULT_2D));
+        mainG.lastLight()->link_position(&mainG.characters[0].visual.x, &mainG.characters[0].visual.y);
+
         switch (mainG.level)
         {
         case 0:
@@ -470,11 +483,11 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
-    game.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(1.0), MATERIAL_DEFAULT_2D));
-    // game.addLight(light(LIGHT_POINT, glm::vec3(0.0, 1.0, 2.5), glm::vec3(0.0), glm::vec3(4.0, 0.0, 0.0), MATERIAL_DEFAULT));
-
     while (!glfwWindowShouldClose(window))
     {
+        game.light_list[1].position.x = game.characters[0].visual.x + game.characters[0].visual.w * 0.5;
+        game.light_list[1].position.y = game.characters[0].visual.y + game.characters[0].visual.h * 0.5;
+
         double past_time = current_time;
         current_time = glfwGetTime();
         delta_time = current_time - past_time;

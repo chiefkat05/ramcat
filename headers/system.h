@@ -410,6 +410,14 @@ struct game_system
             light_list[i] = light_list[i + 1];
         }
     }
+    void clearLights()
+    {
+        light_count = 0;
+    }
+    constexpr light *lastLight()
+    {
+        return &light_list[light_count - 1];
+    }
 
     game_system() {}
     ~game_system()
