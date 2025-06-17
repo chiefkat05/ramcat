@@ -311,8 +311,8 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         }
 
         // TEST
-        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(0.01), 1.0, 0.0, MATERIAL_DEFAULT_2D));
-        mainG.addLight(light(LIGHT_SPOT, glm::vec3(0.0, 0.0, 2.5), glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.5, 0.5, 0.5), 1.0, glm::radians(50.0), MATERIAL_DEFAULT_2D));
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(0.01), 1.0, 0.0, 0.0, MATERIAL_DEFAULT_2D));
+        mainG.addLight(light(LIGHT_SPOT, glm::vec3(0.0, 0.0, 2.5), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0, 1.0, 1.0), 1.0, glm::radians(50.0), glm::radians(45.0), MATERIAL_DEFAULT_2D));
         mainG.lastLight()->link_position(&mainG.characters[0].visual.x, &mainG.characters[0].visual.y);
 
         switch (mainG.level)

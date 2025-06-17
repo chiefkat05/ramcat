@@ -340,6 +340,9 @@ void game_system::light_update()
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_quadratic").c_str(), light_list[i].falloff_quadtratic);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_scale").c_str(), light_list[i].falloff_scale);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".cutoff").c_str(), light_list[i].cutoff);
+        // here check if outer_cutoff is correct
+        std::cout << light_list[i].outer_cutoff << " huh\n";
+        shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".outer_cutoff").c_str(), light_list[i].outer_cutoff);
     }
     shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
 }

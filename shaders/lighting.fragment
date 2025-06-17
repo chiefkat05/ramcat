@@ -34,6 +34,7 @@ struct light
     float falloff_scale;
 
     float cutoff;
+    float outer_cutoff;
 };
 
 const int light_limit = 24;
@@ -93,12 +94,16 @@ void main()
             float spec = pow(max(dot(normals, halfway_dir), 0.0), 128);
             inResult += spec * lights[i].specular;
         }
+        float intensity = 1.0;
         if (lights[i].ltype == 2)
         {
             light_dir = normalize(lights[i].position - fragPos);
             float theta = dot(light_dir, normalize(-lights[i].direction));
-            if (theta > lights[i].cutoff)
-            {
+            float epsilon = lights[i].cutoff - lights[i].outer_cutoff;
+            intensity = clamp((theta - lights[i].outer_cutoff) / epsilon, 0.0, 1.0);
+
+            //if (theta > lights[i].outer_cutoff)
+            //{
                 inResult += lights[i].ambient;
                 float distance = length(lights[i].position - fragPos);
                 attenuation = 1.0 / (lights[i].falloff_constant + lights[i].falloff_linear * distance + lights[i].falloff_quadratic * (distance * distance));
@@ -111,10 +116,10 @@ void main()
                 halfway_dir = normalize(light_dir + view_dir);
                 float spec = pow(max(dot(normals, halfway_dir), 0.0), 128);
                 inResult += spec * lights[i].specular;
-            }
+            //}
         }
 
-        finalResult += inResult * lights[i].color * attenuation * lights[i].falloff_scale;
+        finalResult += inResult * lights[i].color * attenuation * lights[i].falloff_scale * intensity;
     }
 
     vec4 textureOutput = texture(tex, (tex_position + tex_offset) * tex_scale);

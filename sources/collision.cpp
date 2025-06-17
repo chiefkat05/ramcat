@@ -57,27 +57,26 @@ double aabb::response(double xV, double yV, double xV2, double yV2, aabb test, d
     double AxNext = xPos + velX;
     double AyNext = yPos + velY;
 
-    double epsilon = 0.001;
     double maxDistance = -std::numeric_limits<double>::infinity();
-    if (maxDistance <= testBoxExpanded.min_x - xPos + epsilon)
+    if (maxDistance <= testBoxExpanded.min_x - xPos)
     {
         maxDistance = testBoxExpanded.min_x - xPos;
         xNormal = -1;
         yNormal = 0;
     }
-    if (maxDistance <= xPos - testBoxExpanded.max_x + epsilon)
+    if (maxDistance <= xPos - testBoxExpanded.max_x)
     {
         maxDistance = xPos - testBoxExpanded.max_x;
         xNormal = 1;
         yNormal = 0;
     }
-    if (maxDistance <= testBoxExpanded.min_y - yPos + epsilon)
+    if (maxDistance <= testBoxExpanded.min_y - yPos)
     {
         maxDistance = testBoxExpanded.min_y - yPos;
         xNormal = 0;
         yNormal = -1;
     }
-    if (maxDistance <= yPos - testBoxExpanded.max_y + epsilon)
+    if (maxDistance <= yPos - testBoxExpanded.max_y)
     {
         maxDistance = yPos - testBoxExpanded.max_y;
         xNormal = 0;

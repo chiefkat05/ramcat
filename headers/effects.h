@@ -121,12 +121,12 @@ struct light
     double falloff_quadtratic = 0.0;
     double falloff_scale = 0.0;
 
-    double cutoff = 0.0;
+    double cutoff = 0.0, outer_cutoff = 0.0;
 
     double *position_x_p = nullptr, *direction_x_p = nullptr, *color_x_p = nullptr;
     double *position_y_p = nullptr, *direction_y_p = nullptr, *color_y_p = nullptr;
     double *position_z_p = nullptr, *direction_z_p = nullptr, *color_z_p = nullptr;
-    double *falloff_scale_p = nullptr, *cutoff_p = nullptr;
+    double *falloff_scale_p = nullptr, *cutoff_p = nullptr, *outer_cutoff_p = nullptr;
 
     void update_values()
     {
@@ -174,6 +174,10 @@ struct light
         {
             cutoff = *cutoff_p;
         }
+        if (outer_cutoff_p != nullptr)
+        {
+            outer_cutoff = *outer_cutoff_p;
+        }
     }
 
     void link_position(double *x = nullptr, double *y = nullptr, double *z = nullptr)
@@ -198,9 +202,10 @@ struct light
     {
         falloff_scale_p = p;
     }
-    void link_cutoff(double *p)
+    void link_cutoff(double *p, double *out_p)
     {
         cutoff_p = p;
+        outer_cutoff_p = out_p;
     }
 
     void setMaterialValues(light_material mat)
@@ -238,8 +243,8 @@ struct light
     }
 
     light() {}
-    light(light_type l, glm::vec3 p, glm::vec3 d, glm::vec3 c, double fs, double cut = 0.0, light_material m = MATERIAL_DEFAULT)
-        : ltype(l), position(p), direction(d), color(c), falloff_scale(fs), cutoff(cut)
+    light(light_type l, glm::vec3 p, glm::vec3 d, glm::vec3 c, double fs, double cut = 0.0, double out_cut = 0.0, light_material m = MATERIAL_DEFAULT)
+        : ltype(l), position(p), direction(d), color(c), falloff_scale(fs), cutoff(cut), outer_cutoff(out_cut)
     {
         setMaterialValues(m);
     }
