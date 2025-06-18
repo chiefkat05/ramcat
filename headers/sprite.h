@@ -22,12 +22,14 @@ struct object
     unsigned int VBO, VAO, EBO;
     unsigned int instanceCount = 0, instanceVBO, instanceTextureVBO;
     glm::mat4 *instanceArray;
-    glm::vec2 *instanceTextureArray;
+    glm::vec2 *instanceTextureOffsetArray;
     glm::vec4 *instanceColorArray;
+    int *instanceTextureArray;
     object_type obj_type;
     object();
     object(object_type _obj);
-    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec2 *textureInstanceMap = nullptr, glm::vec4 *colorInstanceMap = nullptr);
+    void setInstances(unsigned int _instanceCount = 0, glm::mat4 *instanceMap = nullptr, glm::vec2 *textureOffsetInstanceMap = nullptr,
+                      glm::vec4 *colorInstanceMap = nullptr, int *textureInstanceMap = nullptr);
     void objectKill();
 };
 
@@ -142,7 +144,7 @@ struct animation
 
 struct textCharacter
 {
-    unsigned int TextureID;
+    int letterID;
     glm::ivec2 Size;
     glm::ivec2 Bearing;
     unsigned int Advance;

@@ -452,7 +452,7 @@ int main()
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_PARTICLE] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TILEMAP] = new object(OBJ_QUAD);
-    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_QUAD); // for now just move on to transparency and text :)
+    game.objects[GAME_OBJECT_TEXT] = new object(OBJ_TEXT);
 
     double current_time = 0;
 

@@ -68,6 +68,8 @@ ui_element::ui_element(game_system *game, ui_element_type t, const char *path, d
     else
     {
         visual.Put(((trueX + 1.0) * 0.5f) * window_width, ((trueY + 1.0) * 0.5f) * window_height, visual.z);
+        visual.shaderP = game->shaders[GAME_SHADER_TEXT];
+        visual.objectP = game->objects[GAME_OBJECT_TEXT];
     }
     width = trueWidth / pixel_divider * (window_height / 2);
     height = trueHeight / pixel_divider * (window_height / 2);
