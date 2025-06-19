@@ -230,6 +230,134 @@ void ui_element::slider_values(int sM, int sL)
     }
 }
 
+int gui::loadFont(const char *path)
+{
+    if (FT_Init_FreeType(&font_ft))
+    {
+        std::cout << "\n\tError: Freetype not initiated properly\n";
+        return -1;
+    }
+    if (FT_New_Face(font_ft, path, 0, &font_face))
+    {
+        std::cout << "\n\tError: Freetype failed to load font\n";
+        return -1;
+    }
+    FT_Set_Pixel_Sizes(font_face, 256, 256);
+
+    if (FT_Load_Char(font_face, 'X', FT_LOAD_RENDER))
+    {
+        std::cout << "\n\tError: Freetype failed to load glyph\n";
+        return -1;
+    }
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glGenTextures(1, &text_texture_id);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, text_texture_id);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 256, 256, 128, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+
+    for (unsigned char c; c < 128; ++c)
+    {
+        if (FT_Load_Char(font_face, c, FT_LOAD_RENDER))
+        {
+            std::cout << "/n/tError: Fretype failed to load glyph\n";
+            continue;
+        }
+
+        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (int)c, font_face->glyph->bitmap.width,
+                        font_face->glyph->bitmap.rows, 1, GL_RED, GL_UNSIGNED_BYTE, font_face->glyph->bitmap.buffer);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        textCharacter textChar = {
+            (int)c,
+            glm::ivec2(font_face->glyph->bitmap.width, font_face->glyph->bitmap.rows),
+            glm::ivec2(font_face->glyph->bitmap_left, font_face->glyph->bitmap_top),
+            static_cast<unsigned int>(font_face->glyph->advance.x)};
+        textCharacters.insert(std::pair<char, textCharacter>(c, textChar));
+    }
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    FT_Done_Face(font_face);
+    FT_Done_FreeType(font_ft);
+
+    return 0;
+}
+void gui::setText(game_system &game)
+{
+    letterCount = 0;
+    for (int i = 0; i < elements.size(); ++i)
+    {
+        if (elements[i].utype != UI_TEXT && elements[i].utype != UI_CLICKABLE_TEXT)
+            continue;
+
+        for (int j = 0; j < elements[i].visual.texture_path.size(); ++j)
+        {
+            if (elements[i].visual.texture_path[j] == ' ' || elements[i].visual.texture_path[j] == '\n')
+                continue;
+
+            ++letterCount;
+        }
+    }
+    glm::mat4 transforms[letterCount];
+    int textureIDs[letterCount];
+    letterCount = 0;
+
+    std::string::const_iterator c;
+    for (int i = 0; i < elements.size(); ++i)
+    {
+        if (elements[i].utype != UI_TEXT && elements[i].utype != UI_CLICKABLE_TEXT)
+            continue;
+
+        elements[i].visual.w = 0.2;
+        std::cout << i << ", huh " << elements[i].visual.w << " wow\n"; // here size is broken
+
+        double x = elements[i].visual.x;
+        double y = elements[i].visual.y;
+        double newlineX = x;
+
+        for (c = elements[i].visual.texture_path.begin(); c != elements[i].visual.texture_path.end(); c++)
+        {
+            game.shaders[GAME_SHADER_TEXT]->use();
+            textCharacter ch = textCharacters[*c];
+
+            if (*c == '\n')
+            {
+                y -= ((ch.Size.y)) * 1.3 * elements[i].visual.w;
+                x = newlineX;
+                continue;
+            }
+            if (*c == ' ')
+            {
+                x += (ch.Advance >> 6) * elements[i].visual.w;
+                continue;
+            }
+
+            double xpos = x + ch.Bearing.x * elements[i].visual.w;
+            double ypos = y - (256.0 - ch.Bearing.y) * elements[i].visual.w;
+            double w = 256.0 * elements[i].visual.w;
+            double h = 256.0 * elements[i].visual.w;
+
+            transforms[letterCount] = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0)) * glm::scale(glm::mat4(1.0), glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
+            textureIDs[letterCount] = ch.letterID;
+
+            unsigned int testAdvance = ch.Advance;
+
+            x += (ch.Advance >> 6) * elements[i].visual.w;
+
+            // if (h > returnVec.w)
+            //     returnVec.w = h;
+
+            ++letterCount;
+        }
+    }
+    game.objects[GAME_OBJECT_TEXT]->setInstances(letterCount, transforms, nullptr, nullptr, textureIDs);
+}
+
 void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front)
 {
     win_ratio_x = static_cast<double>(current_win_width) / static_cast<double>(window_width);
@@ -238,6 +366,7 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
     if (quit)
         glfwSetWindowShouldClose(window, true);
 
+    // int text_letter_count = 0;
     for (int i = 0; i < elements.size(); ++i)
     {
         if (front && elements[i].background || !front && !elements[i].background)
@@ -246,17 +375,33 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
         elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
-                                               elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
-                                               glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
+            // for (int j = 0; j < elements[i].visual.texture_path.size(); ++j)
+            // {
+            //     if (elements[i].visual.texture_path[j] == ' ' || elements[i].visual.texture_path[j] == '\n')
+            //         continue;
 
-            boundingbox.y = window_height - boundingbox.y;
-            boundingbox.w = window_height - boundingbox.w;
+            //     ++text_letter_count;
+            // }
+            // glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
+            //                                    elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
+            //                                    glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
+            // glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
+            //                                    elements[i].visual.x, elements[i].visual.y, 2.0,
+            //                                    glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
 
-            elements[i].posX = boundingbox.x * win_ratio_x;
-            elements[i].posY = boundingbox.y * win_ratio_y;
-            elements[i].width = boundingbox.z * win_ratio_x;
-            elements[i].height = boundingbox.w * win_ratio_y;
+            // boundingbox.y = window_height - boundingbox.y;
+            // boundingbox.w = window_height - boundingbox.w;
+
+            // elements[i].posX = boundingbox.x * win_ratio_x;
+            // elements[i].posY = boundingbox.y * win_ratio_y;
+            // elements[i].width = boundingbox.z * win_ratio_x;
+            // elements[i].height = boundingbox.w * win_ratio_y;
+            // glActiveTexture(GL_TEXTURE0);
+            // glBindTexture(GL_TEXTURE_2D_ARRAY, elements[i].visual.sprite_texture);
+            // glBindVertexArray(game.objects[GAME_OBJECT_TEXT]->VAO);
+
+            // glBindBuffer(GL_ARRAY_BUFFER, game.objects[GAME_OBJECT_TEXT]->VBO);
+            // glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, );
         }
         else
         {
@@ -272,6 +417,19 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
             elements[i].visual.Draw();
         }
     }
+
+    game.shaders[GAME_SHADER_TEXT]->use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, text_texture_id);
+    glBindVertexArray(game.objects[GAME_OBJECT_TEXT]->VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, game.objects[GAME_OBJECT_TEXT]->VBO);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, letterCount);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    game.shaders[GAME_SHADER_DEFAULT]->use();
 }
 ui_element *gui::mostRecentCreatedElement()
 {

@@ -220,13 +220,28 @@ struct transition
     }
 };
 
+struct textCharacter
+{
+    int letterID;
+    glm::ivec2 Size;
+    glm::ivec2 Bearing;
+    unsigned int Advance;
+};
 struct gui
 {
     std::vector<ui_element> elements;
     bool quit = false;
 
+    unsigned int text_texture_id;
+    std::map<char, textCharacter> textCharacters;
+    FT_Library font_ft;
+    FT_Face font_face;
+    int loadFont(const char *path);
+    int letterCount = 0;
+
     void screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front);
     ui_element *mostRecentCreatedElement();
+    void setText(game_system &game);
 };
 
 void changeScene(character *p, game_system *gs, world *w, int argv);

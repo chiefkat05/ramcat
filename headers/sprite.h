@@ -142,15 +142,15 @@ struct animation
     }
 };
 
-struct textCharacter
-{
-    int letterID;
-    glm::ivec2 Size;
-    glm::ivec2 Bearing;
-    unsigned int Advance;
-};
-int loadFont(const char *path);
-glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color);
+// struct textCharacter
+// {
+//     int letterID;
+//     glm::ivec2 Size;
+//     glm::ivec2 Bearing;
+//     unsigned int Advance;
+// };
+// int loadFont(const char *path, unsigned int text_texture_id);
+glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color, unsigned int texture_id);
 
 // void clearAllTextures();
 

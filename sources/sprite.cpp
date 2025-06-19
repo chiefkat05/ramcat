@@ -342,7 +342,6 @@ void sprite::trueDraw(bool wireframe)
     case OBJ_NULL:
         break;
     case OBJ_TEXT:
-        renderText(*objectP, *shaderP, texture_path, x, y, w, glm::vec4(colr, colg, colb, cola));
         break;
     default:
         break;
@@ -498,158 +497,83 @@ void object::objectKill()
     glDeleteBuffers(1, &EBO);
 }
 // Text globals maybe can be made not global? But who cares? Also get rid of the absurd amount of globals in main.cpp? You terrible coder?
-std::map<char, textCharacter> textCharacters;
-FT_Library font_ft;
-FT_Face font_face;
 
 // temp
-unsigned int texture_array;
-glm::mat4 textTransformArray[400];
-int textLetterIndexArray[400];
-glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color)
-{
-    scale = scale * 48.0 / 256.0;
-    double newlineX = x;
-    shaderProgram.use();
-    shaderProgram.setUniformVec4("textColor", color.x, color.y, color.z, color.w);
+// glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color, unsigned int texture_id)
+// {
+//     scale = scale * 48.0 / 256.0;
+//     double newlineX = x;
+//     shaderProgram.use();
+//     shaderProgram.setUniformVec4("textColor", color.x, color.y, color.z, color.w);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
-    glBindVertexArray(spriteObject.VAO);
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_2D_ARRAY, texture_id);
+//     glBindVertexArray(spriteObject.VAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, spriteObject.VBO);
+//     glBindBuffer(GL_ARRAY_BUFFER, spriteObject.VBO);
 
-    glm::vec4 returnVec = glm::vec4(x, y, 0, 0);
+//     glm::vec4 returnVec = glm::vec4(x, y, 0, 0);
 
-    unsigned int working_index = 0;
+//     unsigned int working_index = 0;
 
-    std::string::const_iterator c;
-    for (c = text.begin(); c != text.end(); ++c)
-    {
-        if (*c == '\n' || *c == ' ')
-            continue;
-        working_index++;
-    }
+//     std::string::const_iterator c;
+//     for (c = text.begin(); c != text.end(); ++c)
+//     {
+//         if (*c == '\n' || *c == ' ')
+//             continue;
+//         working_index++;
+//     }
 
-    // glm::mat4 textTransformArray[working_index];
-    // int textLetterIndexArray[working_index];
-    working_index = 0;
+//     glm::mat4 textTransformArray[working_index];
+//     int textLetterIndexArray[working_index];
+//     working_index = 0;
 
-    for (c = text.begin(); c != text.end(); c++)
-    {
-        shaderProgram.use();
-        textCharacter ch = textCharacters[*c];
+//     for (c = text.begin(); c != text.end(); c++)
+//     {
+//         shaderProgram.use();
+//         textCharacter ch = textCharacters[*c];
 
-        if (*c == '\n')
-        {
-            y -= ((ch.Size.y)) * 1.3 * scale;
-            x = newlineX;
-            continue;
-        }
-        if (*c == ' ')
-        {
-            x += (ch.Advance >> 6) * scale;
-            continue;
-        }
+//         if (*c == '\n')
+//         {
+//             y -= ((ch.Size.y)) * 1.3 * scale;
+//             x = newlineX;
+//             continue;
+//         }
+//         if (*c == ' ')
+//         {
+//             x += (ch.Advance >> 6) * scale;
+//             continue;
+//         }
 
-        double xpos = x + ch.Bearing.x * scale;
-        double ypos = y - (256.0 - ch.Bearing.y) * scale;
-        double w = 256.0 * scale;
-        double h = 256.0 * scale;
+//         double xpos = x + ch.Bearing.x * scale;
+//         double ypos = y - (256.0 - ch.Bearing.y) * scale;
+//         double w = 256.0 * scale;
+//         double h = 256.0 * scale;
 
-        textTransformArray[working_index] = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0)) * glm::scale(glm::mat4(1.0), glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
-        // textTransformArray[working_index] = glm::translate(glm::mat4(1.0), glm::vec3(0.0, 0.0, 0.0)) * glm::scale(glm::mat4(1.0), glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
-        textLetterIndexArray[working_index] = ch.letterID;
+//         textTransformArray[working_index] = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0)) * glm::scale(glm::mat4(1.0), glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
+//         textLetterIndexArray[working_index] = ch.letterID;
 
-        unsigned int testAdvance = ch.Advance;
+//         unsigned int testAdvance = ch.Advance;
 
-        x += (ch.Advance >> 6) * scale;
+//         x += (ch.Advance >> 6) * scale;
 
-        if (h > returnVec.w)
-            returnVec.w = h;
+//         if (h > returnVec.w)
+//             returnVec.w = h;
 
-        ++working_index;
-    }
-    spriteObject.setInstances(working_index, textTransformArray, nullptr, nullptr, textLetterIndexArray);
-    glBindVertexArray(spriteObject.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, spriteObject.VBO);
+//         ++working_index;
+//     }
+//     spriteObject.setInstances(working_index, textTransformArray, nullptr, nullptr, textLetterIndexArray);
+//     glBindVertexArray(spriteObject.VAO);
+//     glBindBuffer(GL_ARRAY_BUFFER, spriteObject.VBO);
 
-    // spriteObject.setInstances(working_index, textTransformArray, nullptr, nullptr, textLetterIndexArray);
-    // for (int i = 0; i < 400; ++i)
-    // {
-    //     // std::string str1 = std::string("transforms[") + std::to_string(i) + std::string("]");
-    //     std::string str2 = std::string("letterMap[") + std::to_string(i) + std::string("]");
-    //     // shaderProgram.setUniformMat4(str1.c_str(), textTransformArray[i]);
-    //     shaderProgram.setUniformInt(str2.c_str(), textLetterIndexArray[i]);
-    // }
-    // spriteObject.setInstances(working_index, nullptr, nullptr, nullptr, nullptr);
+//     returnVec = glm::vec4(returnVec.x, returnVec.y, x, returnVec.y + returnVec.w);
 
-    returnVec = glm::vec4(returnVec.x, returnVec.y, x, returnVec.y + returnVec.w);
+//     // std::cout << working_index << ", " << spriteObject.instanceTextureArray[working_index - 1] << " well\n";
+//     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, working_index);
 
-    // std::cout << working_index << ", " << spriteObject.instanceTextureArray[working_index - 1] << " well\n";
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, working_index);
+//     glBindBuffer(GL_ARRAY_BUFFER, 0);
+//     glBindVertexArray(0);
+//     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    return returnVec;
-}
-
-int loadFont(const char *path)
-{
-    if (FT_Init_FreeType(&font_ft))
-    {
-        std::cout << "\n\tError: Freetype not initiated properly\n";
-        return -1;
-    }
-    if (FT_New_Face(font_ft, path, 0, &font_face))
-    {
-        std::cout << "\n\tError: Freetype failed to load font\n";
-        return -1;
-    }
-    FT_Set_Pixel_Sizes(font_face, 256, 256);
-
-    if (FT_Load_Char(font_face, 'X', FT_LOAD_RENDER))
-    {
-        std::cout << "\n\tError: Freetype failed to load glyph\n";
-        return -1;
-    }
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    glGenTextures(1, &texture_array);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture_array);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, 256, 256, 128, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
-
-    for (unsigned char c; c < 128; ++c)
-    {
-        if (FT_Load_Char(font_face, c, FT_LOAD_RENDER))
-        {
-            std::cout << "/n/tError: Fretype failed to load glyph\n";
-            continue;
-        }
-
-        glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, (int)c, font_face->glyph->bitmap.width,
-                        font_face->glyph->bitmap.rows, 1, GL_RED, GL_UNSIGNED_BYTE, font_face->glyph->bitmap.buffer);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        textCharacter textChar = {
-            (int)c,
-            glm::ivec2(font_face->glyph->bitmap.width, font_face->glyph->bitmap.rows),
-            glm::ivec2(font_face->glyph->bitmap_left, font_face->glyph->bitmap_top),
-            static_cast<unsigned int>(font_face->glyph->advance.x)};
-        textCharacters.insert(std::pair<char, textCharacter>(c, textChar));
-    }
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    FT_Done_Face(font_face);
-    FT_Done_FreeType(font_ft);
-
-    return 0;
-}
+//     return returnVec;
+// }

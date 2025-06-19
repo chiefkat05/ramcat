@@ -223,7 +223,8 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             }
         }
 
-        gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 1, 1));
+        // gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 1, 1));
+        gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Gamepad Stick Sensitivity", 25.0, 625.0, 1, 1));
         gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
         gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
@@ -415,6 +416,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         break;
     }
 
+    gui_data.setText(mainG);
     prevState = mainG.state;
 }
 
@@ -475,7 +477,7 @@ int main()
         std::cout << game_sound_result << " sound error\n";
     }
 
-    loadFont("./fonts/rainyhearts.ttf");
+    gui_data.loadFont("./fonts/rainyhearts.ttf");
     glm::mat4 textProjection = glm::ortho(0.0, static_cast<double>(window_width), 0.0, static_cast<double>(window_height));
     game.shaders[GAME_SHADER_TEXT]->use();
     game.shaders[GAME_SHADER_TEXT]->setUniformMat4("projection", textProjection);
@@ -522,7 +524,7 @@ int main()
                 game.characters[i].visual.Put(-1.4f + i * 0.22f, 0.0, game.characters[i].visual.z);
                 game.characters[i].visual.Draw();
             }
-            renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
+            // renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
