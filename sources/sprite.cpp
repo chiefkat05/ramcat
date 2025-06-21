@@ -95,6 +95,14 @@ sprite::sprite(shader *program, object *sprite_object, std::string path, unsigne
 
     if (!text)
         textureInit();
+    else
+    {
+        spriteW = 126.0;
+        spriteH = 126.0;
+
+        textureWidth = 1.0;
+        textureHeight = 1.0;
+    }
 }
 void sprite::textureInit()
 {

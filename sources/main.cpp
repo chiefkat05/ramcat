@@ -188,16 +188,21 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         mainG.initSound("./snd/fx/volume.wav", 6, &s_engine);
 
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Settings", -0.8f, 0.75f, 1, 1, nullFunc, false));
+        gui_data.mostRecentCreatedElement()->scale(12.0, 1.0);
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Controls", -0.8f, 0.55f, 1, 1, nullFunc, false));
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, playerIDForControlStr.c_str(), -0.65f, 0.45f, 1, 1, nullFunc, false));
         playerIDForControlStrElementIndex = gui_data.elements.size() - 1;
-        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/arrow_left.png", -0.8f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, -1));
-        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/arrow_right.png", -0.2f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, 1));
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
+        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/arrow_left.png", -0.9f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, -1));
+        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/arrow_right.png", -0.3f, 0.45f, 1, 1, incrementPlayerIDForControlFunc, false, nullptr, nullptr, 1));
 
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE_TEXT, "Next Level", 0.0f, 0.0f, 1, 1, increaseLevel));
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
         for (int i = 0; i < control_limit; ++i)
         {
             gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, controlsetstrings[i].c_str(), -0.95f, 0.2f - i * 0.15f, 1, 1));
+            gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
         }
         if (playerIDForControl >= playerCount)
             playerIDForControl = playerCount - 1;
@@ -215,41 +220,49 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
                 gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE_TEXT, KeyCodeToString(mainG.characters[playerIDForControl].plControl->inputs[i]), -0.65f, 0.2f - i * 0.15f,
                                                        1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &floor, i));
                 gui_data.mostRecentCreatedElement()->visual.SetColor(0.5f, 0.8f, 0.5f, 1.0);
+                gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
             }
             else
             {
                 gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, gamepadInputStrings[mainG.characters[playerIDForControl].plControl->gamepad_inputs[i]], -0.65f, 0.2f - i * 0.15f,
                                                        1, 1, changeControlFunc, false, &mainG.characters[playerIDForControl], &floor, i));
+                gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
             }
         }
 
         // gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Gamepad Stick Sensitivity", 0.2f, 0.8f, 1, 1));
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Gamepad Stick Sensitivity", 25.0, 625.0, 1, 1));
-        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.5f, 0.75f, 1, 1, nullFunc,
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
+        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.2f, 0.75f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, 0, &gamepad_stick_sensitivity));
         gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(0, 1000);
 
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Music Volume", 0.2f, 0.6f, 1, 1));
-        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.5f, 0.55f, 1, 1, nullFunc,
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
+        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.2f, 0.55f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, 0, &mainG.music_volume));
         gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(0, 125);
 
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Sound Volume", 0.2f, 0.45f, 1, 1));
-        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.5f, 0.4f, 1, 1, volumeChangeSoundPlayFunc,
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
+        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.2f, 0.4f, 1, 1, volumeChangeSoundPlayFunc,
                                                false, nullptr, nullptr, 0, &mainG.sound_volume));
         gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(0, 125);
 
         gui_data.elements.push_back(ui_element(&mainG, UI_TEXT, "Camera FOV", 0.2f, 0.3f, 1, 1));
-        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.5f, 0.25f, 1, 1, nullFunc,
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
+        gui_data.elements.push_back(ui_element(&mainG, UI_SLIDER, "./img/debug.png", 0.2f, 0.25f, 1, 1, nullFunc,
                                                false, nullptr, nullptr, 0, &mainCam.default_fov));
         gui_data.mostRecentCreatedElement()->scale(40.0, 2.0);
         gui_data.mostRecentCreatedElement()->slider_values(7000, 12000);
 
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE_TEXT, "Toggle Fullscreen", 0.15f, -0.7f, 1, 1, fullScreenToggleFunc));
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE_TEXT, "Toggle Particles", 0.2f, -0.8f, 1, 1, particleToggleFunc));
+        gui_data.mostRecentCreatedElement()->scale(10.0, 1.0);
 
         break;
     case CHARACTER_CREATION_SCREEN:
@@ -463,7 +476,7 @@ int main()
     glEnable(GL_FRAMEBUFFER_SRGB);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    world mainWorld; // lmao
+    world mainWorld;
     mainCam.cameraPosition = glm::dvec3(0.0, 0.0, 20.0);
     playerInit(game.characters[0], game, playerControllers[0]);
     game.characters[0].visual.SetColor(0.0, 0.0, 0.0, 1.0);

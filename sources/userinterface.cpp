@@ -100,10 +100,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
 {
     glfwGetFramebufferSize(window, &current_win_width, &current_win_height);
 
-    // double trueMouseX = ((mouseX / current_win_width) * 2.0 - 1.0) * windowAspectDivision;
-    // double trueMouseY = (mouseY / window_height) * 2.0 - 1.0;
-
-    if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT)
+    if (utype != UI_TEXT && utype != UI_CLICKABLE_TEXT) // should probably only change element size when window actually resized
     {
         posX = current_win_width / 2 + (trueX * (current_win_width / 2));
         posY = current_win_height / 2 - (visual.y * (current_win_height / 2));
@@ -145,7 +142,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
     case UI_VALUEISFRAME:
         if (value == nullptr)
             break;
-        anim._sprite = &visual; // this should only happen once or so    // sounds important pls look into
+        anim._sprite = &visual; // this should only happen once or so    // sounds important pls look into // it's an issue with having to set a pointer every frame. Probably should make the object be in a static place in memory
         anim.frame = *value;
         anim.timer = 1.0;
         anim.run(delta_time, false);
@@ -162,6 +159,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
             }
             return;
         }
+        std::cout << visual.texture_path << " text hovered!\n";
         buttonHovered = true;
 
         if (!mousePressed)
@@ -313,13 +311,11 @@ void gui::setText(game_system &game)
         if (elements[i].utype != UI_TEXT && elements[i].utype != UI_CLICKABLE_TEXT)
             continue;
 
-        elements[i].visual.w = 0.2;
-        std::cout << i << ", huh " << elements[i].visual.w << " wow\n"; // here size is broken
-
         double x = elements[i].visual.x;
         double y = elements[i].visual.y;
         double newlineX = x;
 
+        glm::vec4 bounding_box = glm::vec4(elements[i].visual.x, elements[i].visual.y, 0.0, 0.0);
         for (c = elements[i].visual.texture_path.begin(); c != elements[i].visual.texture_path.end(); c++)
         {
             game.shaders[GAME_SHADER_TEXT]->use();
@@ -349,11 +345,20 @@ void gui::setText(game_system &game)
 
             x += (ch.Advance >> 6) * elements[i].visual.w;
 
-            // if (h > returnVec.w)
-            //     returnVec.w = h;
+            double ySize = ch.Size.y * elements[i].visual.w;
+            if (ySize > bounding_box.w)
+                bounding_box.w = ySize;
 
             ++letterCount;
         }
+        bounding_box.z = x;
+        bounding_box.y = window_height - elements[i].visual.y;
+        bounding_box.w = window_height - elements[i].visual.y - bounding_box.w;
+
+        elements[i].posX = bounding_box.x * win_ratio_x;
+        elements[i].posY = bounding_box.y * win_ratio_y;
+        elements[i].width = bounding_box.z * win_ratio_x;
+        elements[i].height = bounding_box.w * win_ratio_y;
     }
     game.objects[GAME_OBJECT_TEXT]->setInstances(letterCount, transforms, nullptr, nullptr, textureIDs);
 }
@@ -375,6 +380,14 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
         elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
+            // std::cout << mouseX << ", " << mouseY << ", visual " << elements[i].posX << ", " << elements[i].posY << ", " << elements[i].width << ", " << elements[i].height << "\n";
+            // if (mouseX < elements[i].visual.x || mouseX > elements[i].visual.x + 50.0 || mouseY > elements[i].visual.y || mouseY < elements[i].visual.y - 50.0)
+            if (mouseX < elements[i].posX || mouseX > elements[i].width || mouseY > elements[i].posY || mouseY < elements[i].height)
+                continue;
+
+            std::cout << elements[i].visual.texture_path << ", " << elements[i].posY << ", " << elements[i].height << " hovered\n";
+            elements[i].visual.w *= 0.9999;
+            setText(game);
             // for (int j = 0; j < elements[i].visual.texture_path.size(); ++j)
             // {
             //     if (elements[i].visual.texture_path[j] == ' ' || elements[i].visual.texture_path[j] == '\n')
