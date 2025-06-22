@@ -157,15 +157,19 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
             {
                 visual.SetColor(1.0, 1.0, 1.0, 1.0);
             }
+            trueHeight = 1.0;
             return;
         }
-        std::cout << visual.texture_path << " text hovered!\n";
         buttonHovered = true;
+        trueHeight = 1.1;
 
         if (!mousePressed)
             visual.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
         else
+        {
             visual.SetColor(0.7f, 0.7f, 0.7f, 0.7f);
+            trueHeight = 0.9;
+        }
 
         if (!mouseReleased)
             return;
@@ -215,6 +219,7 @@ void ui_element::update(GLFWwindow *window, double mouseX, double mouseY, camera
 // v / 1.2s - m/1.2s + l = p
 // p = v / 1.2s - m/1.2s + l
 // sliderPos = *value / 1.2*sliderLimit - sliderMin / 1.2*sliderLimit + (visual.x - visual.w * 0.5)
+// lol
 
 void ui_element::slider_values(int sM, int sL)
 {
@@ -303,6 +308,7 @@ void gui::setText(game_system &game)
     }
     glm::mat4 transforms[letterCount];
     int textureIDs[letterCount];
+    glm::vec4 colors[letterCount];
     letterCount = 0;
 
     std::string::const_iterator c;
@@ -316,6 +322,8 @@ void gui::setText(game_system &game)
         double newlineX = x;
 
         glm::vec4 bounding_box = glm::vec4(elements[i].visual.x, elements[i].visual.y, 0.0, 0.0);
+        // double letterSize = elements[i].visual.w * elements[i].trueHeight;
+        double letterSize = elements[i].visual.w;
         for (c = elements[i].visual.texture_path.begin(); c != elements[i].visual.texture_path.end(); c++)
         {
             game.shaders[GAME_SHADER_TEXT]->use();
@@ -323,31 +331,34 @@ void gui::setText(game_system &game)
 
             if (*c == '\n')
             {
-                y -= ((ch.Size.y)) * 1.3 * elements[i].visual.w;
+                y -= ((ch.Size.y)) * 1.3 * letterSize;
                 x = newlineX;
                 continue;
             }
             if (*c == ' ')
             {
-                x += (ch.Advance >> 6) * elements[i].visual.w;
+                x += (ch.Advance >> 6) * letterSize;
                 continue;
             }
 
-            double xpos = x + ch.Bearing.x * elements[i].visual.w;
-            double ypos = y - (256.0 - ch.Bearing.y) * elements[i].visual.w;
-            double w = 256.0 * elements[i].visual.w;
-            double h = 256.0 * elements[i].visual.w;
+            double xpos = x + ch.Bearing.x * letterSize;
+            double ypos = y - (256.0 - ch.Bearing.y) * letterSize;
+            double w = 256.0 * letterSize;
+            double h = 256.0 * letterSize;
 
-            transforms[letterCount] = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0)) * glm::scale(glm::mat4(1.0), glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
+            transforms[letterCount] = glm::translate(glm::mat4(1.0), glm::vec3(xpos, ypos, 0.0));
+            transforms[letterCount] = glm::scale(transforms[letterCount], glm::vec3(w, h, 0.0)); // make z pos equal to gui zpos
             textureIDs[letterCount] = ch.letterID;
 
             unsigned int testAdvance = ch.Advance;
 
-            x += (ch.Advance >> 6) * elements[i].visual.w;
+            x += (ch.Advance >> 6) * letterSize;
 
-            double ySize = ch.Size.y * elements[i].visual.w;
+            double ySize = ch.Size.y * letterSize;
             if (ySize > bounding_box.w)
                 bounding_box.w = ySize;
+
+            colors[letterCount] = glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola);
 
             ++letterCount;
         }
@@ -360,7 +371,7 @@ void gui::setText(game_system &game)
         elements[i].width = bounding_box.z * win_ratio_x;
         elements[i].height = bounding_box.w * win_ratio_y;
     }
-    game.objects[GAME_OBJECT_TEXT]->setInstances(letterCount, transforms, nullptr, nullptr, textureIDs);
+    game.objects[GAME_OBJECT_TEXT]->setInstances(letterCount, transforms, nullptr, colors, textureIDs);
 }
 
 void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, double mouseX, double mouseY, double delta_time, bool front)
@@ -371,50 +382,24 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
     if (quit)
         glfwSetWindowShouldClose(window, true);
 
-    // int text_letter_count = 0;
     for (int i = 0; i < elements.size(); ++i)
     {
         if (front && elements[i].background || !front && !elements[i].background)
             continue;
 
+        ui_element temp = elements[i];
         elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
+        // std::cout << temp.visual.texture_path << " vs " << elements[i].visual.texture_path << " hmm\n";
+        if (elements[i].visual.texture_path != temp.visual.texture_path)
+        {
+            std::cout << " wierhufawuiefhqoe\n";
+        }
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            // std::cout << mouseX << ", " << mouseY << ", visual " << elements[i].posX << ", " << elements[i].posY << ", " << elements[i].width << ", " << elements[i].height << "\n";
-            // if (mouseX < elements[i].visual.x || mouseX > elements[i].visual.x + 50.0 || mouseY > elements[i].visual.y || mouseY < elements[i].visual.y - 50.0)
-            if (mouseX < elements[i].posX || mouseX > elements[i].width || mouseY > elements[i].posY || mouseY < elements[i].height)
+            if (elements[i] == temp)
                 continue;
 
-            std::cout << elements[i].visual.texture_path << ", " << elements[i].posY << ", " << elements[i].height << " hovered\n";
-            elements[i].visual.w *= 0.9999;
-            setText(game);
-            // for (int j = 0; j < elements[i].visual.texture_path.size(); ++j)
-            // {
-            //     if (elements[i].visual.texture_path[j] == ' ' || elements[i].visual.texture_path[j] == '\n')
-            //         continue;
-
-            //     ++text_letter_count;
-            // }
-            // glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
-            //                                    elements[i].visual.x, elements[i].visual.y, elements[i].visual.w,
-            //                                    glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
-            // glm::vec4 boundingbox = renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], elements[i].visual.texture_path,
-            //                                    elements[i].visual.x, elements[i].visual.y, 2.0,
-            //                                    glm::vec4(elements[i].visual.colr, elements[i].visual.colg, elements[i].visual.colb, elements[i].visual.cola));
-
-            // boundingbox.y = window_height - boundingbox.y;
-            // boundingbox.w = window_height - boundingbox.w;
-
-            // elements[i].posX = boundingbox.x * win_ratio_x;
-            // elements[i].posY = boundingbox.y * win_ratio_y;
-            // elements[i].width = boundingbox.z * win_ratio_x;
-            // elements[i].height = boundingbox.w * win_ratio_y;
-            // glActiveTexture(GL_TEXTURE0);
-            // glBindTexture(GL_TEXTURE_2D_ARRAY, elements[i].visual.sprite_texture);
-            // glBindVertexArray(game.objects[GAME_OBJECT_TEXT]->VAO);
-
-            // glBindBuffer(GL_ARRAY_BUFFER, game.objects[GAME_OBJECT_TEXT]->VBO);
-            // glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, );
+            textChanged = true;
         }
         else
         {
@@ -430,7 +415,14 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
             elements[i].visual.Draw();
         }
     }
-
+    if (textChanged)
+    {
+        setText(game);
+        textChanged = false;
+    }
+}
+void gui::textDraw(game_system &game)
+{
     game.shaders[GAME_SHADER_TEXT]->use();
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D_ARRAY, text_texture_id);

@@ -529,6 +529,7 @@ int main()
         transitionFade.SetColor(1.0, 1.0, 1.0, 2.0 - transitionTimer * 2.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
+        gui_data.textDraw(game);
 
         if (game.state == CHARACTER_CREATION_SCREEN && prevState == CHARACTER_CREATION_SCREEN)
         {
@@ -600,10 +601,14 @@ int main()
 
             for (int i = 0; i < control_limit; ++i)
             {
+                if (!changingControl)
+                    break;
+
                 if (game.characters[playerIDForControl].plControl == nullptr)
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path = "[No Player]";
                     gui_data.elements[uiElementForControlChangeIndex + i].utype = UI_TEXT;
+                    gui_data.textChanged = true;
                     continue;
                 }
 
@@ -612,11 +617,13 @@ int main()
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
                         KeyCodeToString(game.characters[playerIDForControl].plControl->inputs[i]);
+                    gui_data.textChanged = true;
                 }
                 else
                 {
                     gui_data.elements[uiElementForControlChangeIndex + i].visual.texture_path =
                         gamepadInputStrings[game.characters[playerIDForControl].plControl->gamepad_inputs[i]];
+                    gui_data.textChanged = true;
                 }
             }
 
@@ -767,6 +774,7 @@ int main()
             }
         }
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, false);
+        gui_data.textDraw(game);
 
         drawTransparentSprites(mainCam);
 

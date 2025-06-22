@@ -69,6 +69,18 @@ struct sprite
 
     void Draw(bool wireframe = false);
     void trueDraw(bool wireframe);
+
+    constexpr bool operator==(sprite &o)
+    {
+        // probably could make this behemoth more efficient; but I need positional comparisions so
+        if (x != o.x || y != o.y || z != o.z || w != o.w || h != o.h || d != o.d || rx != o.rx || ry != o.ry || rz != o.rz || xOffset != o.xOffset ||
+            yOffset != o.yOffset || zOffset != o.zOffset || colr != o.colr || colg != o.colg || colb != o.colb || cola != o.cola || spriteW != o.spriteW ||
+            spriteH != o.spriteH || framesX != o.framesX || framesY != o.framesY || textureX != o.textureX || textureY != o.textureY || textureWidth != o.textureWidth ||
+            textureHeight != o.textureHeight || textureIncludesTransparency != o.textureIncludesTransparency || sprite_texture != o.sprite_texture ||
+            texture_path != o.texture_path || shaderP != o.shaderP || objectP != o.objectP)
+            return false;
+        return true;
+    }
 };
 
 struct animation
@@ -141,19 +153,6 @@ struct animation
         //                                          _sprite->spriteW * xScale, _sprite->spriteH * yScale));
     }
 };
-
-// struct textCharacter
-// {
-//     int letterID;
-//     glm::ivec2 Size;
-//     glm::ivec2 Bearing;
-//     unsigned int Advance;
-// };
-// int loadFont(const char *path, unsigned int text_texture_id);
-glm::vec4 renderText(object &spriteObject, shader &shaderProgram, std::string text, double x, double y, double scale, glm::vec4 color, unsigned int texture_id);
-
-// void clearAllTextures();
-
 void drawTransparentSprites(camera &cam);
 void resetTransparentSprites();
 

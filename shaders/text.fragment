@@ -6,6 +6,7 @@ uniform sampler2DArray text;
 uniform vec4 textColor;
 
 in flat int letterID;
+in vec4 fColor;
 
 void main()
 {
@@ -13,5 +14,5 @@ void main()
     if (sampled.a < 0.5)
         discard;
         
-    color = textColor * sampled;
+    color = fColor * sampled;
 }

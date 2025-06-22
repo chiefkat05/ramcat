@@ -106,7 +106,6 @@ sprite::sprite(shader *program, object *sprite_object, std::string path, unsigne
 }
 void sprite::textureInit()
 {
-    // stbi_set_flip_vertically_on_load(true);
     glGenTextures(1, &sprite_texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sprite_texture);
@@ -350,6 +349,16 @@ void sprite::trueDraw(bool wireframe)
     case OBJ_NULL:
         break;
     case OBJ_TEXT:
+        std::cout << sprite_texture << ", " << texture_path << " lol\n";
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, sprite_texture);
+        glBindVertexArray(objectP->VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, objectP->VBO);
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, objectP->instanceCount);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
         break;
     default:
         break;
