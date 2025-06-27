@@ -3,6 +3,17 @@
 
 #include <iostream>
 
+enum COLLIDER_PARENT_TYPE
+{
+    NONE,
+    CHARACTER,
+    TILE,
+    parent_type_limit
+};
+
+struct character;
+
+// template <typename T>
 struct aabb
 {
     double min_x, min_y, max_x, max_y;
@@ -11,8 +22,13 @@ struct aabb
     int specialTileX = 0;
     int specialTileY = 0;
 
+    aabb *next_aabb;
+    character *parent_object;
+    // T *parent_object;
+    // COLLIDER_PARENT_TYPE parent_type;
+
     aabb() : min_x(0.0), min_y(0.0), max_x(0.0), max_y(0.0) {}
-    aabb(double x, double y, double x2, double y2) : min_x(x), min_y(y), max_x(x2), max_y(y2) {}
+    aabb(double x, double y, double x2, double y2, character *p = nullptr) : min_x(x), min_y(y), max_x(x2), max_y(y2), parent_object(p) {}
 
     bool colliding(aabb &test);
 

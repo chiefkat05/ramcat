@@ -167,6 +167,8 @@ struct character
 
         colliders[id].xOffsetFromParent = offsetX;
         colliders[id].yOffsetFromParent = offsetY;
+
+        colliders[id].parent_object = this;
     }
     void putCollider(COLLIDER_BOX_IDS id, double x, double y)
     {
@@ -204,135 +206,121 @@ struct character
     void updatePosition(double delta_time);
 };
 
-// struct quadtree_node
-// {
-//     aabb bounds;
-//     quadtree_node *northwest = nullptr;
-//     quadtree_node *northeast = nullptr;
-//     quadtree_node *southwest = nullptr;
-//     quadtree_node *southeast = nullptr;
-//     aabb *obj_list;
-//     unsigned int obj_count = 0;
+struct game_system;
 
-//     sprite visual;
+struct aabb_quadtree
+{
+    aabb_quadtree *nw = nullptr;
+    aabb_quadtree *ne = nullptr;
+    aabb_quadtree *sw = nullptr;
+    aabb_quadtree *se = nullptr;
 
-//     quadtree_node()
-//     {
-//         visual = sprite("./img/debug.png", 1, 1, false);
-//     }
+    bool hasChildren = false;
 
-//     void insert(aabb *input)
-//     {
-//         if (input->max_x < bounds.min_x || input->min_x > bounds.max_x || input->max_y < bounds.min_y || input->min_y > bounds.max_y)
-//             return;
+    aabb *linked_list; // make linked list? or array or vector we figure that out easy easy ya then relax
+    aabb bounds;
 
-//         bool straddle = false;
-//         double xCenter = (bounds.max_x + bounds.min_x) * 0.5;
-//         double yCenter = (bounds.max_y + bounds.min_y) * 0.5;
+    aabb_quadtree()
+    {
+        bounds = aabb(0.0, 0.0, 0.0, 0.0);
+        linked_list = nullptr;
+    }
+    aabb_quadtree(aabb _b)
+    {
+        bounds = _b;
+        linked_list = nullptr;
+    }
+    ~aabb_quadtree()
+    {
+        delete nw;
+        delete ne;
+        delete sw;
+        delete se;
+    }
 
-//         if (input->min_x <= xCenter && input->max_x >= xCenter)
-//             straddle = true;
-//         if (input->min_y <= yCenter && input->max_y >= yCenter)
-//             straddle = true;
+    sprite visual;
+    void setSprite(shader *s, object *o)
+    {
+        visual = sprite(s, o, "./img/debug.png");
+        visual.Put(bounds.min_x, bounds.min_y, 8.0);
+        visual.Scale(bounds.max_x - bounds.min_x, bounds.max_y - bounds.min_y, 1.0);
+    }
 
-//         if (straddle)
-//         {
-//             input->next_obj = obj_list;
-//             obj_list = input;
-//             return;
-//         }
+    void draw()
+    {
+        visual.Draw();
 
-//         if (input->min_x > xCenter && input->min_y > yCenter)
-//         {
-//             if (northeast == nullptr)
-//             {
-//                 northeast = new quadtree_node;
-//                 northeast->bounds = bounds;
-//                 northeast->bounds.min_x = xCenter;
-//                 northeast->bounds.min_y = yCenter;
-//             }
-//             northeast->insert(input);
-//         }
-//         if (input->max_x < xCenter && input->min_y > yCenter)
-//         {
-//             if (northwest == nullptr)
-//             {
-//                 northwest = new quadtree_node;
-//                 northwest->bounds = bounds;
-//                 northwest->bounds.max_x = xCenter;
-//                 northwest->bounds.min_y = yCenter;
-//             }
-//             northwest->insert(input);
-//         }
-//         if (input->min_x > xCenter && input->max_y < yCenter)
-//         {
-//             if (southeast == nullptr)
-//             {
-//                 southeast = new quadtree_node;
-//                 southeast->bounds = bounds;
-//                 southeast->bounds.min_x = xCenter;
-//                 southeast->bounds.max_y = yCenter;
-//             }
-//             southeast->insert(input);
-//         }
-//         if (input->max_x < xCenter && input->max_y < yCenter)
-//         {
-//             if (southwest == nullptr)
-//             {
-//                 southwest = new quadtree_node;
-//                 southwest->bounds = bounds;
-//                 southwest->bounds.max_x = xCenter;
-//                 southwest->bounds.max_y = yCenter;
-//             }
-//             southwest->insert(input);
-//         }
-//     }
+        if (nw != nullptr)
+        {
+            nw->setSprite(visual.shaderP, visual.objectP);
+            nw->draw();
+        }
+        if (ne != nullptr)
+        {
+            ne->setSprite(visual.shaderP, visual.objectP);
+            ne->draw();
+        }
+        if (sw != nullptr)
+        {
+            sw->setSprite(visual.shaderP, visual.objectP);
+            sw->draw();
+        }
+        if (se != nullptr)
+        {
+            se->setSprite(visual.shaderP, visual.objectP);
+            se->draw();
+        }
+    }
 
-//     void draw(shader &program, object &sprite_obj)
-//     {
-//         visual.Put((bounds.min_x + bounds.max_x) * 0.5, (bounds.min_y + bounds.max_y) * 0.5, 0.0);
-//         visual.Scale(bounds.max_x - bounds.min_x, bounds.max_y - bounds.min_y, 0.0);
+    void insert(aabb *_i)
+    {
+        // bool straddling = false;
+        if (std::abs(_i->centerX() - bounds.centerX()) < (_i->max_x - _i->min_x) || std::abs(_i->centerY() - bounds.centerY()) < (_i->max_y - _i->min_y))
+        {
+            _i->next_aabb = linked_list;
+            linked_list = _i;
+            return;
+        }
+        if (!bounds.colliding(*_i))
+        {
+            return;
+        }
 
-//         visual.Draw(program, sprite_obj, true);
-//         if (northwest != nullptr)
-//             northwest->draw(program, sprite_obj);
-//         if (northeast != nullptr)
-//             northeast->draw(program, sprite_obj);
-//         if (southwest != nullptr)
-//             southwest->draw(program, sprite_obj);
-//         if (southeast != nullptr)
-//             southeast->draw(program, sprite_obj);
-//     }
+        if (_i->max_x < bounds.centerX() && _i->min_y > bounds.centerY())
+        {
+            if (nw == nullptr)
+                nw = new aabb_quadtree(aabb(bounds.min_x, bounds.centerY(), bounds.centerX(), bounds.max_y));
 
-//     void empty()
-//     {
-//         obj_list = nullptr;
-//         obj_count = 0;
+            nw->insert(_i);
+        }
+        if (_i->min_x > bounds.centerX() && _i->min_y > bounds.centerY())
+        {
+            if (ne == nullptr)
+                ne = new aabb_quadtree(aabb(bounds.centerX(), bounds.centerY(), bounds.max_x, bounds.max_y));
 
-//         if (northwest != nullptr)
-//             northwest->empty();
-//         if (northeast != nullptr)
-//             northeast->empty();
-//         if (southwest != nullptr)
-//             southwest->empty();
-//         if (southeast != nullptr)
-//             southeast->empty();
-//     }
-// };
+            ne->insert(_i);
+        }
+        if (_i->max_x < bounds.centerX() && _i->max_y < bounds.centerY())
+        {
+            if (sw == nullptr)
+                sw = new aabb_quadtree(aabb(bounds.min_x, bounds.min_y, bounds.centerX(), bounds.centerY()));
 
-// this is tough
-// I'm post-poning the collision detection bounding structure stuff since I can't figure it out right now
-// struct aabb_bhv_node
-// {
-//     aabb bounds;
-//     aabb *obj_list_first;
-//     const unsigned int min_objects = 3;
+            sw->insert(_i);
+        }
+        if (_i->min_x > bounds.centerX() && _i->max_y < bounds.centerY())
+        {
+            if (se == nullptr)
+                se = new aabb_quadtree(aabb(bounds.centerX(), bounds.min_y, bounds.max_x, bounds.centerY()));
 
-//     aabb_bhv_node *children[2];
-//     unsigned int child_count = 0;
+            se->insert(_i);
+        }
 
-//     void construct()
-// };
+        hasChildren = true;
+    }
+
+    void handle_collisions(game_system &game, world &floor, double delta_time);
+};
+
 enum validCollisionType
 {
     VCT_INVALID,
@@ -346,12 +334,14 @@ enum game_objectlist
     GAME_OBJECT_PARTICLE,
     GAME_OBJECT_TILEMAP,
     GAME_OBJECT_TEXT,
+    GAME_OBJECT_GUI,
     object_limit
 };
 enum game_shaderlist
 {
     GAME_SHADER_DEFAULT,
     GAME_SHADER_TEXT,
+    GAME_SHADER_UI,
     shader_limit
 };
 
@@ -364,6 +354,7 @@ struct game_system
 
     character characters[character_limit];
     int characterCount = 0;
+    aabb_quadtree collision_tree;
 
     sprite *sortedSprites[character_limit];
     particlesystem particles[particle_system_limit];
@@ -434,8 +425,6 @@ struct game_system
     }
 
     void Add(character e);
-    // void Spawn_Enemy(std::string filepath, IDENTIFICATION _id, double x, double y, double scaleX, double scaleY, unsigned int fx, unsigned int fy, double cOffX, double cOffY, double cW, double cH);
-    // void Spawn_Enemy(character e);
     void Remove(int index);
     void ClearEnemies();
 
@@ -518,8 +507,8 @@ struct game_system
 
     void particle_update(double delta_time);
     void light_update();
-    void update(world &floor, double delta_time);
-    void handleCollisionSpecifics(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
+    void update(world &floor, camera &mainCam, double delta_time);
+    void handleCharacterCollisions(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
     {
         switch (charA.id)
         {
@@ -575,6 +564,181 @@ struct game_system
                 }
             }
             break;
+        }
+    }
+    void handleTileCollisions(character *c, aabb *t, world &floor, double &delta_time)
+    {
+        if (t->min_x == 0.0 &&
+                t->min_y == 0.0 &&
+                t->max_x == 0.0 &&
+                t->max_y == 0.0 ||
+            t->collisionID <= -1)
+        {
+            return;
+        }
+
+        double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
+        bool collision = false; // now for taking these apart into more managable functions!
+        // something like
+        // bool walkableInterior = (distanceToClosestSide >= -0.01);
+        // and
+        // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
+
+        double firstCollisionHitTest = c->colliders[COLLIDER_SOLID].response(c->velocityX * pixel_scale * delta_time,
+                                                                             c->velocityY * pixel_scale * delta_time, 0.0, 0.0,
+                                                                             *t, xNormal, yNormal, c->visual.x,
+                                                                             c->visual.y, collision, distanceToClosestSide);
+
+        tile *thisSpecialTile = &floor.tiles[t->specialTileX][t->specialTileY];
+        switch (t->collisionID)
+        {
+        case -1:
+            break;
+        case 1:
+            if (collision)
+            {
+                if (xNormal != 0.0)
+                {
+                    c->visual.x = firstCollisionHitTest;
+                    c->velocityX = 0.0;
+                }
+                if (yNormal != 0.0)
+                {
+                    c->hp = 0;
+                }
+            }
+            break;
+        case 2:
+            if (collision && c->plControl != nullptr)
+            {
+                levelincreasing = true;
+            }
+            break;
+        case 3:
+            if (collision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && c->velocityY < 0.0)
+            {
+                c->visual.y = firstCollisionHitTest;
+                c->velocityY = 0.0;
+                c->onGround = true;
+            }
+            break;
+        case 4:
+            if (collision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && c->velocityX > 0.0)
+            {
+                c->visual.x = firstCollisionHitTest;
+                c->velocityX = 0.0;
+            }
+            break;
+        case 5:
+            if (collision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && c->velocityY > 0.0)
+            {
+                c->visual.y = firstCollisionHitTest;
+                c->velocityY = 0.0;
+            }
+            break;
+        case 6:
+            if (collision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && c->velocityX < 0.0)
+            {
+                c->visual.x = firstCollisionHitTest;
+                c->velocityX = 0.0;
+            }
+            break;
+        case 7:
+            if (collision && yNormal != 0.0 && c->velocityY < 0.0)
+            {
+                c->velocityY = 4.0;
+            }
+            break;
+        case 8:
+            if (collision)
+            {
+                floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+                thisSpecialTile->emptyTile();
+                t->collisionID = -1;
+                ++fishCollected;
+                thisSpecialTile->colorIndexID = 0;
+                floor.tileColorsNeedUpdate = true;
+            }
+            break;
+        case 9:
+            if (collision)
+            {
+                thisSpecialTile->id = 2;
+                thisSpecialTile->collisionID = -1;
+                t->collisionID = -1;
+
+                floor.spawnLocationX = t->specialTileX * floor.worldSprite.trueW();
+                floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + t->specialTileY) * floor.worldSprite.trueW();
+                // floor.spawnLocationX = t->centerX();
+                // floor.spawnLocationY = t->centerY();
+            }
+            break;
+        case 10:
+            if (collision)
+            {
+                floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+                thisSpecialTile->emptyTile();
+                t->collisionID = -1;
+                thisSpecialTile->colorIndexID = 0;
+                floor.tileColorsNeedUpdate = true;
+            }
+            break;
+        case 11:
+        {
+            thisSpecialTile->id = -1;
+            thisSpecialTile->collisionID = -1;
+            t->collisionID = -1;
+
+            // Add(character("./img/char/gulk.png", t->min_x * floor.worldSprite.trueW(),
+            //               t->min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
+            Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", t->min_x * floor.worldSprite.trueW(),
+                          t->centerY() * floor.worldSprite.trueH() + 0.2, 0.5, 4, 1, CH_GULK));
+            characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
+            characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+            characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+        }
+        break;
+        case 12:
+        {
+            // tile *npcTile = floor.getTileFromCollisionSpecialID(t->specialTileID);
+            thisSpecialTile->id = -1;
+            thisSpecialTile->collisionID = -1;
+            t->collisionID = -1;
+            Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", t->min_x * floor.worldSprite.trueW(),
+                          t->min_y * floor.worldSprite.trueH() + 0.2, 0.5, 5, 1, CH_COFFEEMUGGUY));
+            // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+            //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
+            characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
+            characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
+            characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+        }
+        break;
+        default:
+            if (collision)
+            {
+                if (xNormal != 0.0)
+                {
+                    c->visual.x = firstCollisionHitTest;
+                    c->velocityX = 0.0;
+                }
+                if (yNormal != 0.0)
+                {
+                    c->visual.y = firstCollisionHitTest;
+                    c->velocityY = 0.0;
+                }
+                if (yNormal > 0.0)
+                    c->onGround = true;
+            }
+            break;
+        }
+
+        if (collision && std::abs(c->velocityX) < 0.5 && xNormal > 0.0 && c->id == CH_GULK)
+        {
+            c->velocityX = 0.5;
+        }
+        if (collision && std::abs(c->velocityX) < 0.5 && xNormal < 0.0 && c->id == CH_GULK)
+        {
+            c->velocityX = -0.5;
         }
     }
 

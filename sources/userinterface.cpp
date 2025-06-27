@@ -13,30 +13,7 @@ extern bool buttonHovered;
 extern bool mouseClicked;
 extern bool mousePressed;
 extern bool mouseReleased;
-// connector host;
-// bool typingInput;
 
-// ui_element::ui_element(ui_element_type t, sprite *v, double x, double y, void func(character *, game_system *, world *, int), bool bg,
-//                        character *_func_p, game_system *_func_gs, world *_func_d,
-//                        int _func_i, int *_linkValue)
-//     : visual(*v), anim(&visual, 0, visual.framesX * visual.framesY, 1.0)
-// {
-//     background = bg;
-//     utype = t;
-//     posX = x;
-//     posY = y;
-//     trueX = x;
-//     trueY = y;
-//     visual.Put(x, y, 0.0);
-//     width = visual.spriteW;
-//     height = visual.spriteH;
-//     function = func;
-//     func_p = _func_p;
-//     func_gs = _func_gs;
-//     func_d = _func_d;
-//     func_i = _func_i;
-//     value = _linkValue;
-// }
 ui_element::ui_element(game_system *game, ui_element_type t, const char *path, double x, double y, int frX, int frY,
                        void func(character *, game_system *, world *, int), bool bg,
                        character *_func_p, world *_func_d,
@@ -390,20 +367,14 @@ void gui::screenDraw(game_system &game, GLFWwindow *window, camera &mainCam, dou
         ui_element temp = elements[i];
         elements[i].update(window, mouseX, mouseY, mainCam, delta_time);
         // std::cout << temp.visual.texture_path << " vs " << elements[i].visual.texture_path << " hmm\n";
-        if (elements[i].visual.texture_path != temp.visual.texture_path)
-        {
-            std::cout << " wierhufawuiefhqoe\n";
-        }
         if (elements[i].utype == UI_TEXT || elements[i].utype == UI_CLICKABLE_TEXT)
         {
-            if (elements[i] == temp)
-                continue;
-
-            textChanged = true;
+            if (!(elements[i] == temp))
+                textChanged = true;
         }
         else
         {
-            if (elements[i].utype == UI_SLIDER)
+            if (elements[i].utype == UI_SLIDER) // problem
             {
                 double holdPosition = elements[i].visual.x;
                 elements[i].visual.x = elements[i].sliderPos;

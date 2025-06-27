@@ -4,23 +4,15 @@
  *  I apologize in advance for the psuedo-organized, chaotic nature of this code.
  **/
 
-// TO-DO LIST
-
-// collisions still funky jumping into corner of block makes you slide inside block, running into wall sometimes keep you stuck on wall etc.
-
-// figure out why windows build doesn't work (probably some variable somewhere that isn't defined)
-
-// text rendering
-
-// make color attribute for instancing (rgba)
-
-// lighting ( maybe lighting using attributes? )
+// TO-DO LIST :)
 
 // quadtree
 
 // save function
 
 // Make the actual game
+
+// TO-DO for after knight game
 
 // use linkvalue in the ui_element initialization to take out some of the need for the variable updates happening in if (state == MENU_SCREEN) in main
 // ^ isn't that what I made it for anyway??
@@ -36,6 +28,10 @@
 // Add #define and #ifdef statements to exclude and include different parts of the engine when it gets big enough
 // Like not everyone is going to need tilemaps or UI or even collision detection so engine customization will be nice to avoid bloat
 // Maybe make one .h file with configs and all the #define statements that you can change to customize the engine
+
+// texture mat4 shader for dynamic texture objects
+// to append the above, different shader sets for different game types would be nice (not every game needs dynamic textures, and some games may only have one model like
+// 2d games with quads so there's a lot of optimization there), even ignoring using shaders for cool graphical effects and stuff
 
 #include "../headers/system.h"
 #include "../headers/userinterface.h"
@@ -462,12 +458,14 @@ int main()
     }
 
     game.shaders[GAME_SHADER_DEFAULT] = new shader("./shaders/lighting.vertex", "./shaders/lighting.fragment");
+    game.shaders[GAME_SHADER_UI] = new shader("./shaders/lighting.vertex", "./shaders/2d_shadow.fragment");
     game.shaders[GAME_SHADER_TEXT] = new shader("./shaders/text.vertex", "./shaders/text.fragment");
 
     game.objects[GAME_OBJECT_DEFAULT] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_PARTICLE] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TILEMAP] = new object(OBJ_QUAD);
     game.objects[GAME_OBJECT_TEXT] = new object(OBJ_TEXT);
+    game.objects[GAME_OBJECT_GUI] = new object(OBJ_QUAD); // go from here
 
     double current_time = 0;
 
@@ -529,7 +527,6 @@ int main()
         transitionFade.SetColor(1.0, 1.0, 1.0, 2.0 - transitionTimer * 2.0);
         transitionFade.Draw();
         gui_data.screenDraw(game, window, mainCam, mouseX, mouseY, delta_time, true);
-        gui_data.textDraw(game);
 
         if (game.state == CHARACTER_CREATION_SCREEN && prevState == CHARACTER_CREATION_SCREEN)
         {
@@ -633,7 +630,7 @@ int main()
         game.light_update();
         if (game.state == WORLD_SCREEN && mainWorld.worldInitialized && prevState == WORLD_SCREEN)
         {
-            game.update(mainWorld, delta_time);
+            game.update(mainWorld, mainCam, delta_time);
 
             if (playerFacingRight && mainCam.offsetX < 0.2)
             {
@@ -739,7 +736,7 @@ int main()
                         game.characters[i].visual.Put(game.characters[0].visual.x, game.characters[0].visual.y, game.characters[i].visual.z);
                         game.characters[i].velocityX = -1.0f;
                     }
-                    game.characters[i].velocityY = 1.0f;
+                    game.characters[i].velocityY = 1.0f; // alright make the gui tilemap fit into the existing ui elements, then make a way to change the button bounds so you can put it around the image instead of some complicated texture cutting thing (which may be helpful on next game or future but not now)
                     // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
                     // if (game.particleByID(i + 30) != nullptr)
                     // {

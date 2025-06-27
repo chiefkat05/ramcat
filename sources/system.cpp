@@ -187,6 +187,140 @@ void quicksortSprites(sprite *sprites[character_limit], int low, int high)
     }
 }
 
+void aabb_quadtree::handle_collisions(game_system &game, world &floor, double delta_time) // if you want quadtrees to work you need the inserted character hitboxes to encapsulate the player hitbox and the velocity so that objects moving past a quadtree branch in 1 frame will still get picked up
+{
+    const int max_depth = 12;
+    static aabb_quadtree *ancestor_stack[max_depth] = {nullptr};
+    static int depth = 0;
+
+    if (depth >= max_depth)
+        return;
+
+    ancestor_stack[depth++] = this;
+    for (int i = 0; i < depth; ++i)
+    {
+        aabb *pA = nullptr, *pB = nullptr;
+
+        for (pA = ancestor_stack[i]->linked_list; pA; pA = pA->next_aabb)
+        {
+            for (pB = linked_list; pB; pB = pB->next_aabb)
+            {
+                if (pA == pB)
+                    break;
+
+                if (pA->parent_object == nullptr && pB->parent_object == nullptr)
+                    continue;
+
+                if (pA->parent_object != nullptr && pB->parent_object != nullptr) // temp pls take out
+                    continue;
+
+                // test collision
+                // if (pA->colliding(*pB))
+                // {
+                //     std::cout << "collision!!!\n";
+                // }
+                double normalX = 0.0, normalY = 0.0, distanceToSide = 0.0;
+                bool collided = false;
+                if (pA->parent_object != nullptr)
+                {
+                    // if (pB->min_x == 0.0 &&
+                    //         pB->min_y == 0.0 &&
+                    //         pB->max_x == 0.0 &&
+                    //         pB->max_y == 0.0 ||
+                    //     pB->collisionID <= -1)
+                    // {
+                    //     return;
+                    // }
+
+                    // double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
+                    // bool collision = false; // now for taking these apart into more managable functions!
+                    // something like
+                    // bool walkableInterior = (distanceToClosestSide >= -0.01);
+                    // and
+                    // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
+
+                    // double firstCollisionHitTest = c->colliders[COLLIDER_SOLID].response(c->velocityX * pixel_scale * delta_time,
+                    //                                                                      c->velocityY * pixel_scale * delta_time, 0.0, 0.0,
+                    //                                                                      *t, xNormal, yNormal, c->visual.x,
+                    //                                                                      c->visual.y, collision, distanceToClosestSide);
+
+                    game.handleTileCollisions(pA->parent_object, pB, floor, delta_time);
+                    // double collisionSnapValue = pA->response(pA->parent_object->velocityX, pA->parent_object->velocityY, 0.0, 0.0, *pB, normalX, normalY,
+                    //                                          pA->parent_object->visual.x, pA->parent_object->visual.y, collided, distanceToSide);
+
+                    // if (collided)
+                    // {
+                    //     std::cout << "hurrah!\n";
+                    //     if (normalX != 0.0)
+                    //     {
+                    //         pA->parent_object->visual.x = collisionSnapValue;
+                    //         pA->parent_object->velocityX = 0.0;
+                    //     }
+                    //     if (normalY != 0.0)
+                    //     {
+                    //         pA->parent_object->visual.y = collisionSnapValue;
+                    //         pA->parent_object->velocityY = 0.0;
+                    //     }
+                    //     if (normalY > 0.0)
+                    //         pA->parent_object->onGround = true;
+                }
+            }
+            if (pB->parent_object != nullptr)
+            {
+                //     if (pA->min_x == 0.0 &&
+                //             pA->min_y == 0.0 &&
+                //             pA->max_x == 0.0 &&
+                //             pA->max_y == 0.0 ||
+                //         pA->collisionID <= -1)
+                //     {
+                //         return;
+                //     }
+                // game.handleTileCollisions(pB->parent_object, pA, floor, delta_time);
+                //     // game.handleTileCollisions(pA->parent_object, pB, floor, delta_time);
+                //     double collisionSnapValue = pB->response(pB->parent_object->velocityX, pB->parent_object->velocityY, 0.0, 0.0, *pA, normalX, normalY,
+                //                                              pB->parent_object->visual.x, pB->parent_object->visual.y, collided, distanceToSide);
+
+                //     if (collided)
+                //     {
+                //         std::cout << "hurrah!\n";
+                //         if (normalX != 0.0)
+                //         {
+                //             pB->parent_object->visual.x = collisionSnapValue;
+                //             pB->parent_object->velocityX = 0.0;
+                //         }
+                //         if (normalY != 0.0)
+                //         {
+                //             pB->parent_object->visual.y = collisionSnapValue;
+                //             pB->parent_object->velocityY = 0.0;
+                //         }
+                //         if (normalY > 0.0)
+                //             pB->parent_object->onGround = true;
+                //     }
+                // }
+            }
+        }
+    }
+
+    if (nw != nullptr)
+    {
+        nw->handle_collisions(game, floor, delta_time);
+    }
+    if (ne != nullptr)
+    {
+        ne->handle_collisions(game, floor, delta_time);
+    }
+    if (sw != nullptr)
+    {
+        sw->handle_collisions(game, floor, delta_time);
+    }
+    if (se != nullptr)
+    {
+        se->handle_collisions(game, floor, delta_time);
+    }
+
+    --depth;
+}
+
 void game_system::Add(character e)
 {
     characters[characterCount] = e;
@@ -340,12 +474,11 @@ void game_system::light_update()
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_quadratic").c_str(), light_list[i].falloff_quadtratic);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".falloff_scale").c_str(), light_list[i].falloff_scale);
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".cutoff").c_str(), light_list[i].cutoff);
-        // here check if outer_cutoff is correct
         shaders[GAME_SHADER_DEFAULT]->setUniformDouble(std::string(uniformName + ".outer_cutoff").c_str(), light_list[i].outer_cutoff);
     }
     shaders[GAME_SHADER_DEFAULT]->setUniformInt("light_count", light_count);
 }
-void game_system::update(world &floor, double delta_time)
+void game_system::update(world &floor, camera &mainCam, double delta_time)
 {
     bool floorTilesNeedUpdate = false;
     for (int i = 0; i < floor.tileAnimationCount; ++i)
@@ -364,6 +497,23 @@ void game_system::update(world &floor, double delta_time)
         floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
     }
 
+    // std::vector<sprite> collision_visual;
+    collision_tree = aabb_quadtree(aabb(mainCam.cameraPosition.x - windowAspectDivision, mainCam.cameraPosition.y - 1.0,
+                                        mainCam.cameraPosition.x + windowAspectDivision, mainCam.cameraPosition.y + 1.0));
+    collision_tree.setSprite(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT]);
+    // collision_tree.checkSprite();
+    for (int i = 0; i < characterCount; ++i)
+    {
+        collision_tree.insert(&characters[i].colliders[COLLIDER_SOLID]);
+    }
+    for (int i = 0; i < floor.collision_box_count; ++i)
+    {
+        collision_tree.insert(&floor.collision_boxes[i]);
+    }
+    collision_tree.draw();
+    // collision_tree.handle_collisions(); // I want to be able to march down the quadtree in here and either get an array of collisions things or return
+    // the branch bunches to test collisions with (don't forget you have to test up the tree not just in each branch)
+
     for (int i = 0; i < characterCount; ++i)
     {
         characters[i].Update(delta_time);
@@ -372,213 +522,218 @@ void game_system::update(world &floor, double delta_time)
         {
             characters[i].velocityY -= 1000.0 * delta_time;
         }
+    }
 
-        for (int j = 0; j < characterCount; ++j)
-        {
-            if (j == i)
-                continue;
+    collision_tree.handle_collisions(*this, floor, delta_time);
 
-            for (int k = 0; k < character_collider_limit; ++k)
-            {
-                if (characters[i].colliders[k].collisionID != k)
-                    continue;
-                for (int l = 0; l < character_collider_limit; ++l)
-                {
-                    if (characters[j].colliders[l].collisionID != l)
-                        continue;
+    // for (int j = 0; j < characterCount; ++j)
+    // {
+    //     if (j == i)
+    //         continue;
 
-                    double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
-                    bool collision = false;
-                    double firstCollisionHitTest = characters[i].colliders[k].response(characters[i].velocityX * delta_time,
-                                                                                       characters[i].velocityY * delta_time,
-                                                                                       characters[j].velocityX * delta_time,
-                                                                                       characters[j].velocityY * delta_time,
-                                                                                       characters[j].colliders[l], xNormal, yNormal,
-                                                                                       characters[i].visual.x, characters[i].visual.y,
-                                                                                       collision, distanceToClosestSide);
+    //     for (int k = 0; k < character_collider_limit; ++k)
+    //     {
+    //         if (characters[i].colliders[k].collisionID != k)
+    //             continue;
+    //         for (int l = 0; l < character_collider_limit; ++l)
+    //         {
+    //             if (characters[j].colliders[l].collisionID != l)
+    //                 continue;
 
-                    validCollisionType cType = getCollisionType(k, l);
-                    if (collision)
-                        handleCollisionSpecifics(characters[i], characters[j], cType, xNormal, yNormal, firstCollisionHitTest, delta_time);
-                }
-            }
-        }
+    //             double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
+    //             bool collision = false;
+    //             double firstCollisionHitTest = characters[i].colliders[k].response(characters[i].velocityX * delta_time,
+    //                                                                                characters[i].velocityY * delta_time,
+    //                                                                                characters[j].velocityX * delta_time,
+    //                                                                                characters[j].velocityY * delta_time,
+    //                                                                                characters[j].colliders[l], xNormal, yNormal,
+    //                                                                                characters[i].visual.x, characters[i].visual.y,
+    //                                                                                collision, distanceToClosestSide);
 
-        for (int j = 0; j < floor.collision_box_count; ++j)
-        {
-            if (floor.collision_boxes[j].min_x == 0.0 &&
-                    floor.collision_boxes[j].min_y == 0.0 &&
-                    floor.collision_boxes[j].max_x == 0.0 &&
-                    floor.collision_boxes[j].max_y == 0.0 ||
-                floor.collision_boxes[j].collisionID <= -1)
-            {
-                continue;
-            }
+    //             validCollisionType cType = getCollisionType(k, l);
+    //             if (collision)
+    //                 handleCharacterCollisions(characters[i], characters[j], cType, xNormal, yNormal, firstCollisionHitTest, delta_time);
+    //         }
+    //     }
+    // }
 
-            double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
-            bool collision = false; // now for taking these apart into more managable functions!
-            // something like
-            // bool walkableInterior = (distanceToClosestSide >= -0.01);
-            // and
-            // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
+    // for (int j = 0; j < floor.collision_box_count; ++j)
+    // {
+    //     if (floor.collision_boxes[j].min_x == 0.0 &&
+    //             floor.collision_boxes[j].min_y == 0.0 &&
+    //             floor.collision_boxes[j].max_x == 0.0 &&
+    //             floor.collision_boxes[j].max_y == 0.0 ||
+    //         floor.collision_boxes[j].collisionID <= -1)
+    //     {
+    //         continue;
+    //     }
 
-            double firstCollisionHitTest = characters[i].colliders[COLLIDER_SOLID].response(characters[i].velocityX * pixel_scale * delta_time,
-                                                                                            characters[i].velocityY * pixel_scale * delta_time, 0.0, 0.0,
-                                                                                            floor.collision_boxes[j], xNormal, yNormal, characters[i].visual.x,
-                                                                                            characters[i].visual.y, collision, distanceToClosestSide);
+    //     double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
+    //     bool collision = false; // now for taking these apart into more managable functions!
+    //     // something like
+    //     // bool walkableInterior = (distanceToClosestSide >= -0.01);
+    //     // and
+    //     // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
 
-            tile *thisSpecialTile = &floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY];
-            switch (floor.collision_boxes[j].collisionID)
-            {
-            case -1:
-                break;
-            case 1:
-                if (collision)
-                {
-                    if (xNormal != 0.0)
-                    {
-                        characters[i].visual.x = firstCollisionHitTest;
-                        characters[i].velocityX = 0.0;
-                    }
-                    if (yNormal != 0.0)
-                    {
-                        characters[i].hp = 0;
-                    }
-                }
-                break;
-            case 2:
-                if (collision && characters[i].plControl != nullptr)
-                {
-                    levelincreasing = true;
-                }
-                break;
-            case 3:
-                if (collision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY < 0.0)
-                {
-                    characters[i].visual.y = firstCollisionHitTest;
-                    characters[i].velocityY = 0.0;
-                    characters[i].onGround = true;
-                }
-                break;
-            case 4:
-                if (collision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX > 0.0)
-                {
-                    characters[i].visual.x = firstCollisionHitTest;
-                    characters[i].velocityX = 0.0;
-                }
-                break;
-            case 5:
-                if (collision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY > 0.0)
-                {
-                    characters[i].visual.y = firstCollisionHitTest;
-                    characters[i].velocityY = 0.0;
-                }
-                break;
-            case 6:
-                if (collision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX < 0.0)
-                {
-                    characters[i].visual.x = firstCollisionHitTest;
-                    characters[i].velocityX = 0.0;
-                }
-                break;
-            case 7:
-                if (collision && yNormal != 0.0 && characters[i].velocityY < 0.0)
-                {
-                    characters[i].velocityY = 4.0;
-                }
-                break;
-            case 8:
-                if (collision)
-                {
-                    floor.removeTileAnimation(thisSpecialTile->animationIndexID);
-                    thisSpecialTile->emptyTile();
-                    floor.collision_boxes[j].collisionID = -1;
-                    ++fishCollected;
-                    thisSpecialTile->colorIndexID = 0;
-                    floor.tileColorsNeedUpdate = true;
-                }
-                break;
-            case 9:
-                if (collision)
-                {
-                    thisSpecialTile->id = 2;
-                    thisSpecialTile->collisionID = -1;
-                    floor.collision_boxes[j].collisionID = -1;
+    //     double firstCollisionHitTest = characters[i].colliders[COLLIDER_SOLID].response(characters[i].velocityX * pixel_scale * delta_time,
+    //                                                                                     characters[i].velocityY * pixel_scale * delta_time, 0.0, 0.0,
+    //                                                                                     floor.collision_boxes[j], xNormal, yNormal, characters[i].visual.x,
+    //                                                                                     characters[i].visual.y, collision, distanceToClosestSide);
 
-                    floor.spawnLocationX = floor.collision_boxes[j].specialTileX * floor.worldSprite.trueW();
-                    floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].specialTileY) * floor.worldSprite.trueW();
-                    // floor.spawnLocationX = floor.collision_boxes[j].centerX();
-                    // floor.spawnLocationY = floor.collision_boxes[j].centerY();
-                }
-                break;
-            case 10:
-                if (collision)
-                {
-                    floor.removeTileAnimation(thisSpecialTile->animationIndexID);
-                    thisSpecialTile->emptyTile();
-                    floor.collision_boxes[j].collisionID = -1;
-                    thisSpecialTile->colorIndexID = 0;
-                    floor.tileColorsNeedUpdate = true;
-                }
-                break;
-            case 11:
-            {
-                thisSpecialTile->id = -1;
-                thisSpecialTile->collisionID = -1;
-                floor.collision_boxes[j].collisionID = -1;
+    //     tile *thisSpecialTile = &floor.tiles[floor.collision_boxes[j].specialTileX][floor.collision_boxes[j].specialTileY];
+    //     switch (floor.collision_boxes[j].collisionID)
+    //     {
+    //     case -1:
+    //         break;
+    //     case 1:
+    //         if (collision)
+    //         {
+    //             if (xNormal != 0.0)
+    //             {
+    //                 characters[i].visual.x = firstCollisionHitTest;
+    //                 characters[i].velocityX = 0.0;
+    //             }
+    //             if (yNormal != 0.0)
+    //             {
+    //                 characters[i].hp = 0;
+    //             }
+    //         }
+    //         break;
+    //     case 2:
+    //         if (collision && characters[i].plControl != nullptr)
+    //         {
+    //             levelincreasing = true;
+    //         }
+    //         break;
+    //     case 3:
+    //         if (collision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY < 0.0)
+    //         {
+    //             characters[i].visual.y = firstCollisionHitTest;
+    //             characters[i].velocityY = 0.0;
+    //             characters[i].onGround = true;
+    //         }
+    //         break;
+    //     case 4:
+    //         if (collision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX > 0.0)
+    //         {
+    //             characters[i].visual.x = firstCollisionHitTest;
+    //             characters[i].velocityX = 0.0;
+    //         }
+    //         break;
+    //     case 5:
+    //         if (collision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityY > 0.0)
+    //         {
+    //             characters[i].visual.y = firstCollisionHitTest;
+    //             characters[i].velocityY = 0.0;
+    //         }
+    //         break;
+    //     case 6:
+    //         if (collision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && characters[i].velocityX < 0.0)
+    //         {
+    //             characters[i].visual.x = firstCollisionHitTest;
+    //             characters[i].velocityX = 0.0;
+    //         }
+    //         break;
+    //     case 7:
+    //         if (collision && yNormal != 0.0 && characters[i].velocityY < 0.0)
+    //         {
+    //             characters[i].velocityY = 4.0;
+    //         }
+    //         break;
+    //     case 8:
+    //         if (collision)
+    //         {
+    //             floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+    //             thisSpecialTile->emptyTile();
+    //             floor.collision_boxes[j].collisionID = -1;
+    //             ++fishCollected;
+    //             thisSpecialTile->colorIndexID = 0;
+    //             floor.tileColorsNeedUpdate = true;
+    //         }
+    //         break;
+    //     case 9:
+    //         if (collision)
+    //         {
+    //             thisSpecialTile->id = 2;
+    //             thisSpecialTile->collisionID = -1;
+    //             floor.collision_boxes[j].collisionID = -1;
 
-                // Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                //               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
-                Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                              floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 0.5, 4, 1, CH_GULK));
-                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
-                characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
-            }
-            break;
-            case 12:
-            {
-                // tile *npcTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
-                thisSpecialTile->id = -1;
-                thisSpecialTile->collisionID = -1;
-                floor.collision_boxes[j].collisionID = -1;
-                Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                              floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 0.5, 5, 1, CH_COFFEEMUGGUY));
-                // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-                //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
-                characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
-                characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
-                characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-            }
-            break;
-            default:
-                if (collision)
-                {
-                    if (xNormal != 0.0)
-                    {
-                        characters[i].visual.x = firstCollisionHitTest;
-                        characters[i].velocityX = 0.0;
-                    }
-                    if (yNormal != 0.0)
-                    {
-                        characters[i].visual.y = firstCollisionHitTest;
-                        characters[i].velocityY = 0.0;
-                    }
-                    if (yNormal > 0.0)
-                        characters[i].onGround = true;
-                }
-                break;
-            }
+    //             floor.spawnLocationX = floor.collision_boxes[j].specialTileX * floor.worldSprite.trueW();
+    //             floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + floor.collision_boxes[j].specialTileY) * floor.worldSprite.trueW();
+    //             // floor.spawnLocationX = floor.collision_boxes[j].centerX();
+    //             // floor.spawnLocationY = floor.collision_boxes[j].centerY();
+    //         }
+    //         break;
+    //     case 10:
+    //         if (collision)
+    //         {
+    //             floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+    //             thisSpecialTile->emptyTile();
+    //             floor.collision_boxes[j].collisionID = -1;
+    //             thisSpecialTile->colorIndexID = 0;
+    //             floor.tileColorsNeedUpdate = true;
+    //         }
+    //         break;
+    //     case 11:
+    //     {
+    //         thisSpecialTile->id = -1;
+    //         thisSpecialTile->collisionID = -1;
+    //         floor.collision_boxes[j].collisionID = -1;
 
-            if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal > 0.0 && characters[i].id == CH_GULK)
-            {
-                characters[i].velocityX = 0.5;
-            }
-            if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal < 0.0 && characters[i].id == CH_GULK)
-            {
-                characters[i].velocityX = -0.5;
-            }
-        }
+    //         // Add(character("./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+    //         //               floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
+    //         Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+    //                       floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 0.5, 4, 1, CH_GULK));
+    //         characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
+    //         characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+    //         characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+    //     }
+    //     break;
+    //     case 12:
+    //     {
+    //         // tile *npcTile = floor.getTileFromCollisionSpecialID(floor.collision_boxes[j].specialTileID);
+    //         thisSpecialTile->id = -1;
+    //         thisSpecialTile->collisionID = -1;
+    //         floor.collision_boxes[j].collisionID = -1;
+    //         Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+    //                       floor.collision_boxes[j].min_y * floor.worldSprite.trueH() + 0.2, 0.5, 5, 1, CH_COFFEEMUGGUY));
+    //         // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
+    //         //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
+    //         characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
+    //         characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
+    //         characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+    //     }
+    //     break;
+    //     default:
+    //         if (collision)
+    //         {
+    //             if (xNormal != 0.0)
+    //             {
+    //                 characters[i].visual.x = firstCollisionHitTest;
+    //                 characters[i].velocityX = 0.0;
+    //             }
+    //             if (yNormal != 0.0)
+    //             {
+    //                 characters[i].visual.y = firstCollisionHitTest;
+    //                 characters[i].velocityY = 0.0;
+    //             }
+    //             if (yNormal > 0.0)
+    //                 characters[i].onGround = true;
+    //         }
+    //         break;
+    //     }
+
+    //     if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal > 0.0 && characters[i].id == CH_GULK)
+    //     {
+    //         characters[i].velocityX = 0.5;
+    //     }
+    //     if (collision && std::abs(characters[i].velocityX) < 0.5 && xNormal < 0.0 && characters[i].id == CH_GULK)
+    //     {
+    //         characters[i].velocityX = -0.5;
+    //     }
+    // }
+    for (int i = 0; i < characterCount; ++i)
+    {
         characters[i].updatePosition(delta_time);
     }
 }
