@@ -504,11 +504,14 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
     // collision_tree.checkSprite();
     for (int i = 0; i < characterCount; ++i)
     {
-        collision_tree.insert(&characters[i].colliders[COLLIDER_SOLID]);
+        aabb box = characters[i].colliders[COLLIDER_SOLID];
+        aabb boundingBox(box.min_x + std::min(characters[i].velocityX, 0.0), box.min_y + std::min(characters[i].velocityY, 0.0),
+                         box.max_x + std::max(characters[i].velocityX, 0.0), box.max_y + std::max(characters[i].velocityY, 0.0));
+        collision_tree.insert(&characters[i].colliders[COLLIDER_SOLID], boundingBox);
     }
     for (int i = 0; i < floor.collision_box_count; ++i)
     {
-        collision_tree.insert(&floor.collision_boxes[i]);
+        collision_tree.insert(&floor.collision_boxes[i], floor.collision_boxes[i]);
     }
     collision_tree.draw();
     // collision_tree.handle_collisions(); // I want to be able to march down the quadtree in here and either get an array of collisions things or return
@@ -525,6 +528,7 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
     }
 
     collision_tree.handle_collisions(*this, floor, delta_time);
+    collision_tree.empty();
 
     // for (int j = 0; j < characterCount; ++j)
     // {

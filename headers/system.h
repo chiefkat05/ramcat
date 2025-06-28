@@ -237,6 +237,15 @@ struct aabb_quadtree
         delete sw;
         delete se;
     }
+    void empty()
+    {
+        delete nw;
+        delete ne;
+        delete sw;
+        delete se;
+        linked_list = nullptr;
+        hasChildren = false;
+    }
 
     sprite visual;
     void setSprite(shader *s, object *o)
@@ -271,11 +280,10 @@ struct aabb_quadtree
             se->draw();
         }
     }
-
-    void insert(aabb *_i)
+    void insert(aabb *_i, aabb workingBox)
     {
         // bool straddling = false;
-        if (std::abs(_i->centerX() - bounds.centerX()) < (_i->max_x - _i->min_x) || std::abs(_i->centerY() - bounds.centerY()) < (_i->max_y - _i->min_y))
+        if (std::abs(workingBox.centerX() - bounds.centerX()) < (workingBox.max_x - workingBox.min_x) || std::abs(workingBox.centerY() - bounds.centerY()) < (workingBox.max_y - workingBox.min_y))
         {
             _i->next_aabb = linked_list;
             linked_list = _i;
@@ -286,33 +294,33 @@ struct aabb_quadtree
             return;
         }
 
-        if (_i->max_x < bounds.centerX() && _i->min_y > bounds.centerY())
+        if (workingBox.max_x < bounds.centerX() && workingBox.min_y > bounds.centerY())
         {
             if (nw == nullptr)
                 nw = new aabb_quadtree(aabb(bounds.min_x, bounds.centerY(), bounds.centerX(), bounds.max_y));
 
-            nw->insert(_i);
+            nw->insert(_i, workingBox);
         }
-        if (_i->min_x > bounds.centerX() && _i->min_y > bounds.centerY())
+        if (workingBox.min_x > bounds.centerX() && workingBox.min_y > bounds.centerY())
         {
             if (ne == nullptr)
                 ne = new aabb_quadtree(aabb(bounds.centerX(), bounds.centerY(), bounds.max_x, bounds.max_y));
 
-            ne->insert(_i);
+            ne->insert(_i, workingBox);
         }
-        if (_i->max_x < bounds.centerX() && _i->max_y < bounds.centerY())
+        if (workingBox.max_x < bounds.centerX() && workingBox.max_y < bounds.centerY())
         {
             if (sw == nullptr)
                 sw = new aabb_quadtree(aabb(bounds.min_x, bounds.min_y, bounds.centerX(), bounds.centerY()));
 
-            sw->insert(_i);
+            sw->insert(_i, workingBox);
         }
-        if (_i->min_x > bounds.centerX() && _i->max_y < bounds.centerY())
+        if (workingBox.min_x > bounds.centerX() && workingBox.max_y < bounds.centerY())
         {
             if (se == nullptr)
                 se = new aabb_quadtree(aabb(bounds.centerX(), bounds.min_y, bounds.max_x, bounds.centerY()));
 
-            se->insert(_i);
+            se->insert(_i, workingBox);
         }
 
         hasChildren = true;
