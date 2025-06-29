@@ -399,14 +399,17 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         dePl = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1);
 #endif
 
-        playerSpawnDist = 0;
-        for (int i = 0; i < playerCount; ++i)
+        if (prevState != MENU_SCREEN)
         {
-            if (mainG.characters[i].plControl == nullptr)
-                continue;
+            playerSpawnDist = 0;
+            for (int i = 0; i < playerCount; ++i)
+            {
+                if (mainG.characters[i].plControl == nullptr)
+                    continue;
 
-            mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, mainG.characters[i].visual.z);
-            playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
+                mainG.characters[i].visual.Put(floor.spawnLocationX, -floor.spawnLocationY + playerSpawnDist, mainG.characters[i].visual.z);
+                playerSpawnDist += mainG.characters[i].visual.h + 0.02f;
+            }
         }
         lowestCamYLevel = p1.visual.y;
 

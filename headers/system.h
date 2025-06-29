@@ -31,9 +31,6 @@ const unsigned int window_width = 1280;
 const unsigned int window_height = 720;
 const unsigned int player_limit = 12;
 
-const int quadtree_leaf_capacity = 4;
-const int quadtree_node_limit = 12;
-
 const unsigned int light_limit = 24; // don't forget to change in fragment shader if you change this
 
 struct character;
@@ -257,7 +254,7 @@ struct aabb_quadtree
 
     void draw()
     {
-        visual.Draw();
+        visual.Draw(true);
 
         if (nw != nullptr)
         {
