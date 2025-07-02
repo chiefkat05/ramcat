@@ -10,8 +10,8 @@ particlesystem::particlesystem()
     variables[PV_LIFE_HIGH] = 0.0;
     variables[PV_SPAWN_X] = 0.0;
     variables[PV_SPAWN_Y] = 0.0;
-    variables[PV_SPAWN_W] = 0.0;
-    variables[PV_SPAWN_H] = 0.0;
+    variables[PV_SPAWN_X2] = 0.0;
+    variables[PV_SPAWN_Y2] = 0.0;
 
     particle_count = 0.0;
 }
@@ -42,9 +42,9 @@ void particlesystem::spawn(double delta_time)
 
     ++totalParticlesSpawned;
 
-    std::uniform_real_distribution<double> posXRand(variables[PV_SPAWN_X], variables[PV_SPAWN_W]);
-    std::uniform_real_distribution<double> posYRand(variables[PV_SPAWN_Y], variables[PV_SPAWN_H]);
-    std::uniform_real_distribution<double> lifeRand(variables[PV_LIFE_LOW], variables[PV_LIFE_HIGH]);
+    std::uniform_real_distribution<double> posXRand(variables[PV_SPAWN_X], std::max(variables[PV_SPAWN_X], variables[PV_SPAWN_X2]));
+    std::uniform_real_distribution<double> posYRand(variables[PV_SPAWN_Y], std::max(variables[PV_SPAWN_Y], variables[PV_SPAWN_Y2]));
+    std::uniform_real_distribution<double> lifeRand(variables[PV_LIFE_LOW], std::max(variables[PV_LIFE_LOW], variables[PV_LIFE_HIGH]));
 
     particles[particles_alive].Put(posXRand(numGen), posYRand(numGen));
     particles[particles_alive].velX = 0.0;
@@ -57,8 +57,8 @@ void particlesystem::spawn(double delta_time)
     particles[particles_alive].blue = variables[PV_BLUE];
     particles[particles_alive].alpha = variables[PV_ALPHA];
 
-    std::uniform_real_distribution<double> parXVel(variables[PV_PUSHMIN_X], variables[PV_PUSHMAX_X]);
-    std::uniform_real_distribution<double> parYVel(variables[PV_PUSHMIN_Y], variables[PV_PUSHMAX_Y]);
+    std::uniform_real_distribution<double> parXVel(variables[PV_PUSHMIN_X], std::max(variables[PV_PUSHMIN_X], variables[PV_PUSHMAX_X]));
+    std::uniform_real_distribution<double> parYVel(variables[PV_PUSHMIN_Y], std::max(variables[PV_PUSHMIN_Y], variables[PV_PUSHMAX_Y]));
 
     particles[particles_alive].velX = parXVel(numGen);
     particles[particles_alive].velY = parYVel(numGen);
@@ -84,6 +84,7 @@ void particlesystem::update(double delta_time)
 
     glm::mat4 transformArray[particles_alive];
     glm::vec2 textureArray[particles_alive];
+    glm::vec4 colorsArray[particles_alive];
     for (int i = 0; i < particles_alive; ++i)
     {
         if (particles[i].life < 0.0)
@@ -101,9 +102,11 @@ void particlesystem::update(double delta_time)
         transformArray[i] = glm::scale(transformArray[i], glm::vec3(particles[i].w, particles[i].h, 1.0));
 
         textureArray[i] = glm::vec2(static_cast<int>(particles[i].animationTime) % visual.framesX, static_cast<int>(particles[i].animationTime) / visual.framesX);
+
+        colorsArray[i] = glm::vec4(particles[i].red, particles[i].green, particles[i].blue, particles[i].alpha);
     }
 
-    visual.objectP->setInstances(particles_alive, transformArray, textureArray);
+    visual.objectP->setInstances(particles_alive, transformArray, textureArray, colorsArray);
 }
 void particlesystem::draw(double delta_time)
 {

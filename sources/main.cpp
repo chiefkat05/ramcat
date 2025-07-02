@@ -6,8 +6,6 @@
 
 // TO-DO LIST :)
 
-// quadtree
-
 // save function
 
 // Make the actual game
@@ -35,6 +33,7 @@
 
 #include "../headers/system.h"
 #include "../headers/userinterface.h"
+#include "../headers/savedata.h"
 #include "../headers/miniaudio.h"
 
 // #define COLLISION_DEBUG
@@ -163,8 +162,8 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 1, 1, quitGame));
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 1, 1, goMenuScreen));
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
-        mainG.level = 0;
-        mainG.levelincreasing = false;
+        // mainG.level = 0;
+        // mainG.levelincreasing = false;
         break;
     case MENU_SCREEN:
         mainCam.setBoundary(0.0, -0.0, -100.0, 0.0, 0.0, 100.0);
@@ -301,9 +300,9 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         //     mainG.particleByID(30)->setVariable(PV_ANIM_END, 4.0);
         //     mainG.particleByID(30)->setVariable(PV_ANIM_SPEED, 8.0);
         //     mainG.particleByID(30)->linkVariable(PV_SPAWN_X, &mainG.characters[0].visual.x);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_W, &mainG.characters[0].visual.x);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_X2, &mainG.characters[0].visual.x);
         //     mainG.particleByID(30)->linkVariable(PV_SPAWN_Y, &mainG.characters[0].visual.y);
-        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_H, &mainG.characters[0].visual.y);
+        //     mainG.particleByID(30)->linkVariable(PV_SPAWN_Y2, &mainG.characters[0].visual.y);
         // }
 
         for (int i = 0; i < playerCount; ++i)
@@ -386,6 +385,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             break;
         case 17:
             mainG.nextState = START_SCREEN;
+            mainG.level = 0;
             return;
         default:
             std::cout << ":megamind: no level?\n";
@@ -499,6 +499,11 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
+    // test saving
+    savevalue<int> levelSaveValue("level.save");
+
+    levelSaveValue.loadData(0, game.level);
+
     while (!glfwWindowShouldClose(window))
     {
         game.light_list[1].position.x = game.characters[0].visual.x + game.characters[0].visual.w * 0.5;
@@ -538,24 +543,24 @@ int main()
                 game.characters[i].visual.Put(-1.4f + i * 0.22f, 0.0, game.characters[i].visual.z);
                 game.characters[i].visual.Draw();
             }
-            // renderText(*game.objects[GAME_OBJECT_TEXT], *game.shaders[GAME_SHADER_TEXT], "Character Select", 25.0, 625.0, 2.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            // game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52);
-            // if (game.particleByID(52) != nullptr)
-            // {
-            //     game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -15.0);
-            //     game.particleByID(52)->setVariable(PV_PUSHMAX_Y, -15.0);
-            //     game.particleByID(52)->setVariable(PV_RED, 1.0);
-            //     game.particleByID(52)->setVariable(PV_GREEN, 1.0);
-            //     game.particleByID(52)->setVariable(PV_BLUE, 1.0);
-            //     game.particleByID(52)->setVariable(PV_ALPHA, 1.0);
-            //     game.particleByID(52)->setVariable(PV_WIDTH, 0.02);
-            //     game.particleByID(52)->setVariable(PV_HEIGHT, 0.08);
-            //     game.particleByID(52)->setVariable(PV_SPAWN_X, -1.8);
-            //     game.particleByID(52)->setVariable(PV_SPAWN_W, 1.5);
-            // }
+            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52); // run main and fix the source of error message pls?
+            if (game.particleByID(52) != nullptr)
+            {
+                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -80.0);
+                game.particleByID(52)->setVariable(PV_SPAWN_Y, 2.0);
+                game.particleByID(52)->setVariable(PV_RED, 1.0);
+                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+                game.particleByID(52)->setVariable(PV_ALPHA, 0.78);
+                game.particleByID(52)->setVariable(PV_WIDTH, 0.2);
+                game.particleByID(52)->setVariable(PV_HEIGHT, 0.5);
+                game.particleByID(52)->setVariable(PV_SPAWN_X, -12.0);
+                game.particleByID(52)->setVariable(PV_SPAWN_X2, 12.0);
+                game.particleByID(52)->setVariable(PV_LIFE_LOW, 0.8);
+            }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
@@ -759,9 +764,9 @@ int main()
                     //     game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
                     //     game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
                     //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_W, &game.characters[i].visual.x);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X2, &game.characters[i].visual.x);
                     //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_H, &game.characters[i].visual.y);
+                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y2, &game.characters[i].visual.y);
                     // }
                     // player animation here???
                     game.characters[i].hp = game.characters[i].maxhp;
@@ -781,6 +786,7 @@ int main()
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+    levelSaveValue.saveData(game.level);
     // ma_engine_uninit(&soundEngine);
 
     glfwTerminate();

@@ -212,6 +212,12 @@ void drawTransparentSprites(camera &cam)
 
     for (std::map<double, sprite *>::iterator iter = drawOrderMap.begin(); iter != drawOrderMap.end(); ++iter)
     {
+        if (iter->second->shaderP == nullptr)
+        {
+            std::cout << "shader for sprite " << iter->second->texture_path << " does not exist or is not assigned, skipping draw and removing from transparency list.\n";
+            iter->second->inTransparencyList = false;
+            continue;
+        }
         iter->second->trueDraw(false);
     }
 }

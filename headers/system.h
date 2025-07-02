@@ -227,13 +227,11 @@ struct aabb_quadtree
         bounds = _b;
         linked_list = nullptr;
     }
-    ~aabb_quadtree()
-    {
-        delete nw;
-        delete ne;
-        delete sw;
-        delete se;
-    }
+    // ~aabb_quadtree() // I have resolved not to touch this for the time being as every deletion function I try to make causes a crash on game exit
+    // {
+    //     empty();
+    // }
+    // I will return to the above when I have learned a thing or two about deletion functions with nested pointers and all that fun stuff
     void empty()
     {
         delete nw;
@@ -434,41 +432,7 @@ struct game_system
     void ClearEnemies();
 
     void setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                      double sX, double sY, double sW, double sH, unsigned int uniqueID)
-    {
-        if (particlesystemcount >= particle_system_limit || !particlesenabled)
-            return;
-
-        particles[particlesystemcount].totalParticlesSpawned = 0;
-
-        for (int i = 0; i < particlesystemcount; ++i)
-        {
-            if (uniqueID == particles[i].id)
-            {
-                return;
-            }
-        }
-
-        particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
-
-        // particles[particlesystemcount].visual.texture_path = path;
-        // particles[particlesystemcount].visual.framesX = fx;
-        // particles[particlesystemcount].visual.framesY = fy;
-        // particles[particlesystemcount].visual.textureInit();
-
-        // particles[particlesystemcount].particle_count = _particle_count;
-        if (_particle_count >= particle_limit)
-            particles[particlesystemcount].particle_count = particle_limit;
-        particles[particlesystemcount].variables[PV_LIFE_LOW] = _life_lower;
-        particles[particlesystemcount].variables[PV_LIFE_HIGH] = _life_upper;
-        particles[particlesystemcount].variables[PV_SPAWN_X] = sX;
-        particles[particlesystemcount].variables[PV_SPAWN_Y] = sY;
-        particles[particlesystemcount].variables[PV_SPAWN_W] = sW;
-        particles[particlesystemcount].variables[PV_SPAWN_H] = sH;
-
-        particles[particlesystemcount].id = uniqueID;
-        ++particlesystemcount;
-    }
+                      double sX, double sY, double sW, double sH, unsigned int uniqueID);
     particlesystem *lastParticleSet()
     {
         return &particles[particlesystemcount - 1];
@@ -482,25 +446,7 @@ struct game_system
         }
         return nullptr;
     }
-    void removeParticles(unsigned int index)
-    {
-        particles[index] = particlesystem();
-        for (int i = 0; i < pv_variable_limit; ++i)
-        {
-            particles[index].variable_pointers[i] = nullptr;
-        }
-
-        for (int i = index; i < particlesystemcount - 1; ++i)
-        {
-            particles[i] = particles[i + 1];
-        }
-        particles[particlesystemcount] = particlesystem();
-        for (int i = 0; i < pv_variable_limit; ++i)
-        {
-            particles[particlesystemcount].variable_pointers[i] = nullptr;
-        }
-        --particlesystemcount;
-    }
+    void removeParticles(unsigned int index);
 
     // void initSoundEngine();
     // void handleMusic();

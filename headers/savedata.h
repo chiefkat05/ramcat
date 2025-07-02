@@ -3,31 +3,43 @@
 
 #include "system.h"
 
-struct savedata
+template <typename T>
+struct savevalue
 {
-    character *saveChar[character_limit];
-    int level;
+    std::string save_path;
 
-    void save(std::string path, game_system &game)
-    {
-        std::ofstream saveFile(path);
+    savevalue(std::string sp) : save_path(sp) {}
 
-        if (!saveFile.is_open())
-        {
-            std::cout << "\n\tError: Save file could not be opened.\n";
-            return;
-        }
-
-        for (int i = 0; i < game.characterCount; ++i)
-        {
-            // double chX = game.characters[i]->visual.x;
-            // std::string writeString(i + "x" + chX);
-            saveFile.write(std::string(i + " hello\n").c_str(), 7);
-        }
-    }
-    void load(std::string path)
-    {
-    }
+    void loadData(size_t dataLocation, T &dataV);
+    void saveData(T dataV);
 };
+
+template <typename T>
+void savevalue<T>::loadData(size_t dataLocation, T &dataV)
+{
+    std::ifstream save_file;
+    save_file.open(save_path, std::ios::in | std::ios::binary);
+    if (!save_file.is_open())
+    {
+        return;
+    }
+    save_file.seekg(dataLocation);
+
+    save_file.read((char *)&dataV, sizeof(T));
+    std::cout << "loading " << dataV << "\n";
+
+    save_file.close();
+}
+
+template <typename T>
+void savevalue<T>::saveData(T dataV)
+{
+    std::cout << "saving " << dataV << "\n";
+    std::ofstream save_file;
+    save_file.open(save_path, std::ios::out | std::ios::binary);
+    // save_file.write(reinterpret_cast<char *>(&dataV), sizeof(T));
+    save_file.write((char *)&dataV, sizeof(T));
+    save_file.close();
+}
 
 #endif

@@ -35,13 +35,13 @@ struct particle
     }
 };
 
-enum PARTICLE_VARIABLE
+enum PARTICLE_VARIABLE // make spawn interval variable, and change color variables to things like "Color over life" or "color random range"
 {
     PV_SPAWN_TIMER,
     PV_SPAWN_X,
     PV_SPAWN_Y,
-    PV_SPAWN_W,
-    PV_SPAWN_H,
+    PV_SPAWN_X2,
+    PV_SPAWN_Y2,
     PV_LIFE_LOW,
     PV_LIFE_HIGH,
     PV_PUSHMIN_X,

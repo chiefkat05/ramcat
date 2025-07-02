@@ -395,6 +395,7 @@ void game_system::particle_update(double delta_time)
 
         if (particles[i].particles_alive <= 0)
         {
+            std::cout << " why\n";
             removeParticles(i);
         }
     }
@@ -442,7 +443,6 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
         floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
     }
 
-    // std::vector<sprite> collision_visual;
     collision_tree = aabb_quadtree(aabb(mainCam.cameraPosition.x - windowAspectDivision, mainCam.cameraPosition.y - 1.0,
                                         mainCam.cameraPosition.x + windowAspectDivision, mainCam.cameraPosition.y + 1.0));
     // collision_tree.setSprite(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT]);
@@ -468,8 +468,8 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
         aabb boundingBox(box.min_x + std::min(characters[i].velocityX, 0.0), box.min_y + std::min(characters[i].velocityY, 0.0),
                          box.max_x + std::max(characters[i].velocityX, 0.0), box.max_y + std::max(characters[i].velocityY, 0.0));
 
-        // if (!boundingBox.colliding(collision_tree.bounds) && characters[i].visual.y > collision_tree.bounds.min_y)
-        //     return;
+        if (i > 0 && !boundingBox.colliding(collision_tree.bounds))
+            return;
 
         characters[i].Update(delta_time);
 
@@ -488,8 +488,8 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
         aabb boundingBox(box.min_x + std::min(characters[i].velocityX, 0.0), box.min_y + std::min(characters[i].velocityY, 0.0),
                          box.max_x + std::max(characters[i].velocityX, 0.0), box.max_y + std::max(characters[i].velocityY, 0.0));
 
-        // if (!boundingBox.colliding(collision_tree.bounds) && characters[i].visual.y > collision_tree.bounds.min_y)
-        //     return;
+        if (i > 0 && !boundingBox.colliding(collision_tree.bounds))
+            return;
 
         characters[i].updatePosition(delta_time);
     }
@@ -501,4 +501,56 @@ void game_system::killParticles()
     {
         particles[i].kill();
     }
+}
+void game_system::setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+                               double sX, double sY, double sW, double sH, unsigned int uniqueID)
+{
+    if (particlesystemcount >= particle_system_limit || !particlesenabled)
+        return;
+
+    int workingIndex = -1;
+    for (int i = 0; i < particlesystemcount; ++i)
+    {
+        if (uniqueID == particles[i].id)
+        {
+            workingIndex = i;
+        }
+    }
+
+    if (workingIndex != -1)
+    {
+        particles[workingIndex].totalParticlesSpawned = 0;
+        return;
+    }
+
+    particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
+
+    particles[particlesystemcount].variables[PV_LIFE_LOW] = _life_lower;
+    particles[particlesystemcount].variables[PV_LIFE_HIGH] = _life_upper;
+    particles[particlesystemcount].variables[PV_SPAWN_X] = sX;
+    particles[particlesystemcount].variables[PV_SPAWN_Y] = sY;
+    particles[particlesystemcount].variables[PV_SPAWN_X2] = sW;
+    particles[particlesystemcount].variables[PV_SPAWN_Y2] = sH;
+
+    particles[particlesystemcount].id = uniqueID;
+    ++particlesystemcount;
+}
+void game_system::removeParticles(unsigned int index)
+{
+    particles[index] = particlesystem();
+    for (int i = 0; i < pv_variable_limit; ++i)
+    {
+        particles[index].variable_pointers[i] = nullptr;
+    }
+
+    for (int i = index; i < particlesystemcount - 1; ++i)
+    {
+        particles[i] = particles[i + 1];
+    }
+    particles[particlesystemcount] = particlesystem();
+    for (int i = 0; i < pv_variable_limit; ++i)
+    {
+        particles[particlesystemcount].variable_pointers[i] = nullptr;
+    }
+    --particlesystemcount;
 }
