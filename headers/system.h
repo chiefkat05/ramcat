@@ -277,7 +277,6 @@ struct aabb_quadtree
     }
     void insert(aabb *_i, aabb workingBox)
     {
-        // bool straddling = false;
         if (std::abs(workingBox.centerX() - bounds.centerX()) < (workingBox.max_x - workingBox.min_x) || std::abs(workingBox.centerY() - bounds.centerY()) < (workingBox.max_y - workingBox.min_y))
         {
             _i->next_aabb = linked_list;
@@ -413,7 +412,9 @@ struct game_system
         return &light_list[light_count - 1];
     }
 
-    game_system() {}
+    game_system()
+    {
+    }
     ~game_system()
     {
         // delete pointers inside arrays here?

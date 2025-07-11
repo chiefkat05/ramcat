@@ -499,10 +499,15 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
-    // test saving
-    savevalue<int> levelSaveValue("level.save");
-
-    levelSaveValue.loadData(0, game.level);
+    save_file_manager mainSave;
+    mainSave.addDataToMap(SDT_INT, &game.level);
+    // add game.spawnTile which takes the id of a tile (which should be a spawntile or checkpointtile) and sets the player position to that instead of the direct tile on level load/death)
+    // then obviously make this a saved object
+    // also buttons to automate the saveGame() / loadGame() / setCurrentSaveLoc(x) functions
+    // save_file_manager should probably be inside gamesystem or maybe even global variable? either way works you'll probably rework it a little next game anyway so just make it work for this game
+    mainSave.setPath("save", "");
+    mainSave.setCurrentSaveLoc(0);
+    mainSave.loadGame();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -786,8 +791,8 @@ int main()
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
-    levelSaveValue.saveData(game.level);
     // ma_engine_uninit(&soundEngine);
+    mainSave.saveGame();
 
     glfwTerminate();
     return 0;
@@ -1316,6 +1321,18 @@ void increaseLevel(character *ch, game_system *gs, world *wo, int x)
 
     gs->levelincreasing = true;
 }
+// void saveGame(character *ch, game_system *gs, world *wo, int x)
+// {
+//     gs->mainSave.saveOver(x);
+// }
+// void newSaveGame(character *ch, game_system *gs, world *wo, int x)
+// {
+//     gs->mainSave.newSave();
+// }
+// void loadGame(character *ch, game_system *gs, world *wo, int x)
+// {
+//     gs->mainSave.loadSave(x);
+// }
 void incrementPlayerIDForControlFunc(character *ch, game_system *gs, world *wo, int x)
 {
     playerIDForControl += x;
