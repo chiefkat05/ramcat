@@ -1,7 +1,6 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#include <iostream>
 #include <string>
 #include <memory>
 #include <thread>
@@ -9,6 +8,7 @@
 #include "world.h"
 #include "effects.h"
 #include "miniaudio.h"
+#include "savedata.h"
 
 enum game_state
 {
@@ -133,6 +133,8 @@ enum COLLIDER_BOX_IDS
 {
     COLLIDER_SOLID,
     COLLIDER_STRIKE,
+    COLLIDER_SIGHT,
+    COLLIDER_SIGHT_2,
     character_collider_limit
 };
 struct character
@@ -177,11 +179,11 @@ struct character
     }
     void colliderOn(COLLIDER_BOX_IDS id)
     {
-        colliders[id].collisionID = id;
+        colliders[id].colliderID = id;
     }
     void colliderOff(COLLIDER_BOX_IDS id)
     {
-        colliders[id].collisionID = -1;
+        colliders[id].colliderID = -1;
     }
 
     IDENTIFICATION id = CH_NULL;
@@ -234,12 +236,21 @@ struct aabb_quadtree
     // I will return to the above when I have learned a thing or two about deletion functions with nested pointers and all that fun stuff
     void empty()
     {
-        delete nw;
-        delete ne;
-        delete sw;
-        delete se;
+        // delete nw;
+        // delete ne;
+        // delete sw;
+        // delete se;
         linked_list = nullptr;
         hasChildren = false;
+
+        if (nw != nullptr)
+            nw->empty();
+        if (ne != nullptr)
+            ne->empty();
+        if (sw != nullptr)
+            sw->empty();
+        if (se != nullptr)
+            se->empty();
     }
 
     sprite visual;
@@ -328,7 +339,10 @@ enum validCollisionType
     VCT_INVALID,
     VCT_SOLID_SOLID,
     VCT_STRIKE_SOLID,
-    VCT_SOLID_STRIKE
+    VCT_SOLID_STRIKE,
+
+    VCT_SIGHT_SOLID,
+    VCT_SIGHT2_SOLID,
 };
 enum game_objectlist
 {
@@ -376,6 +390,8 @@ struct game_system
 
     light light_list[light_limit];
     unsigned int light_count = 0;
+
+    save_file_manager saveManager;
 
     void addLight(light l)
     {
@@ -432,8 +448,7 @@ struct game_system
     void Remove(int index);
     void ClearEnemies();
 
-    void setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                      double sX, double sY, double sW, double sH, unsigned int uniqueID);
+    void setParticles(unsigned int uid, sprite v, unsigned int count, glm::vec2 pos, glm::vec2 size);
     particlesystem *lastParticleSet()
     {
         return &particles[particlesystemcount - 1];
@@ -459,6 +474,41 @@ struct game_system
 
     void particle_update(double delta_time);
     void light_update();
+    void worldInitiation(world &floor)
+    {
+        for (int x = 0; x < floor.roomWidth; ++x)
+        {
+            for (int y = 0; y < floor.roomHeight; ++y)
+            {
+                if (floor.tiles[x][y].specialTileID == -1)
+                    continue;
+
+                tile *thisSpecialTile = &floor.tiles[x][y];
+                switch (floor.tiles[x][y].colliderID) // it's collision id not id
+                {
+                case 11:
+                {
+                    thisSpecialTile->id = -1;
+                    thisSpecialTile->colliderID = -1;
+
+                    Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", x * floor.worldSprite.trueW(),
+                                  y * floor.worldSprite.trueH() + 0.2, 0.5, 4, 2, CH_GULK));
+                    sprite *spr = &characters[characterCount - 1].visual;
+                    characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(spr->x, spr->y, spr->x + 0.16, spr->y + 0.16), 0.16, 0.0);
+                    characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
+                    characters[characterCount - 1].setCollider(COLLIDER_STRIKE, aabb(spr->x - 0.08, spr->y, spr->x + 0.24, spr->y + 0.24), 0.16, 0.0); // set attack box here also add enemy strike animation in code it's frames 4-7
+                    // characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
+                    // characters[characterCount - 1].setCollider(COLLIDER_SIGHT, aabb(spr->x - 0.32, spr->y, spr->x + 0.48, spr->y + 0.24), 0.0, 0.0);
+                    characters[characterCount - 1].setCollider(COLLIDER_SIGHT, aabb(spr->x, spr->y, spr->x + 0.16, spr->y + 0.24), 0.16, 0.0);
+                    characters[characterCount - 1].colliderOn(COLLIDER_SIGHT); // now I think set sight collisions thing in collisionhandling function
+                }
+                break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
     void update(world &floor, camera &mainCam, double delta_time);
     void handleCharacterCollisions(character &charA, character &charB, validCollisionType collisionType, double xNormal, double yNormal, double colValue, double delta_time)
     {
@@ -482,34 +532,42 @@ struct game_system
         case CH_GULK:
             if (charB.id == CH_PLAYER)
             {
-                if (collisionType == VCT_SOLID_STRIKE)
+                if (collisionType == VCT_SOLID_STRIKE) // player hits enemy
                 {
                     charA.hp = 0;
                 }
+                if (collisionType == VCT_SIGHT_SOLID) // enemy sees player
+                {
+                    charA.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
+                }
+                if (collisionType == VCT_SOLID_SOLID && xNormal != 0)
+                {
+                    charA.velocityX *= xNormal;
+                }
             }
             goto normal_collision;
-        default:
-        normal_collision: // cursed? maybe.
-            if (collisionType == VCT_SOLID_SOLID)
+        default:                                  // next: either change the 'break;' to a 'continue;' in the quadtree collision handler or fix this code to actually handle both objects' collisionsu8iu
+        normal_collision:                         // cursed? maybe.
+            if (collisionType == VCT_SOLID_SOLID) // this should include some of player 2's collision as well, remember that player 2 gets set to the position of colValue + sprite width or height depending on normals
             {
-                if (xNormal > 0.0 && charA.velocityX < 0.0)
+                if (xNormal > 0 && charA.velocityX < 0.0)
                 {
                     charA.visual.x = colValue;
                     charA.velocityX = 0.0;
                 }
-                if (xNormal < 0.0 && charA.velocityX > 0.0)
+                if (xNormal < 0 && charA.velocityX > 0.0)
                 {
                     charA.visual.x = colValue;
                     charA.velocityX = 0.0;
                 }
-                if (yNormal > 0.0 && charA.velocityY < 0.0)
+                if (yNormal > 0 && charA.velocityY < 0.0)
                 {
                     charA.visual.y = colValue;
                     charA.velocityY = 0.0;
                     charA.velocityX += charB.velocityX;
                     charA.onGround = true;
                 }
-                if (yNormal < 0.0 && charA.velocityY > 0.0)
+                if (yNormal < 0 && charA.velocityY > 0.0)
                 {
                     charA.visual.y = colValue;
                     charA.velocityY = 0.0;
@@ -524,173 +582,132 @@ struct game_system
                 t->min_y == 0.0 &&
                 t->max_x == 0.0 &&
                 t->max_y == 0.0 ||
-            t->collisionID <= -1)
+            t->colliderID <= -1)
         {
             return;
         }
 
-        double xNormal = 0.0, yNormal = 0.0, distanceToClosestSide = 0.0;
-        bool collision = false; // now for taking these apart into more managable functions!
-        // something like
-        // bool walkableInterior = (distanceToClosestSide >= -0.01);
-        // and
-        // void respondCollision(int collisionID, bool walkableInterior = true, bool groundBlock = true, replaceOnSpawnWith(GULK));
+        // replace all the collider collision hold values with the original temp variables right here.
+        bool collisionHappening = false;
+        double xNormal = 0.0;
 
-        double firstCollisionHitTest = c->colliders[COLLIDER_SOLID].response(c->velocityX * pixel_scale * delta_time,
-                                                                             c->velocityY * pixel_scale * delta_time, 0.0, 0.0,
-                                                                             *t, xNormal, yNormal, c->visual.x,
-                                                                             c->visual.y, collision, distanceToClosestSide);
+        c->colliders[COLLIDER_SOLID].collisionSnapValue = c->colliders[COLLIDER_SOLID].response(c->velocityX * pixel_scale * delta_time,
+                                                                                                c->velocityY * pixel_scale * delta_time, 0.0, 0.0,
+                                                                                                *t, c->colliders[COLLIDER_SOLID].collisionNormalX, c->colliders[COLLIDER_SOLID].collisionNormalY, c->visual.x,
+                                                                                                c->visual.y, collisionHappening, c->colliders[COLLIDER_SOLID].collisionDistanceToSide);
+
+        if (!collisionHappening)
+        {
+            return;
+        }
+        c->colliders[COLLIDER_SOLID].collisionThisFrame = true;
 
         tile *thisSpecialTile = &floor.tiles[t->specialTileX][t->specialTileY];
-        switch (t->collisionID)
+        switch (t->colliderID)
         {
         case -1:
             break;
         case 1:
-            if (collision)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalX != 0)
             {
-                if (xNormal != 0.0)
-                {
-                    c->visual.x = firstCollisionHitTest;
-                    c->velocityX = 0.0;
-                }
-                if (yNormal != 0.0)
-                {
-                    c->hp = 0;
-                }
+                c->visual.x = c->colliders[COLLIDER_SOLID].collisionSnapValue;
+                c->velocityX = 0.0;
+            }
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY != 0.0)
+            {
+                c->hp = 0;
             }
             break;
         case 2:
-            if (collision && c->plControl != nullptr)
+            if (c->plControl != nullptr)
             {
                 levelincreasing = true;
             }
             break;
         case 3:
-            if (collision && yNormal > 0.0 && distanceToClosestSide >= -0.01 && c->velocityY < 0.0)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY > 0 && c->colliders[COLLIDER_SOLID].collisionDistanceToSide >= -0.01 && c->velocityY < 0.0)
             {
-                c->visual.y = firstCollisionHitTest;
+                c->visual.y = c->colliders[COLLIDER_SOLID].collisionSnapValue;
                 c->velocityY = 0.0;
                 c->onGround = true;
             }
             break;
         case 4:
-            if (collision && xNormal < 0.0 && distanceToClosestSide >= -0.01 && c->velocityX > 0.0)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalX < 0.0 && c->colliders[COLLIDER_SOLID].collisionDistanceToSide >= -0.01 && c->velocityX > 0.0)
             {
-                c->visual.x = firstCollisionHitTest;
+                c->visual.x = c->colliders[COLLIDER_SOLID].collisionSnapValue;
                 c->velocityX = 0.0;
             }
             break;
         case 5:
-            if (collision && yNormal < 0.0 && distanceToClosestSide >= -0.01 && c->velocityY > 0.0)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY < 0 && c->colliders[COLLIDER_SOLID].collisionDistanceToSide >= -0.01 && c->velocityY > 0.0)
             {
-                c->visual.y = firstCollisionHitTest;
+                c->visual.y = c->colliders[COLLIDER_SOLID].collisionSnapValue;
                 c->velocityY = 0.0;
             }
             break;
         case 6:
-            if (collision && xNormal > 0.0 && distanceToClosestSide >= -0.01 && c->velocityX < 0.0)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalX > 0.0 && c->colliders[COLLIDER_SOLID].collisionDistanceToSide >= -0.01 && c->velocityX < 0.0)
             {
-                c->visual.x = firstCollisionHitTest;
+                c->visual.x = c->colliders[COLLIDER_SOLID].collisionSnapValue;
                 c->velocityX = 0.0;
             }
             break;
         case 7:
-            if (collision && yNormal != 0.0 && c->velocityY < 0.0)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY != 0 && c->velocityY < 0.0)
             {
                 c->velocityY = 4.0;
             }
             break;
         case 8:
-            if (collision)
-            {
-                floor.removeTileAnimation(thisSpecialTile->animationIndexID);
-                thisSpecialTile->emptyTile();
-                t->collisionID = -1;
-                ++fishCollected;
-                thisSpecialTile->colorIndexID = 0;
-                floor.tileColorsNeedUpdate = true;
-            }
+            floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+            thisSpecialTile->emptyTile();
+            t->colliderID = -1;
+            ++fishCollected;
+            thisSpecialTile->colorIndexID = 0;
+            floor.tileColorsNeedUpdate = true;
             break;
         case 9:
-            if (collision)
-            {
-                thisSpecialTile->id = 2;
-                thisSpecialTile->collisionID = -1;
-                t->collisionID = -1;
+            thisSpecialTile->id = 2;
+            thisSpecialTile->colliderID = -1;
+            t->colliderID = -1;
 
-                floor.spawnLocationX = t->specialTileX * floor.worldSprite.trueW();
-                floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + t->specialTileY) * floor.worldSprite.trueW();
-                // floor.spawnLocationX = t->centerX();
-                // floor.spawnLocationY = t->centerY();
-            }
+            floor.spawnLocationX = t->specialTileX * floor.worldSprite.trueW();
+            floor.spawnLocationY = (-static_cast<double>(floor.roomHeight) + t->specialTileY) * floor.worldSprite.trueW();
+            // floor.spawnLocationX = t->centerX();
+            // floor.spawnLocationY = t->centerY();
             break;
         case 10:
-            if (collision)
-            {
-                floor.removeTileAnimation(thisSpecialTile->animationIndexID);
-                thisSpecialTile->emptyTile();
-                t->collisionID = -1;
-                thisSpecialTile->colorIndexID = 0;
-                floor.tileColorsNeedUpdate = true;
-            }
+            floor.removeTileAnimation(thisSpecialTile->animationIndexID);
+            thisSpecialTile->emptyTile();
+            t->colliderID = -1;
+            thisSpecialTile->colorIndexID = 0;
+            floor.tileColorsNeedUpdate = true;
             break;
         case 11:
-        {
-            thisSpecialTile->id = -1;
-            thisSpecialTile->collisionID = -1;
-            t->collisionID = -1;
-
-            // Add(character("./img/char/gulk.png", t->min_x * floor.worldSprite.trueW(),
-            //               t->min_y * floor.worldSprite.trueH() + 0.2, 4, 1, CH_GULK));
-            Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", t->min_x * floor.worldSprite.trueW(),
-                          t->centerY() * floor.worldSprite.trueH() + 0.2, 0.5, 4, 1, CH_GULK));
-            characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
-            characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-            characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
-        }
-        break;
-        case 12:
-        {
-            // tile *npcTile = floor.getTileFromCollisionSpecialID(t->specialTileID);
-            thisSpecialTile->id = -1;
-            thisSpecialTile->collisionID = -1;
-            t->collisionID = -1;
-            Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/coffeemugguy.png", t->min_x * floor.worldSprite.trueW(),
-                          t->min_y * floor.worldSprite.trueH() + 0.2, 0.5, 5, 1, CH_COFFEEMUGGUY));
-            // Add(character("./img/char/coffeemugguy.png", floor.collision_boxes[j].min_x * floor.worldSprite.trueW(),
-            //               floor.collision_boxes[j].centerY() * floor.worldSprite.trueH() + 0.2, 5, 1, CH_COFFEEMUGGUY)); FIX
-            characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(characters[characterCount - 1].visual.x, characters[characterCount - 1].visual.y, characters[characterCount - 1].visual.x + 0.16, characters[characterCount - 1].visual.y + 0.24), 0.0, 0.0);
-            characters[characterCount - 1].SetAnimation(ANIM_ABILITY_0, 2, 2, 0.0);
-            characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-        }
-        break;
+            break;
         default:
-            if (collision)
+            if (c->colliders[COLLIDER_SOLID].collisionNormalX != 0) // next you check why animation strike is not triggering
             {
-                if (xNormal != 0.0)
+                if (c->id == CH_GULK)
                 {
-                    c->visual.x = firstCollisionHitTest;
+                    c->velocityX *= -1;
+                }
+                else
+                {
                     c->velocityX = 0.0;
                 }
-                if (yNormal != 0.0)
-                {
-                    c->visual.y = firstCollisionHitTest;
-                    c->velocityY = 0.0;
-                }
-                if (yNormal > 0.0)
-                    c->onGround = true;
+                c->visual.x = c->colliders[COLLIDER_SOLID].collisionSnapValue;
             }
-            break;
-        }
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY != 0)
+            {
+                c->visual.y = c->colliders[COLLIDER_SOLID].collisionSnapValue;
+                c->velocityY = 0.0;
+            }
+            if (c->colliders[COLLIDER_SOLID].collisionNormalY > 0)
+                c->onGround = true;
 
-        if (collision && std::abs(c->velocityX) < 0.5 && xNormal > 0.0 && c->id == CH_GULK)
-        {
-            c->velocityX = 0.5;
-        }
-        if (collision && std::abs(c->velocityX) < 0.5 && xNormal < 0.0 && c->id == CH_GULK)
-        {
-            c->velocityX = -0.5;
+            break;
         }
     }
 

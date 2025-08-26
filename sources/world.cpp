@@ -62,78 +62,78 @@ void world::readRoomFile(const char *path, object &worldObject)
             {
             case '0':
                 tiles[i][roomHeight].id = -1;
-                tiles[i][roomHeight].collisionID = -1;
+                tiles[i][roomHeight].colliderID = -1;
                 break;
             case '1':
                 tiles[i][roomHeight].id = 0;
-                tiles[i][roomHeight].collisionID = 0;
+                tiles[i][roomHeight].colliderID = 0;
                 break;
             case 's':
                 tiles[i][roomHeight].id = 2;
 
                 spawnLocationX = i * worldSprite.trueW();
                 spawnLocationY = roomHeight;
-                tiles[i][roomHeight].collisionID = -1;
+                tiles[i][roomHeight].colliderID = -1;
                 break;
             case 'S':
                 tiles[i][roomHeight].id = 21;
-                tiles[i][roomHeight].collisionID = 9;
+                tiles[i][roomHeight].colliderID = 9;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case 'c':
                 tiles[i][roomHeight].id = 25;
-                tiles[i][roomHeight].collisionID = 10;
+                tiles[i][roomHeight].colliderID = 10;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 setTileAnimation(tiles[i][roomHeight].specialTileID, 24, 25, 80.0);
                 break;
             case 'e':
                 tiles[i][roomHeight].id = 3;
-                tiles[i][roomHeight].collisionID = 2;
+                tiles[i][roomHeight].colliderID = 2;
                 break;
             case 'f':
                 tiles[i][roomHeight].id = 27;
-                tiles[i][roomHeight].collisionID = 8;
+                tiles[i][roomHeight].colliderID = 8;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 setTileAnimation(tiles[i][roomHeight].specialTileID, 26, 27, 90.0);
                 break;
             case '2':
                 tiles[i][roomHeight].id = 1;
-                tiles[i][roomHeight].collisionID = 1;
+                tiles[i][roomHeight].colliderID = 1;
                 break;
             case '3':
                 tiles[i][roomHeight].id = 12;
-                tiles[i][roomHeight].collisionID = 3;
+                tiles[i][roomHeight].colliderID = 3;
                 break;
             case '4':
                 tiles[i][roomHeight].id = 13;
-                tiles[i][roomHeight].collisionID = 4;
+                tiles[i][roomHeight].colliderID = 4;
                 break;
             case '5':
                 tiles[i][roomHeight].id = 14;
-                tiles[i][roomHeight].collisionID = 5;
+                tiles[i][roomHeight].colliderID = 5;
                 break;
             case '6':
                 tiles[i][roomHeight].id = 15;
-                tiles[i][roomHeight].collisionID = 6;
+                tiles[i][roomHeight].colliderID = 6;
                 break;
             case 'r':
                 tiles[i][roomHeight].id = 8;
-                tiles[i][roomHeight].collisionID = 7;
+                tiles[i][roomHeight].colliderID = 7;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case '!':
                 tiles[i][roomHeight].id = 4;
-                tiles[i][roomHeight].collisionID = 11;
+                tiles[i][roomHeight].colliderID = 11;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             case 'C':
                 tiles[i][roomHeight].id = 5;
-                tiles[i][roomHeight].collisionID = 12;
+                tiles[i][roomHeight].colliderID = 12;
                 tiles[i][roomHeight].specialTileID = ++uTileIDIncrement;
                 break;
             default:
                 tiles[i][roomHeight].id = -1;
-                tiles[i][roomHeight].collisionID = -1;
+                tiles[i][roomHeight].colliderID = -1;
                 break;
             }
         }
@@ -156,7 +156,7 @@ void world::readRoomFile(const char *path, object &worldObject)
         {
             for (int x = lookXMin; x < lookXLimit; ++x)
             {
-                if (tiles[x][y].collisionID == c && collisionstartx == -1 && tiles[x][y].specialTileID > -1 && !tiles[x][y].collisionTaken)
+                if (tiles[x][y].colliderID == c && collisionstartx == -1 && tiles[x][y].specialTileID > -1 && !tiles[x][y].collisionTaken)
                 {
                     collisionstartx = x;
                     collisionstarty = y;
@@ -166,7 +166,7 @@ void world::readRoomFile(const char *path, object &worldObject)
                     goto collisionAddition; // I think this is correct usage
                 }
                 // if current spot is valid for collision and collision box not started yet, start collision box
-                if (tiles[x][y].collisionID == c && !tiles[x][y].collisionTaken && collisionstartx == -1)
+                if (tiles[x][y].colliderID == c && !tiles[x][y].collisionTaken && collisionstartx == -1)
                 {
                     collisionstartx = x;
                     collisionstarty = y;
@@ -178,14 +178,14 @@ void world::readRoomFile(const char *path, object &worldObject)
                 }
 
                 // if current spot is valid for collision and collision x not ended yet or x position is within start and end x bounds (when y is different)
-                if (tiles[x][y].collisionID == c && !tiles[x][y].collisionTaken && (collisionendx == -1 || x >= collisionstartx && x < collisionendx))
+                if (tiles[x][y].colliderID == c && !tiles[x][y].collisionTaken && (collisionendx == -1 || x >= collisionstartx && x < collisionendx))
                 {
                     tiles[x][y].collisionTaken = true;
                 }
 
                 // if collision x started and collision x not ended and x hits the end or the next tile lacks collision or the next tile is part of a
                 // different box, set end x to next tile
-                if (collisionstartx != -1 && collisionendx == -1 && (x + 1 > roomWidth || tiles[x + 1][y].collisionID != c || tiles[x + 1][y].collisionTaken))
+                if (collisionstartx != -1 && collisionendx == -1 && (x + 1 > roomWidth || tiles[x + 1][y].colliderID != c || tiles[x + 1][y].collisionTaken))
                 {
 #ifdef DEBUG_COLLISIONS
                     std::cout << x << " found x\n";
@@ -201,13 +201,13 @@ void world::readRoomFile(const char *path, object &worldObject)
 #ifdef DEBUG_COLLISIONS
                 if (collisionstartx != -1 && collisionendy == -1 && collisionendx == -1)
                 {
-                    std::cout << tiles[x][y + 1].collisionID << ", " << tiles[x][y + 1].collisionTaken << " test\n";
+                    std::cout << tiles[x][y + 1].colliderID << ", " << tiles[x][y + 1].collisionTaken << " test\n";
                 }
 #endif
                 if (collisionstartx != -1 && collisionendy == -1 &&
                     (collisionendx != -1 && x >= collisionstartx && x < collisionendx &&
-                         (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisionTaken) ||
-                     y + 1 == roomHeight || collisionendx == -1 && x >= collisionstartx && (tiles[x][y + 1].collisionID != c || tiles[x][y + 1].collisionTaken)))
+                         (tiles[x][y + 1].colliderID != c || tiles[x][y + 1].collisionTaken) ||
+                     y + 1 == roomHeight || collisionendx == -1 && x >= collisionstartx && (tiles[x][y + 1].colliderID != c || tiles[x][y + 1].collisionTaken)))
                 {
 #ifdef DEBUG_COLLISIONS
                     std::cout << y << " found y\n";
@@ -221,7 +221,7 @@ void world::readRoomFile(const char *path, object &worldObject)
 #ifdef DEBUG_COLLISIONS
                     if (collisionendx != -1 || collisionendy != -1)
                     {
-                        std::cout << c << ", " << tiles[x][y + 1].collisionID << " loop\n";
+                        std::cout << c << ", " << tiles[x][y + 1].colliderID << " loop\n";
                     }
 #endif
                     continue;
@@ -244,7 +244,7 @@ void world::readRoomFile(const char *path, object &worldObject)
                     collision_boxes[collision_box_count].specialTileX = x;
                     collision_boxes[collision_box_count].specialTileY = y;
                 }
-                collision_boxes[collision_box_count].collisionID = c;
+                collision_boxes[collision_box_count].colliderID = c;
 
                 ++collision_box_count;
                 if (collision_box_count >= collision_box_limit)

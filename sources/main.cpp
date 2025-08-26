@@ -33,10 +33,9 @@
 
 #include "../headers/system.h"
 #include "../headers/userinterface.h"
-#include "../headers/savedata.h"
 #include "../headers/miniaudio.h"
 
-// #define COLLISION_DEBUG
+#define COLLISION_DEBUG
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -107,6 +106,8 @@ void fullScreenToggleFunc(character *ch, game_system *gs, world *wo, int x);
 void particleToggleFunc(character *ch, game_system *gs, world *wo, int x);
 void goMenuScreen(character *p, game_system *gs, world *w, int argv);
 void leaveMenuScreen(character *p, game_system *gs, world *w, int argv);
+void saveGameFunc(character *p, game_system *gs, world *w, int argv);
+void loadGameFunc(character *p, game_system *gs, world *w, int argv);
 
 int playerIDForControlStrElementIndex = -1;
 int prevState = -1;
@@ -137,6 +138,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         return;
 
     mainG.clearLights();
+    mainG.killParticles();
 
     resetTransparentSprites();
 
@@ -158,10 +160,12 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
 
         mainG.initSound("./snd/mus/fellowtheme.mp3", 0, &s_engine);
         mainG.playSound(0, 0.0);
-        gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/menu.png", -1.0, -1.0, 3, 1, nullFunc, true));
-        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 1, 1, quitGame));
-        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 1, 1, goMenuScreen));
-        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(&mainG, UI_IMAGE, "./img/ui/bg.png", -1.0, -1.0, 1, 1, nullFunc, true));
+        // gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/quit.png", -0.1f, -0.5f, 1, 1, quitGame));
+        // gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/options.png", -0.3f, -0.5f, 1, 1, goMenuScreen));
+        // gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, nullptr, CHARACTER_CREATION_SCREEN));
+        gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE_TEXT, "Save 0", 0.0, 0.0, 1, 1, loadGameFunc, false, nullptr, nullptr, 0));
+        gui_data.mostRecentCreatedElement()->scale(12.0, 1.0);
         // mainG.level = 0;
         // mainG.levelincreasing = false;
         break;
@@ -272,7 +276,7 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         gui_data.elements.push_back(ui_element(&mainG, UI_CLICKABLE, "./img/play.png", -0.5f, -0.5f, 1, 1, changeScene, false, nullptr, nullptr, WORLD_SCREEN));
         break;
     case WORLD_SCREEN:
-        for (int i = playerCount; i < mainG.characterCount; ++i)
+        for (int i = playerCount; i < mainG.characterCount; ++i) //?
         {
             if (mainG.characters[i].plControl != nullptr)
                 continue;
@@ -320,9 +324,13 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
         }
 
         // TEST
-        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(0.01), 1.0, 0.0, 0.0, MATERIAL_DEFAULT_2D));
-        mainG.addLight(light(LIGHT_SPOT, glm::vec3(0.0, 0.0, 2.5), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0, 1.0, 1.0), 1.0, glm::radians(50.0), glm::radians(45.0), MATERIAL_DEFAULT_2D));
-        mainG.lastLight()->link_position(&mainG.characters[0].visual.x, &mainG.characters[0].visual.y);
+        mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0), 1.0, 0.0, MATERIAL_DEFAULT_2D));
+        // mainG.addLight(light(LIGHT_DIRECTIONAL, glm::vec3(0.0), glm::vec3(0.0, 0.0, -2.0), glm::vec3(0.01), 1.0, 0.0, 0.0, MATERIAL_DEFAULT_2D));
+        // mainG.addLight(light(LIGHT_SPOT, glm::vec3(0.0, 0.0, 2.5), glm::vec3(0.0, 0.0, -1.0), glm::vec3(1.0, 1.0, 1.0), 1.0, glm::radians(50.0), glm::radians(45.0), MATERIAL_DEFAULT_2D));
+        // mainG.lastLight()->link_position(&mainG.characters[0].visual.x, &mainG.characters[0].visual.y);
+
+        // test
+        std::cout << "enteredd level\n";
 
         switch (mainG.level)
         {
@@ -393,10 +401,11 @@ void sceneInit(game_system &mainG, character &p1, world &floor, ma_engine &s_eng
             break;
         }
         mainCam.setBoundary(1.9f, -0.0, -100.0, floor.roomWidth * floor.worldSprite.w - 1.84, 100.0, 1.0);
+        mainG.worldInitiation(floor);
 
 #ifdef COLLISION_DEBUG
-        deCollision = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1);
-        dePl = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1);
+        deCollision = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1, false, false);
+        dePl = sprite(mainG.shaders[GAME_SHADER_DEFAULT], mainG.objects[GAME_OBJECT_DEFAULT], "./img/debug.png", 1, 1, false, false);
 #endif
 
         if (prevState != MENU_SCREEN)
@@ -499,15 +508,11 @@ int main()
     sprite transitionFade(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_DEFAULT], "./img/fade.png", 1, 1);
     transitionFade.Scale(8.0, 4.0, 0.0);
 
-    save_file_manager mainSave;
-    mainSave.addDataToMap(SDT_INT, &game.level);
+    game.saveManager.addDataToMap(SDT_INT, &game.level);
     // add game.spawnTile which takes the id of a tile (which should be a spawntile or checkpointtile) and sets the player position to that instead of the direct tile on level load/death)
     // then obviously make this a saved object
     // also buttons to automate the saveGame() / loadGame() / setCurrentSaveLoc(x) functions
     // save_file_manager should probably be inside gamesystem or maybe even global variable? either way works you'll probably rework it a little next game anyway so just make it work for this game
-    mainSave.setPath("save", "");
-    mainSave.setCurrentSaveLoc(0);
-    mainSave.loadGame();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -551,21 +556,23 @@ int main()
         }
         if (game.state == MENU_SCREEN && prevState == MENU_SCREEN)
         {
-            game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, 52); // run main and fix the source of error message pls?
-            if (game.particleByID(52) != nullptr)
-            {
-                game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -80.0);
-                game.particleByID(52)->setVariable(PV_SPAWN_Y, 2.0);
-                game.particleByID(52)->setVariable(PV_RED, 1.0);
-                game.particleByID(52)->setVariable(PV_GREEN, 1.0);
-                game.particleByID(52)->setVariable(PV_BLUE, 1.0);
-                game.particleByID(52)->setVariable(PV_ALPHA, 0.78);
-                game.particleByID(52)->setVariable(PV_WIDTH, 0.2);
-                game.particleByID(52)->setVariable(PV_HEIGHT, 0.5);
-                game.particleByID(52)->setVariable(PV_SPAWN_X, -12.0);
-                game.particleByID(52)->setVariable(PV_SPAWN_X2, 12.0);
-                game.particleByID(52)->setVariable(PV_LIFE_LOW, 0.8);
-            }
+            // game.setParticles("./img/gfx/rain.png", 1, 1, 30, 1.5, 1.5, -1.8, 1.5, 1.8, 1.5, glm::vec4(1.0), 52);
+            // game.setParticles(52, sprite(game.shaders[GAME_SHADER_DEFAULT], game.objects[GAME_OBJECT_PARTICLE], "./img/gfx/rain.png"),
+            //                   30, glm::vec2(0.0), glm::vec2(1.0));
+            // if (game.particleByID(52) != nullptr)
+            // {
+            //     game.particleByID(52)->setVariable(PV_PUSHMIN_Y, -80.0);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_Y, 2.0);
+            //     game.particleByID(52)->setVariable(PV_RED, 1.0);
+            //     game.particleByID(52)->setVariable(PV_GREEN, 1.0);
+            //     game.particleByID(52)->setVariable(PV_BLUE, 1.0);
+            //     game.particleByID(52)->setVariable(PV_ALPHA, 0.78);
+            //     game.particleByID(52)->setVariable(PV_WIDTH, 0.2);
+            //     game.particleByID(52)->setVariable(PV_HEIGHT, 0.5);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_X, -12.0);
+            //     game.particleByID(52)->setVariable(PV_SPAWN_X2, 12.0);
+            //     game.particleByID(52)->setVariable(PV_LIFE_LOW, 0.8);
+            // }
 
             static double currentMusicVolume = 0, currentSoundVolume = 0;
 
@@ -701,30 +708,55 @@ int main()
 #ifdef COLLISION_DEBUG
             for (int i = 0; i < collision_box_limit; ++i)
             {
-                if (mainWorld.collision_boxes[i].collisionID < 0)
+                if (mainWorld.collision_boxes[i].colliderID == -1)
                     continue;
 
                 double mdXScale = mainWorld.collision_boxes[i].max_x - mainWorld.collision_boxes[i].min_x;
                 double mdYScale = mainWorld.collision_boxes[i].max_y - mainWorld.collision_boxes[i].min_y;
-                deCollision.Scale(mdXScale,
-                                  mdYScale, 1.0);
+                deCollision.Scale(mdXScale, mdYScale, 1.0);
 
                 double newX = mainWorld.collision_boxes[i].min_x;
                 double newY = mainWorld.collision_boxes[i].min_y;
-                deCollision.Put(newX, newY, 0.0);
-                deCollision.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
+                deCollision.Put(newX, newY, 10.0);
+                deCollision.SetColor(0.5f, 0.5f, 0.5f, 1.0f);
                 deCollision.Draw();
             }
 #endif
 
 #ifdef COLLISION_DEBUG
-            double mpcXScale = game.characters[0].colliders[0].max_x - game.characters[0].colliders[0].min_x;
-            double mpcYScale = game.characters[0].colliders[0].max_y - game.characters[0].colliders[0].min_y;
-            dePl.Scale(mpcXScale, mpcYScale, 1.0);
-            dePl.Put(game.characters[0].colliders[0].min_x, game.characters[0].colliders[0].min_y, 0.0);
-            dePl.SetColor(0.5f, 0.5f, 0.5f, 0.5f);
-            if (!dePl.empty)
-                dePl.Draw();
+            for (int i = 0; i < game.characterCount; ++i)
+            {
+                for (int j = 0; j < character_collider_limit; ++j)
+                {
+                    if (game.characters[i].colliders[j].colliderID == -1)
+                        continue;
+
+                    double mpcXScale = game.characters[i].colliders[j].max_x - game.characters[i].colliders[j].min_x;
+                    double mpcYScale = game.characters[i].colliders[j].max_y - game.characters[i].colliders[j].min_y;
+                    dePl.Scale(mpcXScale, mpcYScale, 1.0);
+                    dePl.Put(game.characters[i].colliders[j].min_x, game.characters[i].colliders[j].min_y, 10.0);
+                    switch (game.characters[i].colliders[j].colliderID)
+                    {
+                    case COLLIDER_SOLID:
+                        dePl.SetColor(0.3f, 1.0f, 0.3f, 1.0);
+                        break;
+                    case COLLIDER_STRIKE:
+                        dePl.SetColor(1.0f, 0.3f, 0.3f, 1.0);
+                        break;
+                    case COLLIDER_SIGHT:
+                        dePl.SetColor(1.0f, 1.0f, 0.3f, 1.0);
+                        break;
+                    case COLLIDER_SIGHT_2:
+                        dePl.SetColor(0.3f, 1.0f, 0.8f, 1.0);
+                        break;
+                    default:
+                        dePl.SetColor(0.8f, 0.0f, 0.8f, 1.0);
+                        break;
+                    }
+                    if (!dePl.empty)
+                        dePl.Draw();
+                }
+            }
 #endif
 
             mainWorld.draw();
@@ -750,29 +782,6 @@ int main()
                         game.characters[i].velocityX = -1.0f;
                     }
                     game.characters[i].velocityY = 1.0f; // alright make the gui tilemap fit into the existing ui elements, then make a way to change the button bounds so you can put it around the image instead of some complicated texture cutting thing (which may be helpful on next game or future but not now)
-                    // game.setParticles("./img/gfx/spawn.png", 4, 1, 15, 4.0, 4.0, 0.0, 0.0, 0.2, 0.2, i + 30);
-                    // if (game.particleByID(i + 30) != nullptr)
-                    // {
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_Y, -1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_Y, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMIN_X, -1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_PUSHMAX_X, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_RED, game.characters[i].visual.colr);
-                    //     game.particleByID(i + 30)->setVariable(PV_GREEN, game.characters[i].visual.colg);
-                    //     game.particleByID(i + 30)->setVariable(PV_BLUE, game.characters[i].visual.colb);
-                    //     game.particleByID(i + 30)->setVariable(PV_ALPHA, 1.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH, 0.1);
-                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT, 0.1);
-                    //     game.particleByID(i + 30)->setVariable(PV_WIDTH_LIFE_FALLOFF, 0.2);
-                    //     game.particleByID(i + 30)->setVariable(PV_HEIGHT_LIFE_FALLOFF, -0.2);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_START, 0.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_END, 4.0);
-                    //     game.particleByID(i + 30)->setVariable(PV_ANIM_SPEED, 8.0);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X, &game.characters[i].visual.x);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_X2, &game.characters[i].visual.x);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y, &game.characters[i].visual.y);
-                    //     game.particleByID(i + 30)->linkVariable(PV_SPAWN_Y2, &game.characters[i].visual.y);
-                    // }
                     // player animation here???
                     game.characters[i].hp = game.characters[i].maxhp;
                 }
@@ -792,10 +801,21 @@ int main()
         glfwSwapBuffers(window);
     }
     // ma_engine_uninit(&soundEngine);
-    mainSave.saveGame();
 
     glfwTerminate();
     return 0;
+}
+
+void saveGameFunc(character *p, game_system *gs, world *w, int argv)
+{
+    gs->saveManager.saveGame();
+}
+void loadGameFunc(character *p, game_system *gs, world *w, int argv)
+{
+    gs->saveManager.setPath("save", "");
+    gs->saveManager.setCurrentSaveLoc(argv);
+    gs->saveManager.loadGame();
+    gs->nextState = CHARACTER_CREATION_SCREEN;
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)

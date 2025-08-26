@@ -90,7 +90,8 @@ struct animation
     double speed = 1.0;
     double timer = 10.0;
     unsigned int frame = 0;
-    bool finished = true;
+    bool finished = true; // objective: I want to activate the strike collider when the correct frame hits and deactivate it when the next frame happens
+    // can this be simplified from a function? Can I hardcode it maybe? Probably would be best if only things inside the character/sprite object could be accessed for animation metadata purposes
 
     sprite *_sprite;
 
@@ -109,6 +110,7 @@ struct animation
 
     void run(double delta_time, bool loop, bool changeSprite = true, bool *updated = nullptr)
     {
+
         finished = false;
         if (timer <= 0.0)
         {
@@ -136,7 +138,7 @@ struct animation
 
         if (_sprite == nullptr)
         {
-            std::cout << "error: animation not attached to a sprite!\n";
+            std::cout << "error: animation not attached to a sprite!\n"; // needs an anim_metadata or something to add functions when a frame hits
             finished = true;
             return;
         }

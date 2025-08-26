@@ -15,13 +15,13 @@ const unsigned int tile_color_limit = 12;
 
 struct tile
 {
-    int id = -1, collisionID = -1, specialTileID = -1, animationIndexID = -1, colorIndexID = -1;
+    int id = -1, colliderID = -1, specialTileID = -1, animationIndexID = -1, colorIndexID = -1;
     bool collisionTaken = false;
 
     void emptyTile()
     {
         id = -1;
-        collisionID = -1;
+        colliderID = -1;
         collisionTaken = false;
     }
 };

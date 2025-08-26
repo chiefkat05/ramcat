@@ -13,7 +13,7 @@
 
 std::string readFileToString(std::string path);
 
-const double pixel_scale = 0.015;
+const double pixel_scale = 0.01; // problems: pixel scale does not affect gui components, and enemy hitbox is too tall??
 
 class shader
 {

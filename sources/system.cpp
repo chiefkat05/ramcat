@@ -112,10 +112,34 @@ void character::Update(double delta_time)
     switch (id)
     {
     case CH_COFFEEMUGGUY:
-        PlayAnimation(ANIM_IDLE, delta_time, true);
+        // PlayAnimation(ANIM_IDLE, delta_time, true);
+        break;
+    case CH_GULK:
+        if (velocityX == 0.0)
+        {
+            velocityX = 25.0;
+        }
+        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame == 3)
+        {
+            colliderOn(COLLIDER_STRIKE);
+        }
+        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame > 3)
+        {
+            colliderOff(COLLIDER_STRIKE);
+        }
+        // if (colliders[COLLIDER_SOLID].collisionThisFrame && colliders[COLLIDER_SOLID].) // this isn't triggering for some reason
+        // {
+        //     std::cout << "???\n";
+        //     velocityX = -velocityX;
+        // } // wouldn't this be better in the collision response function? I think so, try it.
         break;
     default:
         break;
+    }
+
+    for (int i = 0; i < character_collider_limit; ++i)
+    {
+        colliders[i].collisionThisFrame = false;
     }
 }
 void character::updatePosition(double delta_time)
@@ -189,16 +213,17 @@ void quicksortSprites(sprite *sprites[character_limit], int low, int high)
     }
 }
 
-void aabb_quadtree::handle_collisions(game_system &game, world &floor, double delta_time) // if you want quadtrees to work you need the inserted character hitboxes to encapsulate the player hitbox and the velocity so that objects moving past a quadtree branch in 1 frame will still get picked up
+const int max_depth = 6;
+void aabb_quadtree::handle_collisions(game_system &game, world &floor, double delta_time)
 {
-    const int max_depth = 12;
     static aabb_quadtree *ancestor_stack[max_depth] = {nullptr};
     static int depth = 0;
 
     if (depth >= max_depth)
         return;
 
-    ancestor_stack[depth++] = this;
+    ancestor_stack[depth] = this;
+    ++depth;
     for (int i = 0; i < depth; ++i)
     {
         aabb *pA = nullptr, *pB = nullptr;
@@ -208,39 +233,33 @@ void aabb_quadtree::handle_collisions(game_system &game, world &floor, double de
             for (pB = linked_list; pB; pB = pB->next_aabb)
             {
                 if (pA == pB)
-                    continue; // should be break?
+                    continue; // should be break? would be more complicated collision resolution if it's break but better performance...
 
-                if (pA->parent_object == nullptr && pB->parent_object == nullptr)
+                if (pA->parent_object == nullptr && pB->parent_object == nullptr) // yay
                     continue;
 
                 if (pA->parent_object != nullptr && pB->parent_object != nullptr)
                 {
-                    double normalX = 0.0, normalY = 0.0, distanceToSide = 0.0, collisionValue = 0.0;
-                    bool collided = false;
+                    bool collisionHappening = false;
+                    pA->collisionSnapValue = pA->response(pA->parent_object->velocityX * pixel_scale * delta_time,
+                                                          pA->parent_object->velocityY * pixel_scale * delta_time,
+                                                          pB->parent_object->velocityX * pixel_scale * delta_time,
+                                                          pB->parent_object->velocityY * pixel_scale * delta_time,
+                                                          *pB, pA->collisionNormalX, pA->collisionNormalY,
+                                                          pA->parent_object->visual.x, pA->parent_object->visual.y,
+                                                          collisionHappening, pA->collisionDistanceToSide);
 
-                    collisionValue = pA->response(pA->parent_object->velocityX * pixel_scale * delta_time,
-                                                  pA->parent_object->velocityY * pixel_scale * delta_time,
-                                                  pB->parent_object->velocityX * pixel_scale * delta_time,
-                                                  pB->parent_object->velocityY * pixel_scale * delta_time,
-                                                  *pB, normalX, normalY,
-                                                  pA->parent_object->visual.x, pA->parent_object->visual.y,
-                                                  collided, distanceToSide);
-
-                    if (collided)
+                    if (collisionHappening)
                     {
-                        validCollisionType cType = getCollisionType(pA->collisionID, pB->collisionID);
-                        game.handleCharacterCollisions(*pA->parent_object, *pB->parent_object, cType, normalX, normalY, collisionValue, delta_time);
+                        pA->collisionThisFrame = true;
+                        validCollisionType cType = getCollisionType(pA->colliderID, pB->colliderID);
+                        game.handleCharacterCollisions(*pA->parent_object, *pB->parent_object, cType, pA->collisionNormalX, pA->collisionNormalY, pA->collisionSnapValue, delta_time);
                     }
-                    continue;
                 }
 
-                if (pA->parent_object != nullptr)
+                if (pA->parent_object != nullptr && pB->parent_object == nullptr)
                 {
                     game.handleTileCollisions(pA->parent_object, pB, floor, delta_time);
-                }
-                if (pB->parent_object != nullptr)
-                {
-                    game.handleTileCollisions(pB->parent_object, pA, floor, delta_time);
                 }
             }
         }
@@ -284,7 +303,6 @@ void game_system::Add(character e)
     switch (characters[characterCount].id)
     {
     case CH_GULK:
-        characters[characterCount].velocityX = -0.5;
         break;
     default:
         break;
@@ -395,7 +413,6 @@ void game_system::particle_update(double delta_time)
 
         if (particles[i].particles_alive <= 0)
         {
-            std::cout << " why\n";
             removeParticles(i);
         }
     }
@@ -443,8 +460,17 @@ void game_system::update(world &floor, camera &mainCam, double delta_time)
         floor.updateTileColors(*objects[GAME_OBJECT_TILEMAP]);
     }
 
+    // test
+    // for (int i = 0; i < characterCount; ++i)
+    // {
+    //     std::cout << i << " character " << characters[i].visual.texture_path << " p = " << &characters[i] << " huh\n";
+    // }
+    // std::cout << " / " << characterCount << "\n";
+
     collision_tree = aabb_quadtree(aabb(mainCam.cameraPosition.x - windowAspectDivision, mainCam.cameraPosition.y - 1.0,
                                         mainCam.cameraPosition.x + windowAspectDivision, mainCam.cameraPosition.y + 1.0));
+    // aabb_quadtree temp_collision_tree = aabb_quadtree(aabb(mainCam.cameraPosition.x - windowAspectDivision, mainCam.cameraPosition.y - 1.0,
+    //                                                        mainCam.cameraPosition.x + windowAspectDivision, mainCam.cameraPosition.y + 1.0));
     // collision_tree.setSprite(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT]);
     for (int i = 0; i < characterCount; ++i)
     {
@@ -501,9 +527,12 @@ void game_system::killParticles()
     {
         particles[i].kill();
     }
+    particlesystemcount = 0;
 }
-void game_system::setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
-                               double sX, double sY, double sW, double sH, unsigned int uniqueID)
+// should be: (id, sprite&, particle_count, vec2 pos, vec2 size);
+// void game_system::setParticles(std::string path, unsigned int fx, unsigned int fy, unsigned int _particle_count, double _life_lower, double _life_upper,
+//                                double sX, double sY, double sW, double sH, glm::vec4 col, unsigned int uniqueID)
+void game_system::setParticles(unsigned int uid, sprite v, unsigned int count, glm::vec2 pos, glm::vec2 size)
 {
     if (particlesystemcount >= particle_system_limit || !particlesenabled)
         return;
@@ -511,7 +540,7 @@ void game_system::setParticles(std::string path, unsigned int fx, unsigned int f
     int workingIndex = -1;
     for (int i = 0; i < particlesystemcount; ++i)
     {
-        if (uniqueID == particles[i].id)
+        if (uid == particles[i].id)
         {
             workingIndex = i;
         }
@@ -523,16 +552,23 @@ void game_system::setParticles(std::string path, unsigned int fx, unsigned int f
         return;
     }
 
-    particles[particlesystemcount] = particlesystem(path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE], fx, fy, _particle_count);
+    particles[particlesystemcount] = particlesystem(v.texture_path.c_str(), shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_PARTICLE],
+                                                    v.framesX, v.framesY, count);
 
-    particles[particlesystemcount].variables[PV_LIFE_LOW] = _life_lower;
-    particles[particlesystemcount].variables[PV_LIFE_HIGH] = _life_upper;
-    particles[particlesystemcount].variables[PV_SPAWN_X] = sX;
-    particles[particlesystemcount].variables[PV_SPAWN_Y] = sY;
-    particles[particlesystemcount].variables[PV_SPAWN_X2] = sW;
-    particles[particlesystemcount].variables[PV_SPAWN_Y2] = sH;
+    particles[particlesystemcount].variables[PV_LIFE_LOW] = 1.0;
+    particles[particlesystemcount].variables[PV_LIFE_HIGH] = 1.0;
+    particles[particlesystemcount].variables[PV_SPAWN_X] = pos.x;
+    particles[particlesystemcount].variables[PV_SPAWN_Y] = pos.y;
+    particles[particlesystemcount].variables[PV_WIDTH] = size.x;
+    particles[particlesystemcount].variables[PV_HEIGHT] = size.y;
+    particles[particlesystemcount].variables[PV_SPAWN_X2] = pos.x;
+    particles[particlesystemcount].variables[PV_SPAWN_Y2] = pos.y;
+    particles[particlesystemcount].variables[PV_RED] = v.colr;
+    particles[particlesystemcount].variables[PV_GREEN] = v.colg;
+    particles[particlesystemcount].variables[PV_BLUE] = v.colb;
+    particles[particlesystemcount].variables[PV_ALPHA] = v.cola;
 
-    particles[particlesystemcount].id = uniqueID;
+    particles[particlesystemcount].id = uid;
     ++particlesystemcount;
 }
 void game_system::removeParticles(unsigned int index)

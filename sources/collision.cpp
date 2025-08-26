@@ -34,13 +34,13 @@ void aabb::Scale(double w, double h)
 
 // special thanks to the excellent book, "real time collision detection" by Christer Ericson,
 // as well as the online tutorial -> https://gamedev.net/tutorials/programming/general-and-gameplay-programming/swept-aabb-collision-detection-and-response-r3084/ by BrendanL.K
-double aabb::response(double xV, double yV, double xV2, double yV2, aabb test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision,
+double aabb::response(double xV, double yV, double xV2, double yV2, aabb test, int &xNormal, int &yNormal, double &xPos, double &yPos, bool &insideCollision,
                       double &distanceToSide)
 {
     aabb boundingA(min_x + std::min(xV, 0.0), min_y + std::min(yV, 0.0), max_x + std::max(xV, 0.0), max_y + std::max(yV, 0.0));
     aabb boundingB(test.min_x + std::min(xV2, 0.0), test.min_y + std::min(yV2, 0.0), test.max_x + std::max(xV2, 0.0), test.max_y + std::max(yV2, 0.0));
-    if (!boundingA.colliding(boundingB))
-    {
+    if (!boundingA.colliding(boundingB)) // next we need to make the collision boxes correct number-wise and then see what the trouble is with playing the strike animation for gulk.
+    {                                    // Also we need to get gulk to move and try getting it to turn around and see what other collision things you can do to test
         insideCollision = false;
         return 0.0;
     }

@@ -1,7 +1,9 @@
 #ifndef SAVE_DATA_H
 #define SAVE_DATA_H
 
-#include "system.h"
+#include <iostream>
+#include <fstream>
+#include <vector>
 
 const unsigned int save_data_type_limit = 64;
 // const unsigned int save_data_reference_limit = 64;
@@ -9,37 +11,21 @@ const unsigned int save_data_type_limit = 64;
 template <typename T>
 struct savevalue
 {
-    // void loadData(std::string save_path, size_t dataLocation, T &dataV, size_t dataSize)
-    // {
-    //     std::ifstream save_file;
-    //     save_file.open(save_path, std::ios::in | std::ios::binary);
-    //     if (!save_file.is_open())
-    //     {
-    //         std::cout << "\n\tWarning: failed to open " << save_path << "\n";
-    //         return;
-    //     }
-    //     save_file.seekg(dataLocation);
-
-    //     save_file.read((char *)&dataV, dataSize);
-    //     std::cout << "loading " << dataV << "\n";
-
-    //     save_file.close();
-    // }
-    void loadData(std::string save_path, size_t dataLocation, T &dataV, size_t dataSize)
+    bool loadData(std::string save_path, size_t dataLocation, T &dataV, size_t dataSize)
     {
         std::ifstream save_file;
         save_file.open(save_path, std::ios::in | std::ios::binary);
         if (!save_file.is_open())
         {
-            std::cout << "\n\tWarning: failed to open " << save_path << "\n";
-            return;
+            std::cout << "\n\tWarning: failed to open save path \"" << save_path << "\"\n";
+            return false;
         }
         save_file.seekg(dataLocation);
 
         save_file.read((char *)&dataV, dataSize);
-        std::cout << "loading " << *reinterpret_cast<T *>(&dataV) << "\n";
 
         save_file.close();
+        return true;
     }
     void saveData(std::string save_path, T &dataV, size_t dataSize)
     {
@@ -47,7 +33,6 @@ struct savevalue
         save_file.open(save_path, std::ios::out | std::ios::binary | std::ios::app);
         save_file.write(reinterpret_cast<char *>(&dataV), dataSize); // this was (char *)&dataV before so if major problems arise try changing this back
 
-        std::cout << "saving " << *reinterpret_cast<T *>(&dataV) << " at pointer " << &dataV << "\n";
         save_file.close();
     }
 };
@@ -67,7 +52,7 @@ struct save_data
     void *data_reference;
 };
 
-struct save_file_manager // do it again but keep in mind that editing the text file produces char* values so you should save the file from this function before loading it
+struct save_file_manager
 {
     std::string save_path = "", save_extension = "";
     unsigned int save_location = 0;
@@ -87,7 +72,107 @@ struct save_file_manager // do it again but keep in mind that editing the text f
     {
         smap.push_back({t, ref});
     }
-    // void removeData // what would be the point of this
+    size_t getDataLocation(unsigned int index)
+    {
+        if (index > smap.size())
+        {
+            std::cout << "\n\tWarning: Requested save data index greater than total data objects in save file! This function will return the beginning of the file.\n";
+            return 0;
+        }
+        size_t loc = 0;
+        for (int i = 0; i < smap.size(); ++i)
+        {
+            if (i == index)
+                break;
+
+            switch (smap[i].type)
+            {
+            case SDT_INT:
+            {
+                loc += sizeof(int);
+            }
+            break;
+            case SDT_UINT:
+            {
+                loc += sizeof(unsigned int);
+            }
+            break;
+            case SDT_DOUBLE:
+            {
+                loc += sizeof(double);
+            }
+            break;
+            case SDT_BOOL:
+            {
+                loc += sizeof(bool);
+            }
+            break;
+            case SDT_CHAR:
+            {
+                loc += sizeof(char);
+            }
+            break;
+            default:
+                break;
+            }
+        }
+        return loc;
+    }
+    void referenceData(unsigned int loc, save_data_type t, void *output) // also a version that you select the data using a location number corresponding to the data's sequential position not byte location
+    {
+        std::string fp = fullPath();
+
+        switch (t)
+        {
+        case SDT_INT:
+        {
+            savevalue<int> temp;
+            if (!temp.loadData(fp, loc, *reinterpret_cast<int *>(output), sizeof(int)))
+            {
+                *reinterpret_cast<int *>(output) = 0;
+            }
+            break;
+        case SDT_UINT:
+        {
+            savevalue<unsigned int> temp;
+            if (!temp.loadData(fp, loc, *reinterpret_cast<unsigned int *>(output), sizeof(unsigned int)))
+            {
+                *reinterpret_cast<int *>(output) = 0;
+            }
+        }
+        break;
+        case SDT_DOUBLE:
+        {
+            savevalue<double> temp;
+            if (!temp.loadData(fp, loc, *reinterpret_cast<double *>(output), sizeof(double)))
+            {
+                *reinterpret_cast<double *>(output) = 0.0;
+            }
+        }
+        break;
+        case SDT_BOOL:
+        {
+            savevalue<bool> temp;
+            if (!temp.loadData(fp, loc, *reinterpret_cast<bool *>(output), sizeof(bool)))
+            {
+                *reinterpret_cast<bool *>(output) = false;
+            }
+        }
+        break;
+        case SDT_CHAR:
+        {
+            savevalue<char> temp;
+            if (!temp.loadData(fp, loc, *(char *)output, sizeof(char)))
+            {
+                *reinterpret_cast<char *>(output) = ' ';
+            }
+        }
+        break;
+        default:
+            break;
+        }
+        }
+    }
 
     std::string fullPath()
     {
@@ -106,31 +191,31 @@ struct save_file_manager // do it again but keep in mind that editing the text f
             case SDT_INT:
             {
                 savevalue<int> temp;
-                temp.saveData(fp, *(int *)smap[i].data_reference, sizeof(int)); // fix these all to be reinterpret_casts
+                temp.saveData(fp, *reinterpret_cast<int *>(smap[i].data_reference), sizeof(int));
             }
             break;
             case SDT_UINT:
             {
                 savevalue<unsigned int> temp;
-                temp.saveData(fp, *(unsigned int *)smap[i].data_reference, sizeof(unsigned int));
+                temp.saveData(fp, *reinterpret_cast<unsigned int *>(smap[i].data_reference), sizeof(unsigned int));
             }
             break;
             case SDT_DOUBLE:
             {
                 savevalue<double> temp;
-                temp.saveData(fp, *(double *)smap[i].data_reference, sizeof(double));
+                temp.saveData(fp, *reinterpret_cast<double *>(smap[i].data_reference), sizeof(double));
             }
             break;
             case SDT_BOOL:
             {
                 savevalue<bool> temp;
-                temp.saveData(fp, *(bool *)smap[i].data_reference, sizeof(bool));
+                temp.saveData(fp, *reinterpret_cast<bool *>(smap[i].data_reference), sizeof(bool));
             }
             break;
             case SDT_CHAR:
             {
                 savevalue<char> temp;
-                temp.saveData(fp, *(char *)smap[i].data_reference, sizeof(char));
+                temp.saveData(fp, *reinterpret_cast<char *>(smap[i].data_reference), sizeof(char));
             }
             break;
             default:
@@ -150,35 +235,50 @@ struct save_file_manager // do it again but keep in mind that editing the text f
             case SDT_INT:
             {
                 savevalue<int> temp;
-                temp.loadData(fp, loc, *(int *)smap[i].data_reference, sizeof(int)); // fix these to also be reinterpret_casts
+                if (!temp.loadData(fp, loc, *reinterpret_cast<int *>(smap[i].data_reference), sizeof(int)))
+                {
+                    *reinterpret_cast<int *>(smap[i].data_reference) = 0;
+                }
                 loc += sizeof(int);
             }
             break;
             case SDT_UINT:
             {
                 savevalue<unsigned int> temp;
-                temp.loadData(fp, loc, *(unsigned int *)smap[i].data_reference, sizeof(unsigned int));
+                if (!temp.loadData(fp, loc, *reinterpret_cast<unsigned int *>(smap[i].data_reference), sizeof(unsigned int)))
+                {
+                    *reinterpret_cast<unsigned int *>(smap[i].data_reference) = 0;
+                }
                 loc += sizeof(unsigned int);
             }
             break;
             case SDT_DOUBLE:
             {
                 savevalue<double> temp;
-                temp.loadData(fp, loc, *(double *)smap[i].data_reference, sizeof(double));
+                if (temp.loadData(fp, loc, *reinterpret_cast<double *>(smap[i].data_reference), sizeof(double)))
+                {
+                    *reinterpret_cast<double *>(smap[i].data_reference) = 0.0;
+                }
                 loc += sizeof(double);
             }
             break;
             case SDT_BOOL:
             {
                 savevalue<bool> temp;
-                temp.loadData(fp, loc, *(bool *)smap[i].data_reference, sizeof(bool));
+                if (!temp.loadData(fp, loc, *reinterpret_cast<bool *>(smap[i].data_reference), sizeof(bool)))
+                {
+                    *reinterpret_cast<bool *>(smap[i].data_reference) = false;
+                }
                 loc += sizeof(bool);
             }
             break;
             case SDT_CHAR:
             {
                 savevalue<char> temp;
-                temp.loadData(fp, loc, *(char *)smap[i].data_reference, sizeof(char));
+                if (temp.loadData(fp, loc, *reinterpret_cast<char *>(smap[i].data_reference), sizeof(char)))
+                {
+                    *reinterpret_cast<char *>(smap[i].data_reference) = ' ';
+                }
                 loc += sizeof(char);
             }
             break;

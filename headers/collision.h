@@ -18,12 +18,16 @@ struct aabb
 {
     double min_x, min_y, max_x, max_y;
     double xOffsetFromParent = 0.0, yOffsetFromParent = 0.0;
-    int collisionID = -1;
+    int colliderID = -1;
     int specialTileX = 0;
     int specialTileY = 0;
 
-    aabb *next_aabb;
-    character *parent_object;
+    bool collisionThisFrame = false;
+    int collisionNormalX = 0, collisionNormalY = 0;
+    double collisionDistanceToSide = 0.0, collisionSnapValue = 0.0;
+
+    aabb *next_aabb = nullptr;
+    character *parent_object = nullptr;
     // T *parent_object;
     // COLLIDER_PARENT_TYPE parent_type;
 
@@ -36,7 +40,7 @@ struct aabb
     void Put(double x, double y);
     void Scale(double w, double h);
 
-    double response(double xV, double yV, double xV2, double yV2, aabb test, double &xNormal, double &yNormal, double &xPos, double &yPos, bool &insideCollision, double &distanceToSide);
+    double response(double xV, double yV, double xV2, double yV2, aabb test, int &xNormal, int &yNormal, double &xPos, double &yPos, bool &insideCollision, double &distanceToSide);
     // double response(double xV, double yV, double xV2, double yV2, aabb test, double &tfirst, double &tlast, double &xNormal, double &yNormal,
     // double &xPos, double &yPos, bool &insideCollision);
 
