@@ -119,11 +119,11 @@ void character::Update(double delta_time)
         {
             velocityX = 25.0;
         }
-        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame == 3)
+        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame == 5)
         {
             colliderOn(COLLIDER_STRIKE);
         }
-        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame > 3)
+        if (colliders[COLLIDER_STRIKE].colliderID != -1 && (playingAnim != ANIM_ABILITY_1 || playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame != 5))
         {
             colliderOff(COLLIDER_STRIKE);
         }
@@ -303,6 +303,7 @@ void game_system::Add(character e)
     switch (characters[characterCount].id)
     {
     case CH_GULK:
+        characters[characterCount].SetAnimation(ANIM_ABILITY_1, 4, 7, 100.0); // make this sense frames correct (IT WORKS YES CELEBRATE BUT THE FRAMES AND HITBOXES ARE OFF FIX THOSE)
         break;
     default:
         break;
@@ -391,6 +392,8 @@ validCollisionType getCollisionType(unsigned int idA, unsigned int idB)
         return VCT_STRIKE_SOLID;
     if (idA == COLLIDER_SOLID && idB == COLLIDER_STRIKE)
         return VCT_SOLID_STRIKE;
+    if (idA == COLLIDER_SIGHT && idB == COLLIDER_SOLID)
+        return VCT_SIGHT_SOLID;
 
     return VCT_INVALID;
 }

@@ -169,6 +169,13 @@ struct character
 
         colliders[id].parent_object = this;
     }
+    void setCollider(COLLIDER_BOX_IDS id, double width, double height, double offsetX, double offsetY)
+    {
+        colliders[id] = aabb(width * -0.5, height * -0.5, width * 0.5, height * 0.5, this);
+
+        colliders[id].xOffsetFromParent = offsetX;
+        colliders[id].yOffsetFromParent = offsetY;
+    }
     void putCollider(COLLIDER_BOX_IDS id, double x, double y)
     {
         colliders[id].Put(x, y);
@@ -493,14 +500,20 @@ struct game_system
 
                     Add(character(shaders[GAME_SHADER_DEFAULT], objects[GAME_OBJECT_DEFAULT], "./img/char/gulk.png", x * floor.worldSprite.trueW(),
                                   y * floor.worldSprite.trueH() + 0.2, 0.5, 4, 2, CH_GULK));
+
+                    // the following should all go inside the switch function in the Add function used just above
                     sprite *spr = &characters[characterCount - 1].visual;
-                    characters[characterCount - 1].setCollider(COLLIDER_SOLID, aabb(spr->x, spr->y, spr->x + 0.16, spr->y + 0.16), 0.16, 0.0);
+                    characters[characterCount - 1].setCollider(COLLIDER_SOLID, 0.16, 0.16, 0.16, 0.0);
+                    characters[characterCount - 1].setCollider(COLLIDER_STRIKE, 0.32, 0.16, 0.08, 0.0);
+                    characters[characterCount - 1].setCollider(COLLIDER_SIGHT, 0.16, 0.16, -0.16, 0.0);
+                    // now enemy has to turn visual when hitting something like a wall
+                    // and enemy sight box offset has to change when turning
+                    // and player needs to die when hit by enemy
+                    // also enemy animation should probably be slower
+                    // also enemy needs walking animation and maybe particle effects on death
+
                     characters[characterCount - 1].colliderOn(COLLIDER_SOLID);
-                    characters[characterCount - 1].setCollider(COLLIDER_STRIKE, aabb(spr->x - 0.08, spr->y, spr->x + 0.24, spr->y + 0.24), 0.16, 0.0); // set attack box here also add enemy strike animation in code it's frames 4-7
-                    // characters[characterCount - 1].scaleCollider(COLLIDER_STRIKE, 0.32, 0.16);
-                    // characters[characterCount - 1].setCollider(COLLIDER_SIGHT, aabb(spr->x - 0.32, spr->y, spr->x + 0.48, spr->y + 0.24), 0.0, 0.0);
-                    characters[characterCount - 1].setCollider(COLLIDER_SIGHT, aabb(spr->x, spr->y, spr->x + 0.16, spr->y + 0.24), 0.16, 0.0);
-                    characters[characterCount - 1].colliderOn(COLLIDER_SIGHT); // now I think set sight collisions thing in collisionhandling function
+                    characters[characterCount - 1].colliderOn(COLLIDER_SIGHT);
                 }
                 break;
                 default:
@@ -532,7 +545,7 @@ struct game_system
         case CH_GULK:
             if (charB.id == CH_PLAYER)
             {
-                if (collisionType == VCT_SOLID_STRIKE) // player hits enemy
+                if (collisionType == VCT_SOLID_STRIKE)
                 {
                     charA.hp = 0;
                 }
@@ -687,7 +700,7 @@ struct game_system
         case 11:
             break;
         default:
-            if (c->colliders[COLLIDER_SOLID].collisionNormalX != 0) // next you check why animation strike is not triggering
+            if (c->colliders[COLLIDER_SOLID].collisionNormalX != 0)
             {
                 if (c->id == CH_GULK)
                 {
