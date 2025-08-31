@@ -91,7 +91,16 @@ void character::Update(double delta_time)
 {
     if (hp <= 0)
     {
-        visual.Rotate(0.0, 0.0, 90.0);
+        switch (id)
+        {
+        case CH_GULK:
+            visual.Rotate(0.0, 0.0, -90.0);
+            visual.xOffset = 0.0, visual.yOffset = 0.48;
+            break;
+        default:
+            visual.Rotate(0.0, 0.0, 90.0);
+            break;
+        }
         return;
     }
 
@@ -111,13 +120,16 @@ void character::Update(double delta_time)
 
     switch (id)
     {
-    case CH_COFFEEMUGGUY:
-        // PlayAnimation(ANIM_IDLE, delta_time, true);
-        break;
     case CH_GULK:
-        if (velocityX == 0.0)
+        if (velocityX == 0.0 && char_state == CSTATE_MOVING)
         {
-            velocityX = 25.0;
+            velocityX = -25.0;
+            visual.Rotate(0.0, 0.0, 0.0);
+            visual.xOffset = 0.0;
+        }
+        if (char_state == CSTATE_ATTACKING)
+        {
+            velocityX = 0.0;
         }
         if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame == 5)
         {
@@ -127,11 +139,10 @@ void character::Update(double delta_time)
         {
             colliderOff(COLLIDER_STRIKE);
         }
-        // if (colliders[COLLIDER_SOLID].collisionThisFrame && colliders[COLLIDER_SOLID].) // this isn't triggering for some reason
-        // {
-        //     std::cout << "???\n";
-        //     velocityX = -velocityX;
-        // } // wouldn't this be better in the collision response function? I think so, try it.
+        if (playingAnim == ANIM_ABILITY_1 && animations[playingAnim].frame > 6)
+        {
+            char_state = CSTATE_MOVING;
+        }
         break;
     default:
         break;
@@ -232,8 +243,8 @@ void aabb_quadtree::handle_collisions(game_system &game, world &floor, double de
         {
             for (pB = linked_list; pB; pB = pB->next_aabb)
             {
-                if (pA == pB)
-                    continue; // should be break? would be more complicated collision resolution if it's break but better performance...
+                if (pA == pB || pA->parent_object != nullptr && pB->parent_object != nullptr && pA->parent_object == pB->parent_object) // no collision if character is the same
+                    continue;                                                                                                           // should be break? would be more complicated collision resolution if it's break but better performance...
 
                 if (pA->parent_object == nullptr && pB->parent_object == nullptr) // yay
                     continue;

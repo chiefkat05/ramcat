@@ -49,7 +49,6 @@ enum IDENTIFICATION
     CH_BINK,
     CH_MIMIC,
     ch_npc_ids,
-    CH_COFFEEMUGGUY,
     ch_other_ids
 };
 
@@ -128,6 +127,14 @@ struct player
     bool getInput(GLFWwindow *window, controlset action);
 };
 
+enum CHARACTER_STATE
+{
+    CSTATE_NOSTATE,
+    CSTATE_MOVING,
+    CSTATE_ATTACKING,
+    character_state_limit
+};
+
 // this is simply for clarity in the code, please change according to what purpose each collision box serves in the character collider lists.
 enum COLLIDER_BOX_IDS
 {
@@ -142,6 +149,7 @@ struct character
     double velocityX = 0.0, velocityY = 0.0;
     bool onGround = false, jumped = false;
     player *plControl = nullptr;
+    CHARACTER_STATE char_state = CSTATE_NOSTATE;
 
     // everything below should be in the player struct
     float parryCooloff = 20, parryTimer = 0, parryWindow = 5;
@@ -504,8 +512,9 @@ struct game_system
                     // the following should all go inside the switch function in the Add function used just above
                     sprite *spr = &characters[characterCount - 1].visual;
                     characters[characterCount - 1].setCollider(COLLIDER_SOLID, 0.16, 0.16, 0.16, 0.0);
-                    characters[characterCount - 1].setCollider(COLLIDER_STRIKE, 0.32, 0.16, 0.08, 0.0);
-                    characters[characterCount - 1].setCollider(COLLIDER_SIGHT, 0.16, 0.16, -0.16, 0.0);
+                    characters[characterCount - 1].setCollider(COLLIDER_STRIKE, 0.14, 0.08, 0.0, 0.02);
+                    characters[characterCount - 1].setCollider(COLLIDER_SIGHT, 0.16, 0.12, 0.0, 0.02);
+                    characters[characterCount - 1].char_state = CSTATE_MOVING;
                     // now enemy has to turn visual when hitting something like a wall
                     // and enemy sight box offset has to change when turning
                     // and player needs to die when hit by enemy
@@ -529,29 +538,13 @@ struct game_system
         {
         case CH_PLAYER:
             goto normal_collision;
-        case CH_COFFEEMUGGUY:
-            if (charB.id == CH_PLAYER)
-            {
-                if (collisionType == VCT_SOLID_SOLID)
-                {
-                    charA.PlayAnimation(ANIM_ABILITY_0, delta_time, false);
-                }
-                if (collisionType == VCT_SOLID_STRIKE)
-                {
-                    state = COFFEE_MUG_DEATH_STATE;
-                }
-            }
-            goto normal_collision;
         case CH_GULK:
             if (charB.id == CH_PLAYER)
             {
-                if (collisionType == VCT_SOLID_STRIKE)
-                {
-                    charA.hp = 0;
-                }
-                if (collisionType == VCT_SIGHT_SOLID) // enemy sees player
+                if (collisionType == VCT_SIGHT_SOLID)
                 {
                     charA.PlayAnimation(ANIM_ABILITY_1, delta_time, false);
+                    charA.char_state = CSTATE_ATTACKING;
                 }
                 if (collisionType == VCT_SOLID_SOLID && xNormal != 0)
                 {
@@ -559,9 +552,9 @@ struct game_system
                 }
             }
             goto normal_collision;
-        default:                                  // next: either change the 'break;' to a 'continue;' in the quadtree collision handler or fix this code to actually handle both objects' collisionsu8iu
-        normal_collision:                         // cursed? maybe.
-            if (collisionType == VCT_SOLID_SOLID) // this should include some of player 2's collision as well, remember that player 2 gets set to the position of colValue + sprite width or height depending on normals
+        default:
+        normal_collision: // cursed? maybe.
+            if (collisionType == VCT_SOLID_SOLID)
             {
                 if (xNormal > 0 && charA.velocityX < 0.0)
                 {
@@ -585,6 +578,10 @@ struct game_system
                     charA.visual.y = colValue;
                     charA.velocityY = 0.0;
                 }
+            }
+            if (collisionType == VCT_SOLID_STRIKE) // everything dies in one hit
+            {
+                charA.hp = 0;
             }
             break;
         }
@@ -705,6 +702,21 @@ struct game_system
                 if (c->id == CH_GULK)
                 {
                     c->velocityX *= -1;
+                    if (c->velocityX < 0.0)
+                    {
+                        c->visual.Rotate(0.0, 0.0, 0.0);
+                        c->visual.xOffset = 0.0;
+                        c->colliders[COLLIDER_SIGHT].xOffsetFromParent = 0.0;
+                        c->colliders[COLLIDER_STRIKE].xOffsetFromParent = 0.0;
+                    }
+                    else
+                    {
+                        c->visual.Rotate(0.0, 180.0, 0.0);
+                        c->visual.xOffset = 0.48; //? honestly at this point hardcoded is not a problem but I would like to know why this needs to be .48 and not .16 or .32
+
+                        c->colliders[COLLIDER_SIGHT].xOffsetFromParent = 0.32;
+                        c->colliders[COLLIDER_STRIKE].xOffsetFromParent = 0.34;
+                    }
                 }
                 else
                 {
